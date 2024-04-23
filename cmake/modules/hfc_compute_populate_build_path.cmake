@@ -1,0 +1,11 @@
+include_guard()
+function(hfc_compute_populate_build_path content_name populate_build_path)
+  set(options_params)
+  set(one_value_params SOURCE_DIR)
+  set(multi_value_params)
+  cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
+
+  cmake_path(GET FN_ARG_SOURCE_DIR PARENT_PATH source_dir_parent)
+  string(TOLOWER ${content_name} content_name_lower)
+  set(${populate_build_path} "${source_dir_parent}/${content_name_lower}-populate-build" PARENT_SCOPE)
+endfunction()

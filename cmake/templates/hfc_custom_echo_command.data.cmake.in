@@ -1,0 +1,1 @@
+set(custom_command_data "@TEMPLATE_custom_command_data@")

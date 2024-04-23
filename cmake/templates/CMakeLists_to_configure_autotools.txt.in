@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 3.27.6)
+project(@PROJECT_NAME@-cmake)
+
+set(CMAKE_MODULE_PATH
+  "@HERMETIC_FETCHCONTENT_ROOT_DIR@"
+  "@HERMETIC_FETCHCONTENT_ROOT_DIR@/modules"
+  ${CMAKE_MODULE_PATH}
+)
+
+include(hunter_autotools_configure_command) 
+include(hfc_get_command_in_cleared_env)
+
+hunter_autotools_configure_command(configure_command_list
+  PACKAGE_CONFIGURATION_TYPES @CMAKE_BUILD_TYPE@
+  PACKAGE_INSTALL_DIR @PROJECT_INSTALL_PREFIX@
+)
+
+set(HERMETIC_FETCHCONTENT_ROOT_DIR "@HERMETIC_FETCHCONTENT_ROOT_DIR@")
+
+
+hfc_get_command_in_cleared_env("${configure_command_list}" configure_command)
+
+execute_process(
+  COMMAND /bin/bash -c ${configure_command}
+  WORKING_DIRECTORY @PROJECT_SOURCE_DIR@/src
+  RESULT_VARIABLE CONFIGURE_RESULT
+  COMMAND_ECHO STDOUT
+) 
+
+if(CONFIGURE_RESULT)
+  message(FATAL_ERROR "Failed to configure @PROJECT_NAME@-cmake")
+endif()

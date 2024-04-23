@@ -1,0 +1,11 @@
+include(${CMAKE_CURRENT_LIST_DIR}/@TEMPLATE_custom_command_name@.data.cmake)
+
+set(header_str "@TEMPLATE_custom_command_header@")
+
+if(NOT header_str STREQUAL "") 
+    message("${header_str}")
+endif()
+
+foreach(entry IN LISTS custom_command_data)
+    message("${entry}")
+endforeach()

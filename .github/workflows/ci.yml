@@ -1,0 +1,74 @@
+name: build 
+
+# This workflow is triggered on pushes to the repository.
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+env:
+  GHA_HFC_TOOLS_DIR_CACHE_KEY: 20241128
+  TIPI_ACCESS_TOKEN: ${{ secrets.TIPI_CI_USER_0001_TIPI_ACCESS_TOKEN }}
+  TIPI_REFRESH_TOKEN: ${{ secrets.TIPI_CI_USER_0001_TIPI_REFRESH_TOKEN }}
+  TIPI_VAULT_PASSPHRASE: ${{ secrets.TIPI_CI_USER_0001_TIPI_VAULT_PASSPHRASE }}
+
+jobs:
+  build: 
+    name: Run HermeticFetchContent tests
+    runs-on: ubuntu-latest-8-cores
+    container: 
+      image: tipibuild/tipi-ubuntu:latest
+      options: --user root
+    steps:
+      - name: Compute environment
+        run: |
+          echo "TESTS_CACHED_HFC_TOOLS_DIR=$GITHUB_WORKSPACE/shared_hfc_tools_dir" >> $GITHUB_ENV
+          echo "TESTS_CACHED_HFC_BASEDIR=$GITHUB_WORKSPACE/hfc_project_basedir" >> $GITHUB_ENV
+
+      - name: prepare runner
+        run: |
+          sudo apt-get update -y
+          sudo apt install -y gettext
+          
+          # this will be cached to  test execution (e.g. avoid rebuilding goldilock and project dependencies all the time)          
+          mkdir -p $TESTS_CACHED_HFC_TOOLS_DIR
+          mkdir -p $TESTS_CACHED_HFC_BASEDIR
+
+      - name: Cached hfc tools dir
+        if: ${{ env.build_with_cache == 'true' }} 
+        id: win-cache-build-artifacts-restore
+        uses: actions/cache@v3
+        with:
+          path: |
+            $TESTS_CACHED_HFC_TOOLS_DIR
+            $TESTS_CACHED_HFC_BASEDIR
+
+          key: ${{ runner.os }}-hfc-project-cache-${{ env.GHA_HFC_TOOLS_DIR_CACHE_KEY }}
+          restore-keys: |
+            ${{ runner.os }}-hfc-project-cache-
+
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          # Relative path under $GITHUB_WORKSPACE to place the repository
+          path: './hfc_project'
+
+      - name: tipi builds project 
+        run: |
+          cd hfc_project/
+          mkdir build/
+          cd build/
+          # note: separating HFC_TEST_SHARED_TOOLS_DIR and HFC_PROJECT_HFC_BASEDIR to enable 
+          # the tests to use the goldilock that is provided by the main project without being impacted
+          # be dependencies built for the test project
+          #
+          # HERMETIC_FETCHCONTENT_TOOLS_DIR needs to be set to the same value as HFC_TEST_SHARED_TOOLS_DIR 
+          # for this to work
+          tipi connect
+          git config --global user.email "hello@tipi.build"
+          git config --global user.name "tipibuild"
+          tipi run cmake -DCMAKE_TOOLCHAIN_FILE=toolchain/toolchain.cmake -GNinja -DHERMETIC_FETCHCONTENT_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_TEST_SHARED_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_PROJECT_HFC_BASEDIR=$TESTS_CACHED_HFC_BASEDIR ..
+          tipi run cmake --build .
+          tipi run ctest --verbose

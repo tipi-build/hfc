@@ -1,0 +1,51 @@
+cmake_minimum_required(VERSION 3.27.6)
+
+project(@content_name@-install LANGUAGES NONE)
+set(HERMETIC_FETCHCONTENT_ROOT_DIR "@HERMETIC_FETCHCONTENT_ROOT_DIR@")
+list(APPEND CMAKE_MODULE_PATH "${HERMETIC_FETCHCONTENT_ROOT_DIR}/modules")
+
+include(ExternalProject)
+include(hfc_goldilock_helpers)
+
+set(CMAKE_PROGRAM_PATH "@CMAKE_PROGRAM_PATH@") # inherit the CMAKE_PROGRAM_PATH of the project being configured/generating this file
+set(HERMETIC_FETCHCONTENT_goldilock_BIN "@HERMETIC_FETCHCONTENT_goldilock_BIN@")
+
+set(input_SOURCE_DIR "@TEMPLATE_SOURCE_DIR@")
+set(input_BINARY_DIR "@TEMPLATE_BINARY_DIR@")
+set(input_INSTALL_DIR  "@TEMPLATE_INSTALL_DIR@")
+
+set(goldilock_commands "${HERMETIC_FETCHCONTENT_goldilock_BIN} ")
+
+function(goldilock_command_append_lockfile dir)
+  __get_lockfile_path("${dir}" lockfile)
+  set(goldilock_commands "${goldilock_commands} --lockfile ${lockfile}" PARENT_SCOPE)
+endfunction()
+
+
+goldilock_command_append_lockfile("${input_SOURCE_DIR}")
+set(effective_source_dir "${input_SOURCE_DIR}")
+
+goldilock_command_append_lockfile("${input_INSTALL_DIR}")
+
+if(NOT "${effective_source_dir}" STREQUAL "${input_BINARY_DIR}")
+  goldilock_command_append_lockfile("${input_BINARY_DIR}")
+endif()
+
+# build the command (with explanations)
+set(command_str "")
+string(APPEND command_str     "test -d ${effective_source_dir}")  # fail is the source dir is not here for some reason
+string(APPEND command_str " && ${goldilock_commands} -- /bin/bash -c \"@TEMPLATE_BUILD_CMD@ && @TEMPLATE_INSTALL_CMD@\"")     # acquire all locks
+
+ExternalProject_Add(@TEMPLATE_TARGET_NAME@
+  SOURCE_DIR "@TEMPLATE_SOURCE_DIR@"
+  BINARY_DIR "@TEMPLATE_BINARY_DIR@"
+  INSTALL_DIR "@TEMPLATE_INSTALL_DIR@"
+
+  CONFIGURE_COMMAND ""
+  UPDATE_COMMAND ""  
+  BUILD_COMMAND ""  
+  INSTALL_COMMAND /bin/bash -c "${command_str}"
+
+  INSTALL_BYPRODUCTS "@TEMPLATE_INSTALL_BYPRODUCTS@"
+  DEPENDS "@TEMPLATE_DEPENDENCIES@"
+)

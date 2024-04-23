@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>FetchContent_MakeHermetic &mdash; hermetic-fetchcontent  Documentation</title>
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a2c47e09" />
+    <link rel="stylesheet" type="text/css" href="../_static/cmake.css?v=3e562cf9" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Add a Library with Hermetic FetchContent" href="../recipes/HowToAddALibrary.html" />
+    <link rel="prev" title="Introduction" href="../index.html" />
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within CMake Documentation of Latest Version"
+          href="../../latest-opensearch.xml"/>
+    <script type="text/javascript" src="../../version_switch.js"></script>
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../recipes/HowToAddALibrary.html" title="How to Add a Library with Hermetic FetchContent"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/tipi-logo.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://tipi.build/">tipi</a> &#187;
+  </li>
+  <li>
+    <span class="version_switch"></span>
+    <a href="../index.html">Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">FetchContent_MakeHermetic</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="fetchcontent-makehermetic">
+<span id="modules:HermeticFetchContent"></span><h1><a class="toc-backref" href="#id1" role="doc-backlink">FetchContent_MakeHermetic</a><a class="headerlink" href="#fetchcontent-makehermetic" title="Link to this heading">¶</a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#fetchcontent-makehermetic" id="id1">FetchContent_MakeHermetic</a></p>
+<ul>
+<li><p><a class="reference internal" href="#overview" id="id2">Overview</a></p></li>
+<li><p><a class="reference internal" href="#commands" id="id3">Commands</a></p></li>
+<li><p><a class="reference internal" href="#build-introspection" id="id4">Build introspection</a></p></li>
+<li><p><a class="reference internal" href="#rationale" id="id5">Rationale</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<p>Set the configuration variables of Hermetic FetchContent for the content</p>
+<section id="overview">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>This module allows to make setup an Hermetic FetchContent configuration for a given content,
+augmenting what FetchContent can do by enabling consuming dependencies that are configured
+in a separate cmake execution.</p>
+<p>The following shows a typical example of declaring content detail for an examplary dependency:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="nb">HermeticFetchContent</span><span class="nf">)</span>
+
+<span class="c"># Hermetic FetchContent consumes information of FetchContent contents declared using the same name</span>
+<span class="nf">FetchContent_Declare(</span>
+<span class="w">  </span><span class="nb">zstd</span>
+<span class="w">  </span><span class="no">GIT_REPOSITORY</span><span class="w"> </span><span class="na">https://github.com/facebook/zstd.git</span>
+<span class="w">  </span><span class="no">GIT_TAG</span><span class="w"> </span><span class="m">63779</span><span class="nb">c798237346c2b245c546c40b72a5a5913fe</span>
+<span class="w">  </span><span class="no">SOURCE_SUBDIR</span><span class="w"> </span><span class="na">build/cmake</span>
+<span class="nf">)</span>
+
+<span class="c"># additional Hermetic FetchContent configuration</span>
+<span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">zstd</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span>
+<span class="nf">)</span>
+
+<span class="c"># choose when this content gets build</span>
+<span class="nf">HermeticFetchContent_MakeAvailableAtConfigureTime(</span><span class="nb">zstd</span><span class="nf">)</span>
+<span class="c"># OR</span>
+<span class="nf">HermeticFetchContent_MakeAvailableAtBuildTime(</span><span class="nb">zstd</span><span class="nf">)</span>
+</pre></div>
+</div>
+<p>Hermetic FetchContent does consume information defined in <cite>FetchContent_Declare</cite> calls whenever possible
+but enables additional configuration through the <span class="target" id="index-0-command:fetchcontent_makehermetic"></span><a class="reference internal" href="#command:fetchcontent_makehermetic" title="fetchcontent_makehermetic"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">FetchContent_MakeHermetic()</span></code></a> command.</p>
+</section>
+<section id="commands">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Commands</a><a class="headerlink" href="#commands" title="Link to this heading">¶</a></h2>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:fetchcontent_makehermetic">
+<span class="sig-name descname"><span class="pre">FetchContent_MakeHermetic</span></span><a class="headerlink" href="#command:fetchcontent_makehermetic" title="Link to this definition">¶</a></dt>
+<dd><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nv">&lt;name&gt;</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="nb">autotools</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="nb">openssl</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_TOOLCHAIN_EXTENSION</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_FIND_PACKAGES</span><span class="w"> </span><span class="nv">&lt;list of hermetic content names&gt;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CREATE_TARGET_ALIASES</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_PREPATCHED_RESOLVER</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span><span class="w">      </span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">FetchContent_MakeHermetic()</span></code> function records options that describe the additional 
+parameters required to populate and consume the specified content in a hermetic way.</p>
+<p>The content <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> can be any string without spaces, but good practice
+would be to use only letters, numbers and underscores.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_BUILD_SYSTEM</span></code> allows selecting which build system scheme will be used to
+configure and build the specified content. Currently the available choices are:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cmake</span></code></dt><dd><p>For contents that come with a working CMake buildsystem</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">autotools</span></code></dt><dd><p>For contents using the <code class="docutils literal notranslate"><span class="pre">GNU</span> <span class="pre">Autotools</span></code> as build system</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">openssl</span></code></dt><dd><p>To consume the native openssl buildsystem</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_TOOLCHAIN_EXTENSION</span></code> option enables injecting code into the toolchain used
+in the isolated build of the specified content, enabling to set the required build configuration
+without interfering with the build configuration of other parts of your project.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">rapidjson</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span>
+<span class="w">  </span><span class="no">HERMETIC_TOOLCHAIN_EXTENSION</span><span class="w"> </span><span class="p">[=[</span>
+<span class="w">    </span><span class="c"># don&#39;t build doc, examples &amp; tests</span>
+<span class="w">    </span><span class="nf">set(</span><span class="no">RAPIDJSON_BUILD_DOC</span><span class="w"> </span><span class="no">OFF</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="no">BOOL</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="no">FORCE</span><span class="nf">)</span>
+<span class="w">    </span><span class="nf">set(</span><span class="no">RAPIDJSON_BUILD_EXAMPLES</span><span class="w"> </span><span class="no">OFF</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="no">BOOL</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="no">FORCE</span><span class="nf">)</span>
+<span class="w">    </span><span class="nf">set(</span><span class="no">RAPIDJSON_BUILD_TESTS</span><span class="w"> </span><span class="no">OFF</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="no">BOOL</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="no">FORCE</span><span class="nf">)</span>
+
+<span class="w">    </span><span class="c"># use std::string</span>
+<span class="w">    </span><span class="nf">set(</span><span class="no">RAPIDJSON_HAS_STDSTRING</span><span class="w"> </span><span class="no">ON</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="no">BOOL</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="no">FORCE</span><span class="nf">)</span>
+<span class="w">  </span><span class="p">]=]</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>Additionally to these dependency specific toolchain fragments Hermetic FetchContent is able
+to forward a defined set of CMake variables to the sub-builds by injecting values of the variables
+specified in the global <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES</span></code> into the
+generated proxy toolchain files:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES</span><span class="w"> </span>
+<span class="w">  </span><span class="s">&quot;CMAKE_BUILD_TYPE&quot;</span>
+<span class="w">  </span><span class="s">&quot;CMAKE_EXE_LINKER_FLAGS&quot;</span>
+<span class="w">  </span><span class="s">&quot;CMAKE_CXX_FLAGS&quot;</span>
+<span class="w">  </span><span class="s">&quot;CMAKE_C_FLAGS&quot;</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_FIND_PACKAGES</span></code> option enables specifying which packages that are provided 
+by other Hermetic FetchContent declarations will be able to be <code class="docutils literal notranslate"><span class="pre">find_package</span></code>-ed by the 
+content being specified. This enables controlling the packages available in the individual
+builds by other means than by just order of declaration.</p>
+<p>In this example, the library <code class="docutils literal notranslate"><span class="pre">libxml2</span></code> gets to <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> <code class="docutils literal notranslate"><span class="pre">Ìconv</span></code> and <code class="docutils literal notranslate"><span class="pre">ZLIB</span></code>.
+These libraries have to be made available using Hermetic FetchContent in the same build.
+Such a call to <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> will fail for other packages that are not explicitely 
+whitelisted, either using the <code class="docutils literal notranslate"><span class="pre">HERMETIC_FIND_PACKAGES</span></code> option OR by adding said library
+to the global <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES</span></code> setting which allows
+<code class="docutils literal notranslate"><span class="pre">find_package()</span></code> to fall-back to CMake's native implementation if it cannot resolve the
+package among the whitelisted Hermetic FetchContent builds.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># omitting the FetchContent_Declare() call</span>
+
+<span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">LibXml2</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span>
+<span class="w">  </span><span class="no">HERMETIC_FIND_PACKAGES</span><span class="w"> </span><span class="s">&quot;Iconv;ZLIB&quot;</span><span class="w"> </span><span class="c"># &lt;- this</span>
+<span class="w">  </span><span class="no">HERMETIC_TOOLCHAIN_EXTENSION</span><span class="w"> </span><span class="p">[=[</span>
+<span class="w">    </span><span class="nf">set(</span><span class="no">LIBXML2_WITH_LZMA</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span>
+<span class="w">    </span><span class="nf">set(</span><span class="no">LIBXML2_WITH_PYTHON</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span>
+<span class="w">  </span><span class="p">]=]</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_CREATE_TARGET_ALIASES</span></code> options allows defining aliases for target during 
+the configure phase. The CMake code provided will be invoked for every CMake target library 
+that is exported by the content. The scope in which this code will be run contains the 
+variable <code class="docutils literal notranslate"><span class="pre">TARGET_NAME</span></code> which will be set to the exported target name. The provided code
+fragment <strong>must</strong> set the <code class="docutils literal notranslate"><span class="pre">list</span></code> <code class="docutils literal notranslate"><span class="pre">TARGET_ALIASES</span></code> to contain <strong>all</strong> the names under 
+which the exported target will be imported when it is consumed.</p>
+<p>It is recommended to test for specific values of <code class="docutils literal notranslate"><span class="pre">TARGET_NAME</span></code> instead of doing blanket
+declarations of aliases &quot;no matter the input&quot; to avoid issues in cases where a library might
+start to provide multiple exported libraries depending on the build configuration or just over
+time.</p>
+<p>In the example below, we will be renaming the target <code class="docutils literal notranslate"><span class="pre">ZLIB::zlib</span></code> that is exported by the
+project to <code class="docutils literal notranslate"><span class="pre">ZLIB::ZLIB</span></code> (notice the difference in casing). This can be required if for 
+example another project is unable to find the library in it's original casing.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_Declare(</span>
+<span class="w">  </span><span class="no">ZLIB</span>
+<span class="w">  </span><span class="no">GIT_REPOSITORY</span><span class="w"> </span><span class="na">https://github.com/cpp-pm/zlib.git</span>
+<span class="w">  </span><span class="no">GIT_TAG</span><span class="w"> </span><span class="m">57</span><span class="nb">af136e436c5596e4f1c63fd5bdd2ce988777d1</span>
+<span class="nf">)</span>
+
+<span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="no">ZLIB</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span>
+<span class="w">  </span><span class="no">HERMETIC_CREATE_TARGET_ALIASES</span><span class="w"> </span><span class="p">[=[</span>
+<span class="w">    </span><span class="nf">if(</span><span class="s">&quot;${TARGET_NAME}&quot;</span><span class="w"> </span><span class="no">STREQUAL</span><span class="w"> </span><span class="s">&quot;ZLIB::zlib&quot;</span><span class="nf">)</span>
+<span class="w">      </span><span class="nf">set(</span><span class="no">TARGET_ALIASES</span><span class="w"> </span><span class="s">&quot;ZLIB::ZLIB&quot;</span><span class="nf">)</span>
+<span class="w">    </span><span class="nf">endif()</span>
+<span class="w">  </span><span class="p">]=]</span>
+<span class="nf">)</span>
+
+<span class="nf">HermeticFetchContent_MakeAvailableAtConfigureTime(</span><span class="no">ZLIB</span><span class="nf">)</span>
+</pre></div>
+</div>
+<p>The option <code class="docutils literal notranslate"><span class="pre">HERMETIC_PREPATCHED_RESOLVER</span></code> enables defining a lookup method for source population.
+This is particularly useful when used in combination with the <code class="docutils literal notranslate"><span class="pre">PATCH_COMMAND</span></code> setting in <code class="docutils literal notranslate"><span class="pre">FetchContent_Declare()</span></code>
+because it allows the developper to store a pre-patched version of the source code of a library in a central
+location to avoid the burden of running potentially lengthy patch operations on every build while still retaining
+the capability of quickly trying out other versions of a dependency during upgrade trials.</p>
+<p>As for the previous option Hermetic FetchContent expects <code class="docutils literal notranslate"><span class="pre">HERMETIC_PREPATCHED_RESOLVER</span></code> to contain an executable
+fragment of CMake code (as a string) that is called in a isolated scope that contains the following variables with
+the values defined in <code class="docutils literal notranslate"><span class="pre">FetchContent_Declare</span></code>:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_REPOSITORY</span></code></dt><dd><p>URL of the git repository. Any URL understood by the git command may be used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code></dt><dd><p>Git branch name, tag or commit hash to be checked out</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">URL</span></code></dt><dd><p>List of paths and/or URL(s) of the external project's source.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">URL_HASH</span></code></dt><dd><p>Hash of the archive file to be downloaded. Should be of the form &lt;algo&gt;=&lt;hashValue&gt; where algo can be any of 
+the hashing algorithms supported by the file() command.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The CMake code can redefine any of these variables to change the source of the content.
+The CMake code must set <code class="docutils literal notranslate"><span class="pre">RESOLVED_PATCH</span></code> to a truthy value if it is able to set an alternate source for the content.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">RESOLVED_PATCH</span></code> is set to a truthy value the source populate operation will rely on the new information
+provided an skip the execution of the <code class="docutils literal notranslate"><span class="pre">PATCH_COMMAND</span></code>. Otherwise the normal expected behavior is executed (e.g. 
+downloading from the original source and running any specified <code class="docutils literal notranslate"><span class="pre">PATCH_COMMAND</span></code>)</p>
+<p>In the following example we will assume that the project is storing a patched copy of the specified repository
+and revision of the original sources in it own github organization under a given commit ID:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_Declare(</span>
+<span class="w">  </span><span class="nb">boost</span>
+<span class="w">  </span><span class="no">GIT_REPOSITORY</span><span class="w"> </span><span class="na">https://github.com/boostorg/boost.git</span>
+<span class="w">  </span><span class="c"># that&#39;s v1.84</span>
+<span class="w">  </span><span class="no">GIT_TAG</span><span class="w">        </span><span class="nb">ad09f667e61e18f5c31590941e748ac38e5a81bf</span><span class="w">   </span>
+<span class="w">  </span><span class="c"># apply the patch &quot;some.patch&quot;</span>
+<span class="w">  </span><span class="no">PATCH_COMMAND</span><span class="w"> </span><span class="nb">cmake</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">patch</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="na">/patchtest/some.patch</span>
+<span class="nf">)</span>
+
+<span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">boost</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span>
+<span class="w">  </span><span class="no">HERMETIC_PREPATCHED_RESOLVER</span><span class="w"> </span><span class="p">[=[</span>
+<span class="w">    </span><span class="nf">if(</span><span class="o">${</span><span class="nt">GIT_TAG</span><span class="o">}</span><span class="w"> </span><span class="no">STREQUAL</span><span class="w"> </span><span class="s">&quot;ad09f667e61e18f5c31590941e748ac38e5a81bf&quot;</span><span class="nf">)</span>
+<span class="w">      </span><span class="c"># hypothetical &lt;my-org&gt;/boost-prepatched.git repo</span>
+<span class="w">      </span><span class="nf">set(</span><span class="no">GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;https://github.com/&lt;my-org&gt;/boost-prepatched.git&quot;</span><span class="nf">)</span>
+<span class="w">      </span><span class="nf">set(</span><span class="no">GIT_TAG</span><span class="w"> </span><span class="s">&quot;9c83f4a27e4227dbe02e4a47ede372ac2a4a043e&quot;</span><span class="nf">)</span>
+<span class="w">      </span><span class="nf">set(</span><span class="no">RESOLVED_PATCH</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span>
+<span class="w">    </span><span class="nf">endif()</span>
+<span class="w">  </span><span class="p">]=]</span>
+<span class="nf">)</span>
+
+<span class="nf">HermeticFetchContent_MakeAvailableAtBuildTime(</span><span class="nb">boost</span><span class="nf">)</span>
+</pre></div>
+</div>
+<p>If the <code class="docutils literal notranslate"><span class="pre">HERMETIC_BUILD_SYSTEM</span></code> option is set to <code class="docutils literal notranslate"><span class="pre">autotools</span></code> or <code class="docutils literal notranslate"><span class="pre">openssl</span></code> the developer
+can use the options <code class="docutils literal notranslate"><span class="pre">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span></code>  to provide a 
+a library export declaration that will enable Hermetic FetchContent to consume the targets
+as-if the project had provided a proper package configuration.</p>
+<p>Note the use of the template variable <code class="docutils literal notranslate"><span class="pre">&#64;HFC_PREFIX_PLACEHOLDER&#64;</span></code> which will be replaced
+with the final install prefix location when the library is consumed later on.</p>
+<p>The following example shows how to define the <code class="docutils literal notranslate"><span class="pre">Pcap::Pcap</span></code> target properties required
+for Hermetic FetchContent to be able to construct a so-called &quot;targets cache&quot;:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">Pcap</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">autotools</span>
+<span class="w">  </span><span class="no">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span><span class="w"> </span>
+<span class="w">    </span><span class="p">[=[</span>
+<span class="w">      </span><span class="nf">add_library(</span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="no">IMPORTED</span><span class="nf">)</span>
+<span class="w">      </span><span class="nf">set_property(</span>
+<span class="w">        </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span><span class="w"> </span>
+<span class="w">        </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">IMPORTED_LOCATION</span><span class="w"> </span>
+<span class="w">        </span><span class="s">&quot;@HFC_PREFIX_PLACEHOLDER@/lib/libpcap.a&quot;</span>
+<span class="w">      </span><span class="nf">)</span><span class="w">    </span>
+<span class="w">      </span><span class="nf">set_property(</span>
+<span class="w">        </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span><span class="w"> </span>
+<span class="w">        </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_INCLUDE_DIRECTORIES</span><span class="w"> </span>
+<span class="w">        </span><span class="s">&quot;@HFC_PREFIX_PLACEHOLDER@/include&quot;</span>
+<span class="w">      </span><span class="nf">)</span>
+<span class="w">    </span><span class="p">]=]</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:hermeticfetchcontent_makeavailableatbuildtime">
+<span class="sig-name descname"><span class="pre">HermeticFetchContent_MakeAvailableAtBuildTime</span></span><a class="headerlink" href="#command:hermeticfetchcontent_makeavailableatbuildtime" title="Link to this definition">¶</a></dt>
+<dd><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">HermeticFetchContent_MakeAvailableAtBuildTime(</span>
+<span class="w">  </span><span class="nv">&lt;name&gt;</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">HermeticFetchContent_MakeAvailableAtBuildTime()</span></code> function makes the content <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> available
+at build time (basically only running the content's configure step) an exporting the required targets.</p>
+<p>After this call the content's targets are available for target linking and dependency management.
+Build graph matters (e.g. when and what to build) are left to the project's build system.</p>
+</dd></dl>
+
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:hermeticfetchcontent_makeavailableatconfiguretime">
+<span class="sig-name descname"><span class="pre">HermeticFetchContent_MakeAvailableAtConfigureTime</span></span><a class="headerlink" href="#command:hermeticfetchcontent_makeavailableatconfiguretime" title="Link to this definition">¶</a></dt>
+<dd><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">HermeticFetchContent_MakeAvailableAtConfigureTime(</span>
+<span class="w">  </span><span class="nv">&lt;name&gt;</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">HermeticFetchContent_MakeAvailableAtConfigureTime()</span></code> function makes the content <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> available
+to the project an other Hermetic FetchContent contents by running the complete build when this statement
+gets executed.</p>
+<p>This is particularly useful when integrating with other build systems that cannot be integrated in the
+project's build graph seamlessly and that - thus - require headers and libraries to be available in an
+installed location during <em>their</em> configure step.</p>
+</dd></dl>
+
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:hermeticfetchcontent_setbasedir">
+<span class="sig-name descname"><span class="pre">HermeticFetchContent_SetBaseDir</span></span><a class="headerlink" href="#command:hermeticfetchcontent_setbasedir" title="Link to this definition">¶</a></dt>
+<dd><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">HermeticFetchContent_SetBaseDir(</span>
+<span class="w">  </span><span class="nv">&lt;directory&gt;</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>Set the base directory for all the hermetic dependency build directory and related folders</p>
+</dd></dl>
+
+</section>
+<section id="build-introspection">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Build introspection</a><a class="headerlink" href="#build-introspection" title="Link to this heading">¶</a></h2>
+<p>HermeticFetchContent adds a number of cmake build targets to the build system that can be executed after the project configuration to enable
+some build introspection:</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_dependencies_build_dirs&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_dependencies_build_dirs&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_dependencies_build_dirs"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints all project's dependencies build directories to the console. Warning! This list might be incomplete if the project build at hand 
+did not actually build the whole list of dependencies</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_dependencies_install_dirs&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_dependencies_install_dirs&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_dependencies_install_dirs"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints all project's dependencies install directories to the console. Warning! Depending on the build state, the listed install trees
+might not be populated (yet).</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_echo_${content_name}_install_dir&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_echo_${content_name}_install_dir&quot;</span></span><a class="headerlink" href="#command:build target "hfc_echo_${content_name}_install_dir"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints the install directory for <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console. Warning! Depending on the build state, the install tree might not be populated (yet).</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_${content_name}_static_libraries_locations&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_${content_name}_STATIC_LIBRARIES_locations&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_${content_name}_static_libraries_locations"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints the list of static libraries of <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console.</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_${content_name}_shared_libraries_locations&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_${content_name}_SHARED_LIBRARIES_locations&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_${content_name}_shared_libraries_locations"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints the list of shared libraries of <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console.</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_${content_name}_module_libraries_locations&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_${content_name}_MODULE_LIBRARIES_locations&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_${content_name}_module_libraries_locations"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints the list of module libraries of <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console.</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_${content_name}_unknown_libraries_locations&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_${content_name}_UNKNOWN_LIBRARIES_locations&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_${content_name}_unknown_libraries_locations"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints the list of 'unknown type' libraries of <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console.</p>
+<dl class="cmake command">
+<dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_${content_name}_executables_locations&quot;">
+<span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_${content_name}_EXECUTABLES_locations&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_${content_name}_executables_locations"" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Prints the list of executables of <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console.</p>
+</section>
+<section id="rationale">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Rationale</a><a class="headerlink" href="#rationale" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Ressembling add_subdirectory through external cmake execution is key to providing reusable install trees :</dt><dd><ul class="simple">
+<li><p>One project depending on a library can reuse the library built by another project</p></li>
+<li><p>The only common element has to be the common CMAKE_TOOLCHAIN_FILE settings</p></li>
+</ul>
+</dd>
+</dl>
+<p>Finally it allows a build graph optimization to be at maximum parallelity. Indeed usual CMake practices for externally built
+libraries found via <cite>find_package</cite> allows reusing the same libraries across project, but requires building them in advance
+before the configure of the dependent project might even be started. However not all target depend directly of the said dependencies.</p>
+<p>With this techniques it can integrate the clean build of the dependencies in the graph, effectively building at the finest granularity
+of dependencies everything  that isn't dependent of the dependencies.  Possibly allowing building earlier parts of the project that do 
+not depend on the dependency itself.</p>
+<p>Plain add_subdirectory allows this but lacks the isolation from the parent CMake project, hindering the reuse of the dependent
+library install tree without the presence of the sources, which is a big speedup in CI workflows, and new developer computer setup,
+optimizing avoid the need of cloning the actual dependencies source files with all the git history and every private implementation files.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">FetchContent_MakeHermetic</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#commands">Commands</a></li>
+<li><a class="reference internal" href="#build-introspection">Build introspection</a></li>
+<li><a class="reference internal" href="#rationale">Rationale</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../index.html"
+                          title="previous chapter">Introduction</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../recipes/HowToAddALibrary.html"
+                          title="next chapter">How to Add a Library with Hermetic FetchContent</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/modules/HermeticFetchContent.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../recipes/HowToAddALibrary.html" title="How to Add a Library with Hermetic FetchContent"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Introduction"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/tipi-logo.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://tipi.build/">tipi</a> &#187;
+  </li>
+  <li>
+    <span class="version_switch"></span>
+    <a href="../index.html">Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">FetchContent_MakeHermetic</a></li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright tipi technologies Ltd..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    </div>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-6042509-4");
+pageTracker._trackPageview();
+} catch(err) {}
+</script>
+  </body>
+</html>

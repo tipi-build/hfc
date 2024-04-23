@@ -1,0 +1,60 @@
+# dump_build_targets.CMakeLists.txt.in / tipi technologies Ltd / 2024
+#
+# Loads configured target descriptions and CMakeCache files from projects and dumps all the target information to a targets info cache file
+#
+# Template Parameters:
+# - HERMETIC_FETCHCONTENT_ROOT_DIR                                :: path to Hermetic_FetchContent
+# - HERMETIC_FETCHCONTENT_DUMPBUILD_TARGETS_SEARCH_PATH           :: folder to scan for target files
+# - HERMETIC_FETCHCONTENT_DUMPBUILD_DESTINATION_CACHE_LIB_FILE    :: file to write scan results to
+# - HERMETIC_FETCHCONTENT_DUMPBUILD_TARGETS_CREATE_TARGET_ALIASES :: injected code for target alias creation
+# - HERMETIC_FETCHCONTENT_CMAKE_ADDITIONAL_EXPORTS                :: additional exports code
+#
+
+
+cmake_minimum_required(VERSION 3.27.0)
+project(dump_build_targets LANGUAGES NONE)
+
+
+list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@")
+list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@/modules")
+
+set(DUMPBUILD_TARGETS_SEARCH_PATH "@HERMETIC_FETCHCONTENT_DUMPBUILD_TARGETS_SEARCH_PATH@")
+if(NOT DUMPBUILD_TARGETS_SEARCH_PATH) 
+    message(FATAL_ERROR "Please set a value for DUMPBUILD_TARGETS_SEARCH_PATH")
+endif()
+
+set(DUMPBUILD_TARGETS_DESTINATION_CACHE_LIB_FILE "@HERMETIC_FETCHCONTENT_DUMPBUILD_DESTINATION_CACHE_LIB_FILE@")
+if(NOT DUMPBUILD_TARGETS_DESTINATION_CACHE_LIB_FILE) 
+    message(FATAL_ERROR "Please set a value for DUMPBUILD_TARGETS_DESTINATION_CACHE_LIB_FILE")
+endif()
+
+function(create_target_aliases target_name OUT_aliases_name)
+
+  set(TARGET_NAME ${target_name})
+  set(TARGET_ALIASES "")
+  
+  block(PROPAGATE TARGET_NAME TARGET_ALIASES)
+  # injected code
+  @HERMETIC_FETCHCONTENT_DUMPBUILD_TARGETS_CREATE_TARGET_ALIASES@
+
+  endblock()
+
+  list(LENGTH TARGET_ALIASES number_entries)
+
+  if(number_entries EQUAL 0)
+    list(APPEND TARGET_ALIASES "${target_name}")
+  endif()
+
+  set(${OUT_aliases_name} "${TARGET_ALIASES}" PARENT_SCOPE)
+
+endfunction()
+
+#
+# the actual scan & dump target cache file
+include(hfc_cmake_targets_cache)
+hfc_cmake_targets_cache(
+  TARGET_SEARCH_PATH "${DUMPBUILD_TARGETS_SEARCH_PATH}"
+  CACHE_DESTINATION_FILE "${DUMPBUILD_TARGETS_DESTINATION_CACHE_LIB_FILE}"
+  CMAKE_ADDITIONAL_EXPORTS [=[@HERMETIC_FETCHCONTENT_CMAKE_ADDITIONAL_EXPORTS@]=]
+  CREATE_TARGET_ALIASES_FN "create_target_aliases"
+)

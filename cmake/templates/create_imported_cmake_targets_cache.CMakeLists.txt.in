@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.27.0)
+project(create_imported_cmake_targets_cache LANGUAGES NONE)
+
+list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@")
+list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@/modules")
+
+include(hfc_targets_cache_create)
+
+
+function(create_target_aliases target_name OUT_aliases_name)
+
+  set(TARGET_NAME ${target_name})
+  set(TARGET_ALIASES "")
+  
+  block(PROPAGATE TARGET_NAME TARGET_ALIASES)
+  # injected code
+  @TEMPLATE_CREATE_TARGET_ALIASES@
+
+  endblock()
+
+  list(LENGTH TARGET_ALIASES number_entries)
+
+  if(number_entries EQUAL 0)
+    list(APPEND TARGET_ALIASES "${target_name}")
+  endif()
+
+  set(${OUT_aliases_name} "${TARGET_ALIASES}" PARENT_SCOPE)
+
+endfunction()
+
+hfc_targets_cache_create(
+    LOAD_TARGETS_CMAKE @LOAD_TARGETS_CMAKE@
+    CACHE_DESTINATION_FILE "@CACHE_DESTINATION_FILE@"
+    CREATE_TARGET_ALIASES_FN "create_target_aliases"
+)
