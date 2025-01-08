@@ -64,6 +64,7 @@ Commands
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]      
       [HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION <cmake code>]
+      [HERMETIC_DISCOVER_TARGETS_FILE_PATTERN <regex pattern>]
     )
 
   The ``FetchContent_MakeHermetic()`` function records options that describe the additional 
@@ -274,6 +275,11 @@ Commands
           )
         ]=]
     )
+
+  In cases in which the dependencie's CMake build system does provide target exports files
+  but is not complying to the common file nameming scheme for those exports (hermetic fetchContent
+  uses the following by default ``([Tt]argets|[Ee]xport(s?))\.cmake``), another pattern can be 
+  supplied using the ``HERMETIC_DISCOVER_TARGETS_FILE_PATTERN`` option.
 
     
 .. command:: HermeticFetchContent_MakeAvailableAtBuildTime

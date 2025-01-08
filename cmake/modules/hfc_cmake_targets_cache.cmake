@@ -18,7 +18,7 @@ function(hfc_cmake_targets_cache)
 
   # arguments parsing
   set(options "")
-  set(oneValueArgs TARGET_SEARCH_PATH CACHE_DESTINATION_FILE CREATE_TARGET_ALIASES_FN CMAKE_ADDITIONAL_EXPORTS)
+  set(oneValueArgs TARGET_SEARCH_PATH CACHE_DESTINATION_FILE CREATE_TARGET_ALIASES_FN CMAKE_ADDITIONAL_EXPORTS TARGETS_FILE_PATTERN)
   set(multiValueArgs )
   cmake_parse_arguments(FN_ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -40,9 +40,17 @@ function(hfc_cmake_targets_cache)
   # target files
   function(${temp_fn_name})
     hfc_log_debug("Calling ${temp_fn_name} to discover targets in ${FN_ARG_TARGET_SEARCH_PATH}")
+
+    if(FN_ARG_TARGETS_FILE_PATTERN) 
+      set(discover_find_target_files_additional_arg TARGETS_FILE_PATTERN "${FN_ARG_TARGETS_FILE_PATTERN}")
+    else()
+      set(discover_find_target_files_additional_arg "")
+    endif()
+
     hfc_cmake_targets_discover(
       SEARCH_PATH "${FN_ARG_TARGET_SEARCH_PATH}" 
       CMAKE_ADDITIONAL_EXPORTS "${FN_ARG_CMAKE_ADDITIONAL_EXPORTS}"
+      ${discover_find_target_files_additional_arg}
       RESULT found_targets
     )
 
@@ -71,7 +79,7 @@ function(hfc_cmake_targets_cache_isolated)
 
   # arguments parsing
   set(options "")
-  set(oneValueArgs TARGET_SEARCH_PATH CACHE_DESTINATION_FILE TOOLCHAIN_FILE TEMP_DIR CREATE_TARGET_ALIASES CMAKE_ADDITIONAL_EXPORTS)
+  set(oneValueArgs TARGET_SEARCH_PATH CACHE_DESTINATION_FILE TOOLCHAIN_FILE TEMP_DIR CREATE_TARGET_ALIASES CMAKE_ADDITIONAL_EXPORTS TARGETS_FILE_PATTERN)
   set(multiValueArgs )
   cmake_parse_arguments(FN_ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -96,6 +104,7 @@ function(hfc_cmake_targets_cache_isolated)
   set(HERMETIC_FETCHCONTENT_DUMPBUILD_DESTINATION_CACHE_LIB_FILE "${FN_ARG_CACHE_DESTINATION_FILE}")
   set(HERMETIC_FETCHCONTENT_DUMPBUILD_TARGETS_CREATE_TARGET_ALIASES "${FN_ARG_CREATE_TARGET_ALIASES}")
   set(HERMETIC_FETCHCONTENT_CMAKE_ADDITIONAL_EXPORTS "${FN_ARG_CMAKE_ADDITIONAL_EXPORTS}")
+  set(HERMETIC_FETCHCONTENT_TARGETS_FILE_PATTERN "${FN_ARG_TARGETS_FILE_PATTERN}")
 
   string(RANDOM LENGTH 10 rand_str)  
   set(tmp_proj_dir "${FN_ARG_TEMP_DIR}/tmp_${rand_str}")

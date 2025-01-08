@@ -49,6 +49,7 @@ function(hfc_cmake_restore_or_configure content_name)
     HERMETIC_TOOLCHAIN_EXTENSION
     MAKE_EXECUTABLES_FINDABLE
     HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING
+    HERMETIC_DISCOVER_TARGETS_FILE_PATTERN
 
     # Cache related
     ORIGIN
@@ -166,7 +167,14 @@ function(hfc_cmake_restore_or_configure content_name)
   else()
   
     hfc_log_debug(" + discovering target files in: ${targets_search_path}")
-    hfc_cmake_targets_discover_find_target_files(SEARCH_PATH "${targets_search_path}" RESULT_LIST found_target_files_list)
+
+    if(FN_ARG_HERMETIC_DISCOVER_TARGETS_FILE_PATTERN) 
+      set(discover_find_target_files_additional_arg TARGETS_FILE_PATTERN "${FN_ARG_HERMETIC_DISCOVER_TARGETS_FILE_PATTERN}")
+    else()
+      set(discover_find_target_files_additional_arg "")
+    endif()
+
+    hfc_cmake_targets_discover_find_target_files(SEARCH_PATH "${targets_search_path}" ${discover_find_target_files_additional_arg} RESULT_LIST found_target_files_list)
 
     if(found_target_files_list)
 
@@ -179,6 +187,7 @@ function(hfc_cmake_restore_or_configure content_name)
         TOOLCHAIN_FILE "${proxy_toolchain_path}"
         TEMP_DIR "${CMAKE_BINARY_DIR}/_deps/targets_dump_tmp"
         CMAKE_ADDITIONAL_EXPORTS "${FN_ARG_CMAKE_ADDITIONAL_EXPORTS}"
+        ${discover_find_target_files_additional_arg}
       )
 
       set(targets_cache_created TRUE)

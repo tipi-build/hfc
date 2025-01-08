@@ -81,6 +81,8 @@ macro(hfc_provide_dependency_FIND_PACKAGE method package_name)
     endif()
 
   else()
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0057 NEW) # make sure we have IN_LIST
 
     if(${package_name} IN_LIST HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES OR FORCE_SYSTEM_${package_name})
       hfc_log_debug(" - forwarding request to native find_package()")
@@ -102,6 +104,7 @@ macro(hfc_provide_dependency_FIND_PACKAGE method package_name)
       hfc_log_debug(" - not in list of hermetic dependencies")
     endif()
 
+    cmake_policy(POP)
   endif()
 
   set(${package_name_uppercase}_FOUND ${package_found})

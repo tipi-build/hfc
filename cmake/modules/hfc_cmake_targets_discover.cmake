@@ -117,14 +117,14 @@ endfunction()
 # Usage:
 # hfc_cmake_targets_discover_find_target_files(
 #   SEARCH_PATH <path to search for target files>
-#   CMAKE_ADDITIONAL_EXPORTS <cmake code to create additional targets>
 #   RESULT_LIST <output list of found files>
+#   TARGETS_FILE_PATTERN <optional regex used to match the targets  export file(s)>
 # )
 function(hfc_cmake_targets_discover_find_target_files)
 
   # arguments parsing
   set(options "")
-  set(oneValueArgs SEARCH_PATH RESULT_LIST)
+  set(oneValueArgs SEARCH_PATH RESULT_LIST TARGETS_FILE_PATTERN)
   set(multiValueArgs "")
   cmake_parse_arguments(FN_ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -137,10 +137,18 @@ function(hfc_cmake_targets_discover_find_target_files)
 
   # find the *([tT]argets)|(export).cmake files
   file(GLOB_RECURSE matched_files "${FN_ARGS_SEARCH_PATH}/*")
-  foreach(found_file IN LISTS matched_files)
-    
-    if(found_file MATCHES "([Tt]argets|[Ee]xport(s?))\\.cmake$")
 
+  foreach(found_file IN LISTS matched_files)
+
+    set(file_matches FALSE)
+
+    if(NOT "${FN_ARGS_TARGETS_FILE_PATTERN}" STREQUAL "" AND found_file MATCHES "${FN_ARGS_TARGETS_FILE_PATTERN}") 
+      set(file_matches TRUE)      
+    elseif(found_file MATCHES "([Tt]argets|[Ee]xport(s?))\\.cmake$")
+      set(file_matches TRUE)
+    endif()
+    
+    if(file_matches)    
       if(found_file MATCHES "^${FN_ARGS_SEARCH_PATH}/_deps")
         hfc_log_debug("Skipping target file in nested fetchcontent subfolder: ${found_file}")
         continue()
@@ -176,6 +184,10 @@ endfunction()
 #                             # "${EXPORT_VARIABLE_PREFIX}BoringSSL_ssl_TYPE" will be available in the 
 #                             # caller scope after executing load_targets()
 #
+#   CMAKE_ADDITIONAL_EXPORTS  # <cmake code to create additional targets>
+#
+#   TARGETS_FILE_PATTERN      # optional regex used to match the targets  export file(s)
+#
 # )
 function(hfc_cmake_targets_discover)
   set(OUT_targets_list "")
@@ -184,7 +196,7 @@ function(hfc_cmake_targets_discover)
 
   # arguments parsing
   set(options "")
-  set(oneValueArgs RESULT SEARCH_PATH CMAKE_ADDITIONAL_EXPORTS EXPORT_VARIABLE_PREFIX)
+  set(oneValueArgs RESULT SEARCH_PATH CMAKE_ADDITIONAL_EXPORTS EXPORT_VARIABLE_PREFIX TARGETS_FILE_PATTERN)
   set(multiValueArgs EXPORT_PROPERTIES)
   cmake_parse_arguments(LOAD_TARGETS_ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -210,8 +222,14 @@ function(hfc_cmake_targets_discover)
   get_property(targets_before_scan DIRECTORY PROPERTY IMPORTED_TARGETS)
   Hermetic_FetchContent_SetFunctionOverride_Enabled(ON)
 
+  if(LOAD_TARGETS_ARGS_TARGETS_FILE_PATTERN) 
+    set(discover_find_target_files_additional_arg TARGETS_FILE_PATTERN "${LOAD_TARGETS_ARGS_TARGETS_FILE_PATTERN}")
+  else()
+    set(discover_find_target_files_additional_arg "")
+  endif()
+
   # find the *([tT]argets)|(export).cmake files
-  hfc_cmake_targets_discover_find_target_files(SEARCH_PATH "${LOAD_TARGETS_ARGS_SEARCH_PATH}" RESULT_LIST target_files)
+  hfc_cmake_targets_discover_find_target_files(SEARCH_PATH "${LOAD_TARGETS_ARGS_SEARCH_PATH}" ${discover_find_target_files_additional_arg} RESULT_LIST target_files)
   foreach(found_file IN LISTS target_files)
     hfc_log(STATUS "Processing targets / export file: ${found_file}")
     include("${found_file}")

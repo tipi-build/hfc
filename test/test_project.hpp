@@ -134,7 +134,7 @@ namespace hfc::test {
     return cmake_bin;
   }
 
-    inline std::string get_cmake_configure_command(
+  inline std::string get_cmake_configure_command(
     const fs::path& test_project_path, 
     const test_variant& data, 
     const std::string& additional_cmake_variables = "", 

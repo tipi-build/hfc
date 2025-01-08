@@ -20,6 +20,14 @@ include(HermeticFetchContent)
 
 if(HFC_ENABLE_CMAKE_SBOM) 
   include(hfc_sbom)
+
+  hfc_generate_sbom(
+    OUTPUT "hfc-sbom.spdx"
+    LICENSE "Proprietary"
+    SUPPLIER "tipi technologies AG"
+    SUPPLIER_URL "https://tipi.build"
+    NO_VERIFY
+  )
 endif()
 
 enable_testing()

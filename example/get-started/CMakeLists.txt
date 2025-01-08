@@ -7,8 +7,8 @@ project(
 
 # boostrap hfc
 include(FetchContent)
-set(hfc_REPOSITORY https://github.com/tipi-build/hermetic-fetchcontent.git)
-set(hfc_REVISION 7aaad4bed29c8e5e225ccdde824edd17a94804f8)
+set(hfc_REPOSITORY https://github.com/tipi-build/hfc.git)
+set(hfc_REVISION main)
 FetchContent_Populate(
   hermetic_fetchcontent
   GIT_REPOSITORY ${hfc_REPOSITORY}
