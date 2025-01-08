@@ -155,7 +155,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
   endif()
 
   set(cmake_contentInstallPath ${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-install)
-  message(" - Hash of persisted Details is ${${content_name}_DETAILS_HASH}" )
+  message(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
   set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.install.done)
 
   hfc_create_restore_prefixes(${content_name} ${__PARAMS_BINARY_DIR} ${cmake_contentInstallPath})
@@ -169,6 +169,16 @@ function(hfc_make_available_single content_name build_at_configure_time)
   if(NOT DEFINED __PARAMS_HERMETIC_BUILD_SYSTEM)
     hfc_log_debug("Defaulting to CMake build")
     set(__PARAMS_HERMETIC_BUILD_SYSTEM "cmake")
+  endif()
+
+  # echoes the source dir for that hfc content
+  if(NOT TARGET hfc_${content_name}_source_dir)
+    hfc_custom_echo_command_create("hfc_${content_name}_source_dir_echo_cmd" "===SOURCE_DIR===")
+    add_custom_target(hfc_${content_name}_source_dir
+      COMMENT "Listing interlocked FetchContent source dirs"
+      DEPENDS hfc_${content_name}_source_dir_echo_cmd
+    )
+    hfc_custom_echo_command_append("hfc_${content_name}_source_dir_echo_cmd" "${__PARAMS_SOURCE_DIR}")
   endif()
 
   # echoes the install prefix for that hfc content

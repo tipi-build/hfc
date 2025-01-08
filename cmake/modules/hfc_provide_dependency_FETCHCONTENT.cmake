@@ -47,6 +47,15 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
     add_subdirectory("${content_source_dir}/${FN_ARG_SOURCE_SUBDIR}" "${FN_ARG_BINARY_DIR}")
   endif()
 
+  if(NOT TARGET hfc_${package_name}_source_dir)
+    hfc_custom_echo_command_create("hfc_${package_name}_source_dir_echo_cmd" "===SOURCE_DIR===")
+    add_custom_target(hfc_${package_name}_source_dir
+      COMMENT "Listing interlocked FetchContent source dirs"
+      DEPENDS hfc_${package_name}_source_dir_echo_cmd
+    )
+    hfc_custom_echo_command_append("hfc_${package_name}_source_dir_echo_cmd" "${content_source_dir}")
+  endif()
+
   hfc_goldilock_release("${content_source_dir}" unlock_success)
 
   if(NOT unlock_success)
