@@ -23,8 +23,11 @@ HermeticFetchContent_MakeAvailableAtBuildTime(Boost)
 find_package(Threads)
 add_compile_definitions(BOOST_ALL_NO_LIB=1)
 
+add_executable(goldilock "${CMAKE_CURRENT_LIST_DIR}/fake_goldilock.cpp")
+
 add_library(hfc_project INTERFACE)
 add_library(hfc_project::test_lib ALIAS hfc_project)
+
 
 target_include_directories(hfc_project INTERFACE 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/>
@@ -93,6 +96,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/configure_stability_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/targets_cache_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/hermetic_dependency_make_executable_findable.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/goldilock_provisioning_test.cpp"
 )
 
 foreach(test_file IN LISTS test_source_files)
@@ -100,4 +104,6 @@ foreach(test_file IN LISTS test_source_files)
     add_test_with_HFC_TOOLS_DIR_ENV(${test_name} "${test_file}" "${HFC_TEST_SHARED_TOOLS_DIR}")    
 endforeach()
 
+set_tests_properties (goldilock_provisioning_test  PROPERTIES
+    ENVIRONMENT "FAKE_GOLDILOCK=$<TARGET_FILE:goldilock>;TRUE_GOLDILOCK=${HERMETIC_FETCHCONTENT_goldilock_BIN};STANDARD_COMPILER=${CMAKE_CXX_COMPILER}")
 set_tests_properties(check_find_package PROPERTIES WILL_FAIL TRUE)

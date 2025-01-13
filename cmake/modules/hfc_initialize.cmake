@@ -238,10 +238,14 @@ function(hfc_ensure_goldilock_available)
     )
     
     hfc_log_debug(" - Configuring goldilock")
-    
+    set(toolchain_for_goldilock "")
+    if(DEFINED CMAKE_TOOLCHAIN_FILE AND NOT CMAKE_CROSSCOMPILING)
+      set(toolchain_for_goldilock "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+    endif()
+
     # cmake configure
     execute_process(
-      COMMAND ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR} -S ${hfc_goldilock_SOURCE_DIR} -B ${hfc_goldilock_BINARY_DIR} ${HFC_GOLDILOCK_BUILD_ARGS}
+      COMMAND ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR} -S ${hfc_goldilock_SOURCE_DIR} -B ${hfc_goldilock_BINARY_DIR} ${HFC_GOLDILOCK_BUILD_ARGS} ${toolchain_for_goldilock}
       WORKING_DIRECTORY "${hfc_goldilock_BINARY_DIR}"
       COMMAND_ECHO STDOUT
       COMMAND_ERROR_IS_FATAL ANY
@@ -351,21 +355,10 @@ function(hfc_initialize HFC_ROOT_DIR)
       "**\n" 
     )
   endif()
+  
 
-  set(GOLDILOCK_MINIMUM_VERSION 1.2.0)
-  hfc_ensure_goldilock_available(
-    GOLDILOCK_REVISION 5b34d2fed2d7da1280a2c5a8134f3d6fe10587df
-    GOLDILOCK_MINIMUM_VERSION ${GOLDILOCK_MINIMUM_VERSION}
-
-    GOLDILOCK_URL_PREBUILT_Darwin_arm64 https://github.com/tipi-build/goldilock/releases/download/v${GOLDILOCK_MINIMUM_VERSION}/goldilock-macos.zip
-    GOLDILOCK_SHA_PREBUILT_Darwin_arm64 642c533ef1257187ab023dc33b95c66ec84b38af
-
-    GOLDILOCK_URL_PREBUILT_Darwin_x86_64 https://github.com/tipi-build/goldilock/releases/download/v${GOLDILOCK_MINIMUM_VERSION}/goldilock-macos-intel.zip
-    GOLDILOCK_SHA_PREBUILT_Darwin_x86_64 8ae6b38766ed485e0b8d6d0b7460bb7e8a71a015
-   
-    GOLDILOCK_URL_PREBUILT_Linux_x86_64 https://github.com/tipi-build/goldilock/releases/download/v${GOLDILOCK_MINIMUM_VERSION}/goldilock-linux.zip
-    GOLDILOCK_SHA_PREBUILT_Linux_x86_64 da1c7b9e9d79fa019ca0e41a002b6fed4fd854ee
-  )
+  include("${HERMETIC_FETCHCONTENT_ROOT_DIR}/modules/hfc_goldilock_base_value.cmake")
+  #HERMETIC_FETCHCONTENT_goldilock_BIN is set by the include of hfc_goldilock_base_value, but we need to set this variable to the parent scope
   set(HERMETIC_FETCHCONTENT_goldilock_BIN ${HERMETIC_FETCHCONTENT_goldilock_BIN} PARENT_SCOPE)
 
   hfc_initialize_enable_cmake_re_if_requested()  
