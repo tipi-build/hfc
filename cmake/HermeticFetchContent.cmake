@@ -15,7 +15,7 @@ Set the configuration variables of Hermetic FetchContent for the content
 Overview
 ^^^^^^^^
 
-This module allows to make setup an Hermetic FetchContent configuration for a given content,
+This module allows to setup an Hermetic FetchContent configuration for a given content,
 augmenting what FetchContent can do by enabling consuming dependencies that are configured
 in a separate cmake execution.
 
@@ -244,17 +244,12 @@ Commands
     HermeticFetchContent_MakeAvailableAtBuildTime(boost)
 
 
-  If the ``HERMETIC_BUILD_SYSTEM`` option is set to ``autotools`` or ``openssl`` the developer
-  can use the options ``HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION``  to provide a 
+  The developer can use the options ``HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION``  to provide a 
   a library export declaration that will enable Hermetic FetchContent to consume the targets
-  as-if the project had provided a proper package configuration.
-
-  Note the use of template variable :
-  - ``@HFC_SOURCE_DIR_PLACEHOLDER@`` which will be replaced with the source directory location when the library is consumed later on. 
-  - ``@HFC_BINARY_DIR_PLACEHOLDER@`` which will be replaced with the binaries directory location when the library is consumed later on.
-  - ``@HFC_PREFIX_PLACEHOLDER@`` which will be replaced with the final install prefix location when the library is consumed later on. 
- 
-
+  as-if the project had provided a proper package configuration. This is useful in cases in which
+  no such information is available (for example in the case of `HERMETIC_BUILD_SYSTEM == autotools` 
+  or `HERMETIC_BUILD_SYSTEM == openssl` or if the project's CMake buildsystem does not install and
+  export targets)
 
   The following example shows how to define the ``Pcap::Pcap`` target properties required
   for Hermetic FetchContent to be able to construct a so-called "targets cache":
@@ -280,11 +275,16 @@ Commands
         ]=]
     )
 
+  The following template variables are available to define the targets:
+  
+  - ``@HFC_SOURCE_DIR_PLACEHOLDER@`` which will be replaced with the source directory location when the library is consumed later on. 
+  - ``@HFC_BINARY_DIR_PLACEHOLDER@`` which will be replaced with the binaries directory location when the library is consumed later on.
+  - ``@HFC_PREFIX_PLACEHOLDER@`` which will be replaced with the final install prefix location when the library is consumed later on. 
+
   In cases in which the dependencie's CMake build system does provide target exports files
   but is not complying to the common file nameming scheme for those exports (hermetic fetchContent
   uses the following by default ``([Tt]argets|[Ee]xport(s?))\.cmake``), another pattern can be 
   supplied using the ``HERMETIC_DISCOVER_TARGETS_FILE_PATTERN`` option.
-
     
 .. command:: HermeticFetchContent_MakeAvailableAtBuildTime
 

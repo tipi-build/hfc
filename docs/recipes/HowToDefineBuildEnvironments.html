@@ -1,18 +1,19 @@
+
 <!DOCTYPE html>
 
-<html lang="en" data-content_root="../">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <title>HermeticFetchContent / Recipes / How to define build Environments &mdash; hermetic-fetchcontent  Documentation</title>
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a2c47e09" />
-    <link rel="stylesheet" type="text/css" href="../_static/cmake.css?v=3e562cf9" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/cmake.css" />
     
-    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -25,7 +26,7 @@
  
 
   </head><body>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -56,14 +57,14 @@
           <div class="body" role="main">
             
   <section id="how-to-define-build-environments">
-<h1>How to define build Environments<a class="headerlink" href="#how-to-define-build-environments" title="Link to this heading">¶</a></h1>
+<h1>How to define build Environments<a class="headerlink" href="#how-to-define-build-environments" title="Permalink to this heading">¶</a></h1>
 <p>In order for the <em>Hermetic</em> aspect of Hermetic FetchContent to work as expected, it is mandatory
 to extract some information that we consider to be <em>environment specific</em> from the project's
 <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files and to unify this as part of a &quot;Hermetic Environment Definition&quot;.</p>
 <p>At its core, this approach utilizes CMake's <code class="docutils literal notranslate"><span class="pre">TOOLCHAIN_FILE</span></code> concept, but does so in a way that enables
 more benefits once used in conjunction with <code class="docutils literal notranslate"><span class="pre">cmake-re</span></code> and/or <code class="docutils literal notranslate"><span class="pre">tipi.build</span></code>.</p>
 <section id="environment-structure">
-<h2>Environment structure<a class="headerlink" href="#environment-structure" title="Link to this heading">¶</a></h2>
+<h2>Environment structure<a class="headerlink" href="#environment-structure" title="Permalink to this heading">¶</a></h2>
 <p>In your project, the location for environment specifications would usually be under <code class="docutils literal notranslate"><span class="pre">&lt;project-root&gt;/toolchains</span></code>.</p>
 <p>Here's what the typical structure of a Hermetic FetchContent build environment looks like:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;environment-folder&gt;/&lt;name&gt;.cmake
@@ -82,7 +83,7 @@ the toolchain file.</p>
 <p>More details on these components are provided below.</p>
 </section>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
 <p>Below a simple example of a toolchain using the system-provided <cite>GCC-13</cite> installation:</p>
 <p>In file <cite>example/example-gcc13.cmake</cite></p>
 <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="s">&quot;${CMAKE_CURRENT_LIST_DIR}/environment/base.cmake&quot;</span><span class="nf">)</span>
@@ -135,7 +136,7 @@ the toolchain file.</p>
 </div>
 </section>
 <section id="cmake-re-and-tipi-remote-build-support">
-<h2>CMake-RE and tipi remote build support<a class="headerlink" href="#cmake-re-and-tipi-remote-build-support" title="Link to this heading">¶</a></h2>
+<h2>CMake-RE and tipi remote build support<a class="headerlink" href="#cmake-re-and-tipi-remote-build-support" title="Permalink to this heading">¶</a></h2>
 <p>To make these environments compatible with remote builds using <cite>cmake-re</cite> and the <cite>tipi.build</cite> cloud,
 additional configurations are required.</p>
 <p>By adding a specific cmake module to <code class="docutils literal notranslate"><span class="pre">&lt;environment-folder&gt;/cmake/test-injector.cmake</span></code>, you can enable
@@ -184,7 +185,7 @@ image URL. It's important to place this file at <code class="docutils literal no
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../index.html">Table of Contents</a></h3>
@@ -210,7 +211,7 @@ image URL. It's important to place this file at <code class="docutils literal no
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<search id="searchbox" style="display: none" role="search">
+<div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -218,13 +219,13 @@ image URL. It's important to place this file at <code class="docutils literal no
       <input type="submit" value="Go" />
     </form>
     </div>
-</search>
+</div>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -250,8 +251,8 @@ image URL. It's important to place this file at <code class="docutils literal no
     </div>
 
     <div class="footer" role="contentinfo">
-    &#169; Copyright tipi technologies Ltd..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+        &#169; Copyright tipi technologies Ltd..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
     </div>
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
