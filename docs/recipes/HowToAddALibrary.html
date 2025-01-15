@@ -1,18 +1,19 @@
+
 <!DOCTYPE html>
 
-<html lang="en" data-content_root="../">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <title>HermeticFetchContent / Recipes / Add a library &mdash; hermetic-fetchcontent  Documentation</title>
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a2c47e09" />
-    <link rel="stylesheet" type="text/css" href="../_static/cmake.css?v=3e562cf9" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/cmake.css" />
     
-    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -26,7 +27,7 @@
  
 
   </head><body>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -60,14 +61,14 @@
           <div class="body" role="main">
             
   <section id="how-to-add-a-library-with-hermetic-fetchcontent">
-<h1>How to Add a Library with Hermetic FetchContent<a class="headerlink" href="#how-to-add-a-library-with-hermetic-fetchcontent" title="Link to this heading">¶</a></h1>
+<h1>How to Add a Library with Hermetic FetchContent<a class="headerlink" href="#how-to-add-a-library-with-hermetic-fetchcontent" title="Permalink to this heading">¶</a></h1>
 <p>To add a new dependency to your build using Hermetic FetchContent, you first need to determine
 the build system used by the library. Currently, Hermetic FetchContent supports adding dependencies
 that use either <cite>CMake</cite> or <cite>GNU Autotools</cite> as their primary build system.</p>
 <p>The following sections provide walk-throughs for the most common scenarios, along with suggestions
 for parameters or workarounds applicable in typical situations.</p>
 <section id="basics">
-<h2>Basics<a class="headerlink" href="#basics" title="Link to this heading">¶</a></h2>
+<h2>Basics<a class="headerlink" href="#basics" title="Permalink to this heading">¶</a></h2>
 <p>Hermetic FetchContent is an augmentation of CMake's native FetchContent module, providing enhanced
 control over project dependencies and their build settings. It offers a structured and more isolated
 approach to declaring each dependency's build settings, reducing the risk of dependencies interfering
@@ -79,9 +80,9 @@ with each other (such as through conflicting options or settings).</p>
 does not currently support), integration is straightforward.</p>
 </section>
 <section id="libraries-using-cmake">
-<h2>Libraries using CMake<a class="headerlink" href="#libraries-using-cmake" title="Link to this heading">¶</a></h2>
+<h2>Libraries using CMake<a class="headerlink" href="#libraries-using-cmake" title="Permalink to this heading">¶</a></h2>
 <section id="modern-cmake-build-system-available">
-<h3>Modern CMake Build System Available<a class="headerlink" href="#modern-cmake-build-system-available" title="Link to this heading">¶</a></h3>
+<h3>Modern CMake Build System Available<a class="headerlink" href="#modern-cmake-build-system-available" title="Permalink to this heading">¶</a></h3>
 <p>First, declare the content settings of the library you wish to add. For example, <cite>civetweb</cite> can
 be fetched directly from its Git repository on <em>github.com</em>. The code below demonstrates this:</p>
 <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Declare the dependency</span>
@@ -150,7 +151,7 @@ maintains all escape characters and spaces, eliminating the need for double esca
 <p>At this point the targets exported by <cite>civetweb</cite> will be availabe for target linking
 and consumption as any other CMake target.</p>
 <section id="making-one-dependency-available-to-another">
-<h4>Making One Dependency Available to Another<a class="headerlink" href="#making-one-dependency-available-to-another" title="Link to this heading">¶</a></h4>
+<h4>Making One Dependency Available to Another<a class="headerlink" href="#making-one-dependency-available-to-another" title="Permalink to this heading">¶</a></h4>
 <p>As mentioned in the introduction, a key distinction of using <code class="docutils literal notranslate"><span class="pre">Hermetic</span> <span class="pre">FetchContent</span></code>
 is that dependencies are built in isolation from each other.</p>
 <p>In scenarios where one dependency needs to <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> another, such an
@@ -193,7 +194,7 @@ Instead, it should rely on the <em>targets</em> that are made available through 
 </div>
 </section>
 <section id="declaring-library-alias-names">
-<h4>Declaring Library Alias Names<a class="headerlink" href="#declaring-library-alias-names" title="Link to this heading">¶</a></h4>
+<h4>Declaring Library Alias Names<a class="headerlink" href="#declaring-library-alias-names" title="Permalink to this heading">¶</a></h4>
 <p>In complex builds, you might encounter situations where different libraries have diverging
 expectations regarding the names under which packages or libraries are found.</p>
 <p>Aliases can be defined using the <code class="docutils literal notranslate"><span class="pre">HERMETIC_CREATE_TARGET_ALIASES</span></code> argument in
@@ -227,7 +228,7 @@ defining aliases. Similarly, providing an empty alias list can be used to mask c
 targets if needed.</p>
 </section>
 <section id="using-a-source-cache-for-pre-patched-dependencies">
-<h4>Using a Source Cache for Pre-Patched Dependencies<a class="headerlink" href="#using-a-source-cache-for-pre-patched-dependencies" title="Link to this heading">¶</a></h4>
+<h4>Using a Source Cache for Pre-Patched Dependencies<a class="headerlink" href="#using-a-source-cache-for-pre-patched-dependencies" title="Permalink to this heading">¶</a></h4>
 <p>Hermetic FetchContent includes the <code class="docutils literal notranslate"><span class="pre">HERMETIC_PREPATCHED_RESOLVER</span></code> argument, which facilitates
 the injection of &quot;pre-patched&quot; sources into the build. This acts as a sort of cache for source
 files that have already been patched.</p>
@@ -303,7 +304,7 @@ and to update the necessary details via <code class="docutils literal notranslat
 </section>
 </section>
 <section id="autotools-and-related-build-systems">
-<h2>Autotools and Related Build Systems<a class="headerlink" href="#autotools-and-related-build-systems" title="Link to this heading">¶</a></h2>
+<h2>Autotools and Related Build Systems<a class="headerlink" href="#autotools-and-related-build-systems" title="Permalink to this heading">¶</a></h2>
 <p>Hermetic FetchContent offers support for dependencies that do not use a native CMake build system,
 but instead rely on <code class="docutils literal notranslate"><span class="pre">GNU</span> <span class="pre">Autotools</span></code> or other closely related systems.</p>
 <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_Declare(</span>
@@ -351,7 +352,7 @@ or Autotools.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../index.html">Table of Contents</a></h3>
@@ -390,7 +391,7 @@ or Autotools.</p>
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<search id="searchbox" style="display: none" role="search">
+<div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -398,13 +399,13 @@ or Autotools.</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</search>
+</div>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="Related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -433,8 +434,8 @@ or Autotools.</p>
     </div>
 
     <div class="footer" role="contentinfo">
-    &#169; Copyright tipi technologies Ltd..
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+        &#169; Copyright tipi technologies Ltd..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
     </div>
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");

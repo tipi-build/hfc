@@ -5,23 +5,20 @@ project(
   VERSION 1.0
   LANGUAGES CXX)
 
-# boostrap hfc
+# Bootstrap hfc : Copy this after your project() call
 include(FetchContent)
-set(hfc_REPOSITORY https://github.com/tipi-build/hfc.git)
-set(hfc_REVISION main)
-FetchContent_Populate(
-  hermetic_fetchcontent
-  GIT_REPOSITORY ${hfc_REPOSITORY}
-  GIT_TAG ${hfc_REVISION}
-  SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/thirdparty/cache/hfc-${hfc_REVISION}/src"
-  SUBBUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/thirdparty/cache/hfc-${hfc_REVISION}/subbuild"
-  BINARY_DIR "${CMAKE_CURRENT_LIST_DIR}/thirdparty/cache/hfc-${hfc_REVISION}/bin"
+FetchContent_Populate(hfc
+  GIT_REPOSITORY https://github.com/tipi-build/hfc.git
+  GIT_TAG main
+  SOURCE_DIR "${PROJECT_SOURCE_DIR}/thirdparty/cache/hfc/src"
+  SUBBUILD_DIR "${PROJECT_SOURCE_DIR}/thirdparty/cache/hfc/subbuild"
+  BINARY_DIR "${PROJECT_SOURCE_DIR}/thirdparty/cache/hfc/bin"
 )
-FetchContent_GetProperties(hermetic_fetchcontent)
-message(STATUS "Hermetic FetchContent ${hfc_REVISION} available at '${hermetic_fetchcontent_SOURCE_DIR}'")
-list(APPEND CMAKE_MODULE_PATH "${hermetic_fetchcontent_SOURCE_DIR}/cmake")
+FetchContent_GetProperties(hfc)
+list(APPEND CMAKE_MODULE_PATH "${hfc_SOURCE_DIR}/cmake")
 include(HermeticFetchContent)
 
+# Your dependencies
 FetchContent_Declare(
   "mathlib"
   GIT_REPOSITORY "https://github.com/tipi-build/unit-test-cmake-template-2libs.git"

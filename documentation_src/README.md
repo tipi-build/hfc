@@ -6,6 +6,15 @@ To generate the documentation you need Sphinx installed in your Python packages:
 pip install -U sphinx
 ```
 
+> ### All in one helper script:
+> 
+> ```bash
+> ./update_documentation.sh
+> ```
+> Performs all the required steps
+
+### Step by step:
+
 To generate the documentation:
 
 ```bash
@@ -18,6 +27,8 @@ ninja
 To update the in-project documentation:
 
 ```bash
-rm -r ../../public/documentation/*
-cmake --install . --prefix ../../public/documentation/
+rm -r ../../docs
+mkdir -p ../../docs
+cmake --install . --prefix ../../docs/
+touch ../../docs/.nojekyll # required for gh-pages
 ```
