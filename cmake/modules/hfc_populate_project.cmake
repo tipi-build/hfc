@@ -121,14 +121,18 @@ function(hfc_populate_project_declare content_name)
 
       if((initial_commit_id STREQUAL FN_ARG_GIT_TAG) AND initial_repo_is_clean)
         hfc_log(STATUS "Repository ${FN_ARG_SOURCE_DIR} already at ${FN_ARG_GIT_TAG} and clean - marking as populated")
-        set(done true)
+        set(done TRUE)
       else()
-        hfc_log(STATUS "Repository ${FN_ARG_SOURCE_DIR} currently at ${initial_commit_id} and is_clean=${initial_repo_is_clean}")
-        checkout_revision_force_clean(
-          REPOSITORY_DIR "${FN_ARG_SOURCE_DIR}"
-          GIT_REVISION "${FN_ARG_GIT_TAG}"
-          OUT_SUCCESS done
-        )
+        # We explicitely do not reset, and trust the stamp files
+        #hfc_log(STATUS "Repository ${FN_ARG_SOURCE_DIR} currently at ${initial_commit_id} and is_clean=${initial_repo_is_clean}")
+        #checkout_revision_force_clean(
+        #  REPOSITORY_DIR "${FN_ARG_SOURCE_DIR}"
+        #  GIT_REVISION "${FN_ARG_GIT_TAG}"
+        #  OUT_SUCCESS done
+        #)
+        if (NOT RESOLVED_PATCH AND NOT FN_ARG_PATCH_COMMAND)
+          hfc_log(WARNING "🔴 Repository ${FN_ARG_SOURCE_DIR} currently at ${initial_commit_id} is not clean. is_clean=${initial_repo_is_clean}. Are the local modifications intentional ?")
+        endif()
       endif()
 
       if(done)
@@ -196,8 +200,10 @@ function(hfc_populate_project_declare content_name)
       list(APPEND populate_args "UPDATE_DISCONNECTED" "1")  # avoid issues with repeated builds, which would "repatch"
     endif()
     
-    # fix issues that could occur if the sources are missing but the stamp file is still around
-    hfc_invalidate_project_population(${content_name} "${FN_ARG_SOURCE_DIR}")
+    # we used to fix issues that could occur if the sources are missing but the stamp file were still around
+    # we now explictely trust the stamps file, this allow better debugging for developers
+    # as this allows modifying the sources of a dependency while debugging configure step
+    #hfc_invalidate_project_population(${content_name} "${FN_ARG_SOURCE_DIR}")
 
     # 
     hfc_log_debug(" - populating (${populate_args})")
@@ -341,4 +347,5 @@ function(hfc_invalidate_project_population content_name source_dir)
   string(TOLOWER ${content_name} content_name_lower)
   file(REMOVE_RECURSE "${subbuild_path}/${content_name_lower}-populate-prefix/src/${content_name_lower}-populate-stamp")
   file(REMOVE_RECURSE "${subbuild_path}/${content_name_lower}-populate-prefix/tmp")
+  file(REMOVE_RECURSE "${subbuild_path}/CMakeFiles/${content_name_lower}-populate-complete")
 endfunction()

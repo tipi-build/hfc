@@ -88,7 +88,7 @@ You can run the HermeticFetchContent test suite this way:
 
   * `cmake -S . -B build/ -DCMAKE_TOOLCHAIN_FILE=toolchain/toolchain.cmake -GNinja` **[*]** 
   * `cmake --build build/`
-  * `ctest --test check_options_and_defines_forwarding`
+  * `ctest -R check_options_and_defines_forwarding`
 
 
 **[*]** Additionally the following variable can be defined to ease development:
