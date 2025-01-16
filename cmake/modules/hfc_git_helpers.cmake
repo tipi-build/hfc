@@ -120,9 +120,9 @@ function(repo_has_revision)
     git_exec(COMMAND "${git_executable} cat-file -e ${FN_ARG_GIT_REVISION}" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" OUT_RETURN_CODE return_code)
 
     if(return_code EQUAL 0)
-        set(${FN_ARG_OUT_RESULT} true PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} TRUE PARENT_SCOPE)
     else()
-        set(${FN_ARG_OUT_RESULT} false PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} FALSE PARENT_SCOPE)
     endif()
 
 endfunction()
@@ -162,9 +162,9 @@ function(repo_has_revision)
     git_exec(COMMAND "${git_executable} cat-file -e ${FN_ARG_GIT_REVISION}" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" OUT_RETURN_CODE return_code)
 
     if(return_code EQUAL 0)
-        set(${FN_ARG_OUT_RESULT} true PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} TRUE PARENT_SCOPE)
     else()
-        set(${FN_ARG_OUT_RESULT} false PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} FALSE PARENT_SCOPE)
     endif()
 
 endfunction()
@@ -213,9 +213,9 @@ function(repo_is_clean)
     )
 
     if(cmd_output STREQUAL "")
-        set(${FN_ARG_OUT_RESULT} true PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} TRUE PARENT_SCOPE)
     else()
-        set(${FN_ARG_OUT_RESULT} false PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} FALSE PARENT_SCOPE)
     endif()
 
 endfunction()
@@ -307,7 +307,7 @@ function(checkout_revision_force_clean)
         hfc_log(STATUS "Repository ${FN_ARG_REPOSITORY_DIR} already at ${FN_ARG_GIT_REVISION} and clean - skipping")
         
         if(FN_ARG_OUT_SUCCESS)
-            set(${FN_ARG_OUT_SUCCESS} true PARENT_SCOPE)
+            set(${FN_ARG_OUT_SUCCESS} TRUE PARENT_SCOPE)
         endif()
         return()
     endif()
@@ -320,7 +320,7 @@ function(checkout_revision_force_clean)
         git_exec(COMMAND "${git_executable} submodule foreach --recursive ${git_executable} clean -xfdf" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" OUT_RETURN_CODE ret_stage0_clean_submodules)
 
         if(FN_ARG_OUT_SUCCESS AND (ret_stage0_clean_repo GREATER 0 OR ret_stage0_clean_submodules GREATER 0))
-            set(${FN_ARG_OUT_SUCCESS} false PARENT_SCOPE)
+            set(${FN_ARG_OUT_SUCCESS} FALSE PARENT_SCOPE)
             return()
         endif()        
     endif()
@@ -346,7 +346,7 @@ function(checkout_revision_force_clean)
     git_exec(COMMAND "${git_executable} checkout -f ${FN_ARG_GIT_REVISION}" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" OUT_RETURN_CODE ret_stage1_checkout)
     
     if(FN_ARG_OUT_SUCCESS AND ret_stage1_checkout GREATER 0) 
-        set(${FN_ARG_OUT_SUCCESS} false PARENT_SCOPE)
+        set(${FN_ARG_OUT_SUCCESS} FALSE PARENT_SCOPE)
         return()
     endif()
 
@@ -357,7 +357,7 @@ function(checkout_revision_force_clean)
     git_exec(COMMAND "${git_executable} submodule update --init --recursive" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" COMMAND_ERROR_IS_FATAL ANY)
 
     # \ö/
-    set(${FN_ARG_OUT_SUCCESS} true PARENT_SCOPE)
+    set(${FN_ARG_OUT_SUCCESS} TRUE PARENT_SCOPE)
 endfunction()
 
 
@@ -393,9 +393,9 @@ function(is_git_repository)
     endif()
 
     if(return_code EQUAL 0)
-        set(${FN_ARG_OUT_RESULT} true PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} TRUE PARENT_SCOPE)
     else()
-        set(${FN_ARG_OUT_RESULT} false PARENT_SCOPE)
+        set(${FN_ARG_OUT_RESULT} FALSE PARENT_SCOPE)
     endif()
 
 endfunction()

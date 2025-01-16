@@ -60,7 +60,7 @@ namespace hfc::test {
 
     {
       fs::path template_path = source_tree / "test" / "test_project_templates" / name_of_the_template;    
-      fs::copy(template_path, project_path);
+      fs::copy(template_path, project_path, fs::copy_options::recursive);
     }
 
     fs::path project_toolchain_dir = get_project_toolchain_dir(project_path);

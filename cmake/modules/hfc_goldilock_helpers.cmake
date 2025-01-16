@@ -48,9 +48,9 @@ function(hfc_goldilock_acquire dir success_var)
   )
 
   if(ret_code EQUAL 0)
-    set(${success_var} true PARENT_SCOPE)
+    set(${success_var} TRUE PARENT_SCOPE)
   else()
-    set(${success_var} false PARENT_SCOPE)
+    set(${success_var} FALSE PARENT_SCOPE)
     hfc_log(WARNING "Failed to acquire lock: ${lockfile_path}\n${command_stdoutput}")
   endif()
 
@@ -78,9 +78,9 @@ function(hfc_goldilock_release dir success_var)
   )
 
   if(ret_code EQUAL 0)
-    set(${success_var} true PARENT_SCOPE)
+    set(${success_var} TRUE PARENT_SCOPE)
   else()
-    set(${success_var} false PARENT_SCOPE)
+    set(${success_var} FALSE PARENT_SCOPE)
     hfc_log(WARNING "Failed to release lock: ${lockfile_path}\n${command_stdoutput}")
   endif()
 
