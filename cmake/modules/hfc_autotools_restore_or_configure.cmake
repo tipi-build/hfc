@@ -216,6 +216,7 @@ function(hfc_autotools_restore_or_configure content_name)
     # PROJECT_DEPENDENCIES not passed : Autotools cannot have dependencies, it doesn't "cmake-find_package"
     PROJECT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}"
     DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
+    PROJECT_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}"
   )  
 
   make_directory(${FN_ARG_PROJECT_INSTALL_PREFIX})

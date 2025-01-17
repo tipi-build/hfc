@@ -13,6 +13,7 @@ as passed by HERMETIC_TOOLCHAIN_EXTENSION or when non-hermetic all dumped variab
   Which content is going to be fetched.
 
   ``PROJECT_DEPENDENCIES``
+  ``PROJECT_SOURCE_DIR``
   ``PROJECT_TOOLCHAIN_EXTENSION``
   ``DESTINATION_TOOLCHAIN_PATH``
 `
@@ -22,6 +23,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   set(options_params "")
   set(one_value_params
     PROJECT_TOOLCHAIN_EXTENSION
+    PROJECT_SOURCE_DIR
     DESTINATION_TOOLCHAIN_PATH
   )
 
@@ -105,7 +107,8 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   # generate the proxy toolchain (isolate ourselves from variable polution from parent scope)
   block(SCOPE_FOR VARIABLES 
     PROPAGATE 
-      toolchain_path_abs 
+      toolchain_path_abs
+      content_name
       proxy_toolchain_forwarded_cmake_variables_content
       HERMETIC_FETCHCONTENT_ROOT_DIR
       HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES
@@ -114,6 +117,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       destination_file_tmp 
       FN_ARG_PROJECT_TOOLCHAIN_EXTENSION 
       FN_ARG_HERMETIC_FIND_PACKAGES
+      FN_ARG_PROJECT_SOURCE_DIR
       HERMETIC_FETCHCONTENT_CACHED_GOLDILOCK_VERSION
   )
     set(HERMETIC_FETCHCONTENT_CMAKE_TOOLCHAIN_FILE "${toolchain_path_abs}")
@@ -125,6 +129,10 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
     cmake_path(GET HERMETIC_FETCHCONTENT_goldilock_BIN PARENT_PATH goldilock_BIN_dir)
     set(HERMETIC_FETCHCONTENT_GOLDILOCKS_INSTALL_DIR "${goldilock_BIN_dir}")
+
+    get_hermetic_target_cache_summary_file_path(${content_name} HFC_SUMMARY_FILE)
+    set(HFC_SUMMARY_CONTENT_NAME "${content_name}")
+    set(HFC_DEPENDENCY_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}")
 
     set(proxy_toolchain_template_path "${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/hfc_hermetic_proxy_toolchain.cmake.in") 
     configure_file("${proxy_toolchain_template_path}" "${destination_file_tmp}" @ONLY)
