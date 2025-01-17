@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.27.6)
+cmake_minimum_required(VERSION 3.30.5)
+cmake_policy(SET CMP0168 NEW)
+
 
 project(@content_name@-install LANGUAGES NONE)
 set(HERMETIC_FETCHCONTENT_ROOT_DIR "@HERMETIC_FETCHCONTENT_ROOT_DIR@")
