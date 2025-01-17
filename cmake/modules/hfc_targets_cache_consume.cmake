@@ -24,6 +24,11 @@ function(hfc_targets_cache_consume content_name)
   set(multiValueArgs )
   cmake_parse_arguments(FN_ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+  if("${content_name}" IN_LIST HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS)
+    hfc_log(STATUS "Target cache for ${content_name} already consumed - skipping")
+    return()
+  endif()
+
   
   if(NOT FN_ARG_TARGETS_CACHE_FILE)
     Hermetic_FetchContent_SetFunctionOverride_Enabled(OFF)
@@ -33,6 +38,32 @@ function(hfc_targets_cache_consume content_name)
   if(NOT FN_ARG_TARGET_INSTALL_PREFIX)
     Hermetic_FetchContent_SetFunctionOverride_Enabled(OFF)
     hfc_log(FATAL_ERROR "hfc_targets_cache_consume needs a value for TARGET_INSTALL_PREFIX parameter to be defined")
+  endif()
+
+  #
+  # check if we need to load nested/consumed contents by consuming the summary file
+  get_hermetic_target_cache_summary_file_path(${content_name} cache_summary_file)
+  
+  include("${cache_summary_file}" OPTIONAL RESULT_VARIABLE cache_summary_loaded)
+
+  message(WARNING "XXX Summary file = Summary file loaded: ${cache_summary_loaded} ( ${cache_summary_file} )")
+
+  if(cache_summary_loaded AND HERMETIC_FETCHCONTENT_SUMMARY_consumed_contents)
+
+    foreach(consumed_content_name IN LISTS HERMETIC_FETCHCONTENT_SUMMARY_consumed_contents)
+      message(WARNING "XXX Consuming this:: ${consumed_content_name}")
+      Hermetic_FetchContent_CMakeTargetsDiscover_escape_content_name(${consumed_content_name} safe_consumed_content_name)
+
+      hfc_targets_cache_consume(
+        ${consumed_content_name}
+        MAKE_EXECUTABLES_FINDABLE "${FN_ARG_MAKE_EXECUTABLES_FINDABLE}"
+        HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${FN_ARG_HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
+        TARGETS_CACHE_FILE "${HERMETIC_FETCHCONTENT_SUMMARY_${safe_consumed_content_name}_TARGETS_CACHE_FILE}" 
+        TARGET_INSTALL_PREFIX "${HERMETIC_FETCHCONTENT_SUMMARY_${safe_consumed_content_name}_TARGETS_INSTALL_PREFIX}"
+      )
+      
+    endforeach()    
+
   endif()
 
   #
