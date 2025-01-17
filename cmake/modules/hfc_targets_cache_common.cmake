@@ -34,6 +34,12 @@ function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_target_name input OUT
   set("${OUT_result}" "${escaped_target_name}" PARENT_SCOPE)
 endfunction()
 
+#
+# Replace chars that cannot be used in function names or variables
+function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_content_name input OUT_result) 
+  string(REGEX REPLACE "[^A-Za-z0-9_]" "_" escaped_content_name "${input}")
+  set("${OUT_result}" "${escaped_content_name}" PARENT_SCOPE)
+endfunction()
 
 #
 # Enable or disable the message() override functionality
