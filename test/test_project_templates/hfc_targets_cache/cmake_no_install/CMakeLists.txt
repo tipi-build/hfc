@@ -3,7 +3,9 @@
 # ensures we can use projects that do not install using add_subdirectory
 #
 
-cmake_minimum_required(VERSION 3.27.6)
+cmake_minimum_required(VERSION 3.30.5)
+cmake_policy(SET CMP0168 NEW)
+
 project(
   ModernCMakeExample
   VERSION 1.0

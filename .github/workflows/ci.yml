@@ -13,6 +13,9 @@ env:
   TIPI_ACCESS_TOKEN: ${{ secrets.TIPI_CI_USER_0001_TIPI_ACCESS_TOKEN }}
   TIPI_REFRESH_TOKEN: ${{ secrets.TIPI_CI_USER_0001_TIPI_REFRESH_TOKEN }}
   TIPI_VAULT_PASSPHRASE: ${{ secrets.TIPI_CI_USER_0001_TIPI_VAULT_PASSPHRASE }}
+  TIPI_DISTRO_MODE: all
+  TIPI_DISTRO_JSON: https://raw.githubusercontent.com/tipi-build/distro/93e1e66e2fe952a56d81ed635c5d6af692a4bc27/distro.json
+  TIPI_DISTRO_JSON_SHA1: 8a02d22b366c9222763c51a9ceb716fd64b1eb0b
 
 jobs:
   build: 
