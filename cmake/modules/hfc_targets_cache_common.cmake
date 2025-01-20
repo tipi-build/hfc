@@ -121,25 +121,13 @@ endfunction()
 #
 # Compute the name of a Hermetic FetchContent target cache file based on the FetchContent content-name
 function(get_hermetic_target_cache_file_path content_name result_variable)
-  if(NOT HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR)
-    # XXX /y I think this is mostly useful for debugging right now. Remove when no longer needed
-    set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR "${CMAKE_BINARY_DIR}/_deps/hermetic_targetcaches")
-    message(WARNING "No HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR defined, falling back to local storage at ${HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR}")
-  endif()
-
-  set(${result_variable} "${HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR}/${content_name}.cmake" PARENT_SCOPE)
+  set(${result_variable} "${HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR}/_deps/hermetic_targetcaches/${content_name}.cmake" PARENT_SCOPE)
 endfunction()
 
 #
 # Compute the name of a Hermetic FetchContent target cache summary (those contain the list of contents consumed by <content_name>) file based on the FetchContent content-name
 function(get_hermetic_target_cache_summary_file_path content_name result_variable)
-  if(NOT HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR)
-    # XXX /y I think this is mostly useful for debugging right now. Remove when no longer needed
-    set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR "${CMAKE_BINARY_DIR}/_deps/hermetic_targetcaches")
-    message(WARNING "No HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR defined, falling back to local storage at ${HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR}")
-  endif()
-
-  set(${result_variable} "${HERMETIC_FETCHCONTENT_TARGETS_CACHE_DIR}/${content_name}.hfcsummary.cmake" PARENT_SCOPE)
+  set(${result_variable} "${HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR}/_deps/hermetic_targetcaches/${content_name}.hfcsummary.cmake" PARENT_SCOPE)
 endfunction()
 
 #
