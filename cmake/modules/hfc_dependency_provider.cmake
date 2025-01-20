@@ -1,14 +1,19 @@
 include(hfc_log)
 include(hfc_targets_cache_common)
 include(hfc_targets_cache_consume)
+include(hfc_targets_cache_alias)
 include(hfc_provide_dependency_FETCHCONTENT)
 
 
-macro(hfc_provide_dependency_FIND_PACKAGE method package_name)
+macro(hfc_provide_dependency_FIND_PACKAGE method content_name)
+  hfc_log_debug("Received find_package() request for package name ${content_name}")
+  HermeticFetchContent_ResolveContentNameAlias(${content_name} package_name) # resolve alias is available...
 
-  string(TOUPPER "${package_name}" package_name_uppercase)
+  if(NOT package_name STREQUAL content_name)
+    hfc_log_debug(" - resolved to alias ${package_name}")
+  endif()
 
-  hfc_log_debug("Received find_package() request for package name ${package_name}")
+  string(TOUPPER "${package_name}" package_name_uppercase)  
 
   hfc_targets_cache_get_registered_info(
     ${package_name}

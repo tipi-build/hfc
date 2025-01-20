@@ -46,12 +46,9 @@ function(hfc_targets_cache_consume content_name)
   
   include("${cache_summary_file}" OPTIONAL RESULT_VARIABLE cache_summary_loaded)
 
-  message(WARNING "XXX Summary file = Summary file loaded: ${cache_summary_loaded} ( ${cache_summary_file} )")
-
   if(cache_summary_loaded AND HERMETIC_FETCHCONTENT_SUMMARY_consumed_contents)
 
     foreach(consumed_content_name IN LISTS HERMETIC_FETCHCONTENT_SUMMARY_consumed_contents)
-      message(WARNING "XXX Consuming this:: ${consumed_content_name}")
       Hermetic_FetchContent_CMakeTargetsDiscover_escape_content_name(${consumed_content_name} safe_consumed_content_name)
 
       hfc_targets_cache_consume(
@@ -303,6 +300,11 @@ function(hfc_targets_cache_consume content_name)
     TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}"
   )
 
+  # 
+  set(all_available_target_contents ${HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS} ${content_name})
+  list(REMOVE_DUPLICATES all_available_target_contents)
+  set(HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS ${all_available_target_contents} CACHE INTERNAL "All contents that can be made available to dependent projects")
+  
   # don't output a path if we are using the system provided $content
   if ((NOT "${FN_ARG_HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}") AND (NOT "${FORCE_SYSTEM_${content_name}}"))
 

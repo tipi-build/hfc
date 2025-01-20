@@ -318,8 +318,8 @@ function(hfc_initialize HFC_ROOT_DIR)
     set(HERMETIC_FETCHCONTENT_CONSUMED_CACHETARGETFILES "" CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
 
     # this is global information but stateless / needs to be re-set at start
-    set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS ${all_consumed_target_contents} CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
-
+    set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS "" CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
+    set(HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS "${HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_FROM_PARENT}" CACHE INTERNAL "All contents that can be made available to dependent projects")
   endif()
 
   if(NOT DEFINED HERMETIC_FETCHCONTENT_ROOT_PROJECT_SOURCE_DIR)
