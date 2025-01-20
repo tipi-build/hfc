@@ -101,6 +101,17 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     endif()
   endforeach()
 
+  # forward content alias information for all contents that were consumed so far
+  set(hfc_contents_forwarding_code "")
+  string(APPEND hfc_contents_forwarding_code "set(HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_FROM_PARENT \"${HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS}\")\n")
+
+  foreach(consumed_content_name IN LISTS HERMETIC_FETCHCONTENT_ALIASED_CONTENTS)
+    __HermeticFetchContent_GetAliasesForContentVariableName("${consumed_content_name}" consumed_content_aliases)
+    foreach(alias_name IN LISTS ${consumed_content_aliases})
+      string(APPEND hfc_contents_forwarding_code "HermeticFetchContent_AddContentAliases(${consumed_content_name} \"${alias_name}\")\n")      
+    endforeach()        
+  endforeach()
+
   #
   set(destination_file_tmp "${FN_ARG_DESTINATION_TOOLCHAIN_PATH}.tmp")
 
@@ -121,6 +132,9 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       HERMETIC_FETCHCONTENT_CACHED_GOLDILOCK_VERSION
       HERMETIC_FETCHCONTENT_ROOT_PROJECT_SOURCE_DIR
       HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR
+      HERMETIC_FETCHCONTENT_INSTALL_DIR
+      FETCHCONTENT_BASE_DIR
+      hfc_contents_forwarding_code
   )
     set(HERMETIC_FETCHCONTENT_CMAKE_TOOLCHAIN_FILE "${toolchain_path_abs}")
     set(HERMETIC_FETCHCONTENT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}")
@@ -135,6 +149,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     get_hermetic_target_cache_summary_file_path(${content_name} HFC_SUMMARY_FILE)
     set(HFC_SUMMARY_CONTENT_NAME "${content_name}")
     set(HFC_DEPENDENCY_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}")
+    set(HFC_AVAILABLE_CONTENTS_CODE "${hfc_contents_forwarding_code}")
 
     set(proxy_toolchain_template_path "${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/hfc_hermetic_proxy_toolchain.cmake.in") 
     configure_file("${proxy_toolchain_template_path}" "${destination_file_tmp}" @ONLY)
