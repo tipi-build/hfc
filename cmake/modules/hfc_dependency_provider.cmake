@@ -51,11 +51,15 @@ macro(hfc_provide_dependency_FIND_PACKAGE method content_name)
 
       # include dirs
       get_target_property(tgt_include_dirs ${target} INTERFACE_INCLUDE_DIRECTORIES)
-      list(APPEND package_INCLUDE_DIRS ${tgt_include_dirs})
+      if(tgt_include_dirs)
+        list(APPEND package_INCLUDE_DIRS ${tgt_include_dirs})
+      endif()
 
       # link libraries
       get_target_property(tgt_location ${target} LOCATION)
-      list(APPEND package_LIBRARIES ${tgt_location})      
+      if(tgt_location)
+        list(APPEND package_LIBRARIES ${tgt_location})    
+      endif()  
     endforeach()
 
     #
