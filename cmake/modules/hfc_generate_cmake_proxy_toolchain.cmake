@@ -24,6 +24,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   set(one_value_params
     PROJECT_TOOLCHAIN_EXTENSION
     PROJECT_SOURCE_DIR
+    PROJECT_SOURCE_SUBDIR
     DESTINATION_TOOLCHAIN_PATH
   )
 
@@ -129,6 +130,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       FN_ARG_PROJECT_TOOLCHAIN_EXTENSION 
       FN_ARG_HERMETIC_FIND_PACKAGES
       FN_ARG_PROJECT_SOURCE_DIR
+      FN_ARG_PROJECT_SOURCE_SUBDIR
       HERMETIC_FETCHCONTENT_CACHED_GOLDILOCK_VERSION
       HERMETIC_FETCHCONTENT_ROOT_PROJECT_SOURCE_DIR
       HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR
@@ -149,6 +151,11 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     get_hermetic_target_cache_summary_file_path(${content_name} HFC_SUMMARY_FILE)
     set(HFC_SUMMARY_CONTENT_NAME "${content_name}")
     set(HFC_DEPENDENCY_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}")
+
+    if(FN_ARG_PROJECT_SOURCE_SUBDIR)
+      set(HFC_DEPENDENCY_SOURCE_DIR "${HFC_DEPENDENCY_SOURCE_DIR}/${FN_ARG_PROJECT_SOURCE_SUBDIR}")
+    endif()
+
     set(HFC_AVAILABLE_CONTENTS_CODE "${hfc_contents_forwarding_code}")
 
     set(proxy_toolchain_template_path "${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/hfc_hermetic_proxy_toolchain.cmake.in") 
