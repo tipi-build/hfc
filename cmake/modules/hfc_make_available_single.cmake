@@ -201,6 +201,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
         ${content_name}
         LOAD_TARGETS_CMAKE "[==[find_package(${content_name} REQUIRED ${__PARAMS_FIND_PACKAGE_ARGS} ) \n]==]"
         CACHE_DESTINATION_FILE "${target_cache_file}"
+        CREATE_TARGET_ALIASES "${__PARAMS_HERMETIC_CREATE_TARGET_ALIASES}"
         TEMP_DIR "${HERMETIC_FETCHCONTENT_INSTALL_DIR}/targets_dump_tmp"
         TOOLCHAIN_FILE ${proxy_toolchain_path}
       )
