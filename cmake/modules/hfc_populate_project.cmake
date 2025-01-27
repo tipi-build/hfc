@@ -24,6 +24,7 @@ function(hfc_populate_project_declare content_name)
       URL_HASH
       GIT_REPOSITORY 
       GIT_TAG
+      GIT_SUBMODULES
       SOURCE_DIR 
       BUILD_IN_SOURCE_TREE
       SOURCE_SUBDIR
@@ -172,6 +173,10 @@ function(hfc_populate_project_declare content_name)
       hfc_log(FATAL_ERROR "Hermetic FetchContent currently supports only URL or GIT_REPOSITORY download schemes")
     endif()
 
+    if (FN_ARG_GIT_SUBMODULES)
+      list(APPEND populate_args "GIT_SUBMODULES" ${FN_ARG_GIT_SUBMODULES}) 
+    endif()
+
     if (NOT "${FN_ARG_BUILD_IN_SOURCE_TREE}" STREQUAL "") 
     
       if(FN_ARG_URL)          
@@ -233,6 +238,7 @@ function(hfc_populate_project_declare content_name)
       URL_HASH
       GIT_REPOSITORY 
       GIT_TAG
+      GIT_SUBMODULES
       SOURCE_DIR 
       BUILD_IN_SOURCE_TREE
       SOURCE_SUBDIR
