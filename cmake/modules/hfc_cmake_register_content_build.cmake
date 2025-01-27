@@ -43,6 +43,7 @@ function(hfc_cmake_register_content_build content_name)
     INSTALL_BYPRODUCTS
     IMPORTED_TARGETS
     BUILD_TARGETS
+    CUSTOM_INSTALL_TARGETS
   )
 
   cmake_parse_arguments(FN_ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -81,15 +82,26 @@ function(hfc_cmake_register_content_build content_name)
 
     string(APPEND build_command " --target")
 
-    foreach(trg IN LISTS FN_ARG_BUILD_TARGETS)
-      string(APPEND build_command " ${trg}")
-      list(APPEND install_commands_list "${CMAKE_COMMAND} --install . --component ${trg}")  # must be done as a list then concatenated because --component doesn't take multiple targets to install
-    endforeach()
+    if (NOT "${FN_ARG_CUSTOM_INSTALL_TARGETS}" STREQUAL "")
+      foreach(trg IN LISTS FN_ARG_BUILD_TARGETS)
+        string(APPEND build_command " ${trg}")
+      endforeach()
 
-  else()
+      foreach(trg IN LISTS FN_ARG_CUSTOM_INSTALL_TARGETS)
+        string(APPEND build_command " ${trg}")
+      endforeach()
 
+    else()
+      foreach(trg IN LISTS FN_ARG_BUILD_TARGETS)
+        string(APPEND build_command " ${trg}")
+        list(APPEND install_commands_list "${CMAKE_COMMAND} --install . --component ${trg}")  # must be done as a list then concatenated because --component doesn't take multiple targets to install
+      endforeach()
+    endif()
+
+  endif()
+
+  if ("${FN_ARG_CUSTOM_INSTALL_TARGETS}" STREQUAL "")
     list(APPEND install_commands_list "${CMAKE_COMMAND} --install .")
-
   endif()
 
   list(JOIN install_commands_list " && " install_command)
@@ -111,6 +123,7 @@ function(hfc_cmake_register_content_build content_name)
   endif()
 
   # this marks this build as installed
+  string(APPEND install_command " && ${CMAKE_COMMAND} -E make_directory ${installed_marker_parent_path}")
   string(APPEND install_command " && ${CMAKE_COMMAND} -E touch ${FN_ARG_HFC_INSTALL_MARKER_FILE}")
 
   if (CMAKE_RE_PATH)
@@ -152,6 +165,7 @@ function(hfc_cmake_register_content_build content_name)
   hfc_log_debug(" - PROJECT_BINARY_DIR = ${FN_ARG_PROJECT_BINARY_DIR}")
   hfc_log_debug(" - PROJECT_INSTALL_PREFIX = ${FN_ARG_PROJECT_INSTALL_PREFIX}")
   hfc_log_debug(" - BUILD_TARGETS = ${FN_ARG_BUILD_TARGETS}")
+  hfc_log_debug(" - CUSTOM_INSTALL_TARGETS = ${FN_ARG_CUSTOM_INSTALL_TARGETS}")
 
   hfc_generate_external_project(${content_name}
     EP_TARGETS_DIR ${build_externalproject_targets_dir}

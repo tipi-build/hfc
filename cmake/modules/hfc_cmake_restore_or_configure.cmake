@@ -59,6 +59,7 @@ function(hfc_cmake_restore_or_configure content_name)
   set(multi_value_params
     HERMETIC_FIND_PACKAGES
     BUILD_TARGETS
+    CUSTOM_INSTALL_TARGETS
   )
 
   cmake_parse_arguments(
@@ -142,13 +143,15 @@ function(hfc_cmake_restore_or_configure content_name)
 
   endif()
 
-  
-  if(dep_need_install)
+  if (NOT "${FN_ARG_CUSTOM_INSTALL_TARGETS}" STREQUAL "")
     set(targets_search_path "${FN_ARG_PROJECT_BINARY_DIR}")
   else()
-    set(targets_search_path "${FN_ARG_PROJECT_INSTALL_PREFIX}")
+    if(dep_need_install)
+      set(targets_search_path "${FN_ARG_PROJECT_BINARY_DIR}")
+    else()
+      set(targets_search_path "${FN_ARG_PROJECT_INSTALL_PREFIX}")
+    endif()
   endif()
-
 
   set(targets_cache_created FALSE)
   get_hermetic_target_cache_file_path(${content_name} target_cache_file)
@@ -159,6 +162,7 @@ function(hfc_cmake_restore_or_configure content_name)
     hfc_targets_cache_create_from_export_declaration(
       ${content_name}
       PROJECT_INSTALL_PREFIX "${FN_ARG_PROJECT_INSTALL_PREFIX}"
+      PROJECT_BINARY_DIR "${FN_ARG_PROJECT_BINARY_DIR}"
       CMAKE_EXPORT_LIBRARY_DECLARATION "${FN_ARG_CMAKE_EXPORT_LIBRARY_DECLARATION}"
       TOOLCHAIN_FILE "${proxy_toolchain_path}"
       OUT_TARGETS_CACHE_FILE target_cache_file
@@ -233,7 +237,8 @@ function(hfc_cmake_restore_or_configure content_name)
         REVISION "${FN_ARG_REVISION}"
         INSTALL_BYPRODUCTS "${library_byproducts}"
         IMPORTED_TARGETS "${imported_libraries}"
-        BUILD_TARGETS ${FN_ARG_BUILD_TARGETS}
+        BUILD_TARGETS "${FN_ARG_BUILD_TARGETS}"
+        CUSTOM_INSTALL_TARGETS "${FN_ARG_CUSTOM_INSTALL_TARGETS}"
         OUT_BUILD_TARGET_NAME registered_build_target_name
       )
 
