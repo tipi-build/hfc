@@ -1,6 +1,8 @@
 include(hfc_goldilock_helpers)
 
 macro(hfc_provide_dependency_FETCHCONTENT method package_name)
+
+  set(options OVERRIDE_FIND_PACKAGE)
   set(oneValueArgs
         GIT_REPOSITORY
         GIT_TAG
@@ -13,6 +15,7 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
                           "${multiValueArgs}" ${ARGN} )
 
   set(CONTENT_SOURCE_HASH "")
+  
   if(FN_ARG_GIT_REPOSITORY)
     set(CONTENT_SOURCE_HASH "${FN_ARG_GIT_TAG}")
   else()
@@ -34,9 +37,30 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
   if(NOT lock_success)
     message(FATAL_ERROR "Could not acquire lock for ${content_source_dir}")
   endif()
+
+  # filter args not supported by FetchContent_Populate:
+  #  The following do not relate to populating content with FetchContent_Populate() and therefore are not supported:
+  #  - EXCLUDE_FROM_ALL
+  #  - SYSTEM
+  #  - OVERRIDE_FIND_PACKAGE
+  #  - FIND_PACKAGE_ARGS
+  set(populate_args ${ARGN})
+
+  list(REMOVE_ITEM populate_args "EXCLUDE_FROM_ALL")
+  list(REMOVE_ITEM populate_args "SYSTEM")
+  list(REMOVE_ITEM populate_args "OVERRIDE_FIND_PACKAGE")
+  
+  if("FIND_PACKAGE_ARGS" IN_LIST populate_args) 
+    # special cookie: (from the doc)
+    # Everything after the FIND_PACKAGE_ARGS keyword is appended to the find_package() call, so all other <contentOptions> must come before the FIND_PACKAGE_ARGS keyword.
+    #
+    # This means that we discard everything after that argument
+    list(FIND populate_args "FIND_PACKAGE_ARGS" FIND_PACKAGE_ARGS_ix)
+    list(SUBLIST populate_args 0 ${FIND_PACKAGE_ARGS_ix} populate_args)
+  endif()
   
   FetchContent_Populate(${package_name}
-    ${ARGN}
+    ${populate_args}
     SOURCE_DIR ${content_source_dir}
     SUBBUILD_DIR "${HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR}/${package_name}-${source_hash_short}-subbuild"
   )
