@@ -34,6 +34,12 @@ function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_target_name input OUT
   set("${OUT_result}" "${escaped_target_name}" PARENT_SCOPE)
 endfunction()
 
+#
+# Replace chars that cannot be used in function names or variables
+function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_content_name input OUT_result) 
+  string(REGEX REPLACE "[^A-Za-z0-9_]" "_" escaped_content_name "${input}")
+  set("${OUT_result}" "${escaped_content_name}" PARENT_SCOPE)
+endfunction()
 
 #
 # Enable or disable the message() override functionality
@@ -115,7 +121,13 @@ endfunction()
 #
 # Compute the name of a Hermetic FetchContent target cache file based on the FetchContent content-name
 function(get_hermetic_target_cache_file_path content_name result_variable)
-  set(${result_variable} "${CMAKE_BINARY_DIR}/_deps/hermetic_targetcaches/${content_name}.cmake" PARENT_SCOPE)
+  set(${result_variable} "${HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR}/_deps/hermetic_targetcaches/${content_name}.cmake" PARENT_SCOPE)
+endfunction()
+
+#
+# Compute the name of a Hermetic FetchContent target cache summary (those contain the list of contents consumed by <content_name>) file based on the FetchContent content-name
+function(get_hermetic_target_cache_summary_file_path content_name result_variable)
+  set(${result_variable} "${HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR}/_deps/hermetic_targetcaches/${content_name}.hfcsummary.cmake" PARENT_SCOPE)
 endfunction()
 
 #

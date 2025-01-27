@@ -317,6 +317,17 @@ function(hfc_initialize HFC_ROOT_DIR)
     set(HERMETIC_FETCHCONTENT_ROOT_DIR "${HFC_ROOT_DIR}" CACHE INTERNAL "Root directory of Hermetic_FetchContent")
     set(HERMETIC_FETCHCONTENT_CONSUMED_CACHETARGETFILES "" CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
 
+    # this is global information but stateless / needs to be re-set at start
+    set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS "" CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
+    set(HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS "${HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_FROM_PARENT}" CACHE INTERNAL "All contents that can be made available to dependent projects")
+  endif()
+
+  if(NOT DEFINED HERMETIC_FETCHCONTENT_ROOT_PROJECT_SOURCE_DIR)
+    set(HERMETIC_FETCHCONTENT_ROOT_PROJECT_SOURCE_DIR "${CMAKE_SOURCE_DIR}" CACHE INTERNAL "The first project in the dependency tree to use HFC / equal to CMAKE_SOURCE_DIR at the top level")
+  endif()
+
+  if(NOT DEFINED HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR)
+    set(HERMETIC_FETCHCONTENT_ROOT_PROJECT_BINARY_DIR "${CMAKE_BINARY_DIR}" CACHE INTERNAL "The first project in the dependency tree to use HFC / equal to CMAKE_BINARY_DIR at the top level")
   endif()
 
   # If the HERMETIC_FETCHCONTENT_INSTALL_DIR is not set we use CMake Default FETCHCONTENT_BASE_DIR ( i.e. build/_deps/ )
@@ -329,12 +340,12 @@ function(hfc_initialize HFC_ROOT_DIR)
     # as otherwise each and every dependency will build it's own goldilock when running the external project subbuild project
     # as these will include and call hfc_initialize() too and the generated project needs HERMETIC_FETCHCONTENT_TOOLS_DIR
     # to be set in order to share the info
-    set(HERMETIC_FETCHCONTENT_TOOLS_DIR "${CMAKE_SOURCE_DIR}/thirdparty/cache/.hfc_tools" CACHE INTERNAL "Default Hermetic-FetchContent tools dir")
+    set(HERMETIC_FETCHCONTENT_TOOLS_DIR "${HERMETIC_FETCHCONTENT_ROOT_PROJECT_SOURCE_DIR}/thirdparty/cache/.hfc_tools" CACHE INTERNAL "Default Hermetic-FetchContent tools dir")
     hfc_log_debug("HERMETIC_FETCHCONTENT_TOOLS_DIR = ${HERMETIC_FETCHCONTENT_TOOLS_DIR}")
   endif()
 
   if(NOT HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR)
-    set(HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/cache" CACHE INTERNAL "Default value for Hermetic-FetchContent source cache dir")
+    set(HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR "${HERMETIC_FETCHCONTENT_ROOT_PROJECT_SOURCE_DIR}/thirdparty/cache" CACHE INTERNAL "Default value for Hermetic-FetchContent source cache dir")
     hfc_log_debug("HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR = ${HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR}")
   endif()
 

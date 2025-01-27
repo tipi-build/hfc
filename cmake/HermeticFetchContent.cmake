@@ -559,3 +559,6 @@ macro(HermeticFetchContent_SetSouceCacheDir directory)
   set(HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR "${directory_abs}" CACHE INTERNAL "Hermetic-FetchContent source cache dir")
   
 endmacro()
+
+
+include(hfc_targets_cache_alias)

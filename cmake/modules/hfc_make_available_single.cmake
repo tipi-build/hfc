@@ -33,7 +33,7 @@ endfunction()
 #
 function(hfc_make_available_single content_name build_at_configure_time) 
 
-  set(HERMETIC_FETCHCONTENT_MADE_CONTENT_AVAILABLE ON CACHE INTERNAL "Hermetic_FetchContent made content available")
+  set(HERMETIC_FETCHCONTENT_MADE_CONTENT_AVAILABLE ON CACHE INTERNAL "Hermetic_FetchContent made content available") # just flag to prevent people from setting base dir etc after a first content was made available.
 
   hfc_saved_details_get(${content_name} __fetchcontent_arguments)
 
@@ -97,6 +97,39 @@ function(hfc_make_available_single content_name build_at_configure_time)
     set(HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING FALSE)
   endif()
 
+  set(cmake_contentInstallPath ${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-install)
+
+  #
+  # check if this content was already "HFC made available" elsewhere through the build tree
+  # this emulates the behavior of FetchContent to use the content "first declared"
+  #
+  # In our case this comes down to using the content "made available first"
+  HermeticFetchContent_ResolveContentNameAlias(${content_name} resolved_content_name) 
+  if(("${resolved_content_name}" IN_LIST HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_FROM_PARENT) OR ("${resolved_content_name}" IN_LIST HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS))    
+
+    if(content_name STREQUAL resolved_content_name)
+      hfc_log_debug("Making '${content_name}' available from target cache")
+    else()
+      hfc_log(STATUS "Making '${content_name}' available from target cache content '${resolved_content_name}' (alias)")
+    endif()
+
+    get_hermetic_target_cache_file_path(${resolved_content_name} target_cache_file)    
+    set(cmake_contentInstallPath ${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${resolved_content_name}-install)
+
+    # Now load the targets in our context
+    hfc_targets_cache_consume(
+      ${resolved_content_name}
+      MAKE_EXECUTABLES_FINDABLE "${__PARAMS_MAKE_EXECUTABLES_FINDABLE}"
+      HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
+      TARGETS_CACHE_FILE "${target_cache_file}" 
+      TARGET_INSTALL_PREFIX "${cmake_contentInstallPath}"
+    )
+
+    return()
+
+  endif()
+
+
   if(NOT __PARAMS_BUILD_TARGETS)
     set(__PARAMS_BUILD_TARGETS FALSE)
   endif()
@@ -155,7 +188,6 @@ function(hfc_make_available_single content_name build_at_configure_time)
     set(__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "# (not provided)")
   endif()
 
-  set(cmake_contentInstallPath ${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-install)
   message(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
   set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.install.done)
 
