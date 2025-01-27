@@ -59,6 +59,7 @@ function(hfc_cmake_restore_or_configure content_name)
   set(multi_value_params
     HERMETIC_FIND_PACKAGES
     BUILD_TARGETS
+    CUSTOM_INSTALL_TARGETS
   )
 
   cmake_parse_arguments(
@@ -234,6 +235,7 @@ function(hfc_cmake_restore_or_configure content_name)
         INSTALL_BYPRODUCTS "${library_byproducts}"
         IMPORTED_TARGETS "${imported_libraries}"
         BUILD_TARGETS ${FN_ARG_BUILD_TARGETS}
+        CUSTOM_INSTALL_TARGETS ${FN_ARG_CUSTOM_INSTALL_TARGETS}
         OUT_BUILD_TARGET_NAME registered_build_target_name
       )
 

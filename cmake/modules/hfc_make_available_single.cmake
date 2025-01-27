@@ -72,6 +72,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     # Hermetic FetchContent arguments
     HERMETIC_FIND_PACKAGES
     BUILD_TARGETS
+    CUSTOM_INSTALL_TARGETS
   )
 
   cmake_parse_arguments(
@@ -287,6 +288,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
       HERMETIC_DISCOVER_TARGETS_FILE_PATTERN "${__PARAMS_HERMETIC_DISCOVER_TARGETS_FILE_PATTERN}"
 
       BUILD_TARGETS ${__PARAMS_BUILD_TARGETS}
+      CUSTOM_INSTALL_TARGETS ${__PARAMS_CUSTOM_INSTALL_TARGETS}
 
       ORIGIN ${${content_name}_origin}  
       REVISION ${${content_name}_revision}
