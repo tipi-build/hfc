@@ -163,6 +163,23 @@ function(hfc_targets_cache_consume content_name)
         "${target_LOCATION}"
       )
 
+      string(
+        REPLACE 
+        "${HERMETIC_FETCHCONTENT_CONST_BINARY_DIR_PLACEHOLDER}" 
+        "${FN_ARG_TARGET_BINARY_DIR}"
+        target_LOCATION_real
+        "${target_LOCATION_real}"
+      )
+
+      string(
+        REPLACE 
+        "${HERMETIC_FETCHCONTENT_CONST_SOURCE_DIR_PLACEHOLDER}" 
+        "${FN_ARG_TARGET_SOURCE_DIR}"
+        target_LOCATION_real
+        "${target_LOCATION_real}"
+      )
+
+
       hfc_log_debug(" * - IMPORTED_LOCATION raw = ${target_LOCATION}")
       hfc_log_debug(" * - IMPORTED_LOCATION = ${target_LOCATION_real}")
       set_property(TARGET "${target_name}" PROPERTY IMPORTED_LOCATION ${target_LOCATION_real})
@@ -256,6 +273,24 @@ function(hfc_targets_cache_consume content_name)
           property_value
           "${property_value}"
         )
+
+        string(
+          REPLACE 
+          "${HERMETIC_FETCHCONTENT_CONST_BINARY_DIR_PLACEHOLDER}" 
+          "${FN_ARG_TARGET_BINARY_DIR}"
+          property_value
+          "${property_value}"
+        )
+
+        string(
+          REPLACE 
+          "${HERMETIC_FETCHCONTENT_CONST_SOURCE_DIR_PLACEHOLDER}" 
+          "${FN_ARG_TARGET_SOURCE_DIR}"
+          property_value
+          "${property_value}"
+        )
+
+
         hfc_log_debug(" P - ${property_name} = ${property_value}")
         set_property(TARGET "${target_name}" PROPERTY "${property_name}" "${property_value}")
       endif()
