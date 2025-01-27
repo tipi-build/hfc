@@ -129,7 +129,7 @@ function(hfc_cmake_register_content_build content_name)
   endif()
 
   # this marks this build as installed
-  string(APPEND install_command " && ${CMAKE_COMMAND} -E touch ${FN_ARG_HFC_INSTALL_MARKER_FILE}")
+  string(APPEND install_command "&& ${CMAKE_COMMAND} -E make_directory ${FN_ARG_PROJECT_INSTALL_PREFIX} && ${CMAKE_COMMAND} -E touch ${FN_ARG_HFC_INSTALL_MARKER_FILE}")
 
   if (CMAKE_RE_PATH)
 
