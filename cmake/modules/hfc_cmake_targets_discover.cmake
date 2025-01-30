@@ -19,7 +19,7 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
   get_property(override_applied GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_Overrides_Applied)
   
   if(NOT override_applied) 
-    hfc_log(STATUS "Overriding CMake built-in message() and get_filename_component()")
+    hfc_log_debug("Overriding CMake built-in message() and get_filename_component()")
     set_property(GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_Overrides_Applied ON)  
 
     #

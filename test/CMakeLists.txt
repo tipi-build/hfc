@@ -83,6 +83,7 @@ set_property(TEST ensure_goldilock PROPERTY RUN_SERIAL ON) # run first and not i
 # all other tests
 # -> those all use the HFC_TEST_SHARED_TOOLS_DIR to avoid re-building goldilock a thousand times over
 set(test_source_files
+    "${CMAKE_CURRENT_LIST_DIR}/check_log_level.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_PATCH_COMMAND.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_compiler_forwarding.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_options_and_defines_forwarding.cpp"

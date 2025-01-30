@@ -136,7 +136,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
   endif()
 
   hfc_saved_details_persist(${content_name} ${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}.fetchcontent_details)
-  hfc_log(STATUS "Acquiring hermetic dependency configuration lock for ${content_name}")
+  hfc_log_debug("Acquiring hermetic dependency configuration lock for ${content_name}")
   set(hfc_configure_lock_file ${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-configure)
   hfc_goldilock_acquire("${hfc_configure_lock_file}" lock_success)
 
@@ -144,7 +144,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     hfc_log(FATAL_ERROR "Could not lock ${hfc_configure_lock_file}")
   endif()
 
-  hfc_log(STATUS " -- Success")
+  hfc_log_debug("Acquiring hermetic dependency configuration lock for ${content_name} -- Success")
 
   if (DEFINED FORCE_SYSTEM_${content_name})
     if (${FORCE_SYSTEM_${content_name}})
@@ -189,7 +189,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     set(__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "# (not provided)")
   endif()
 
-  message(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
+  hfc_log_debug(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
   set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.install.done)
 
   hfc_create_restore_prefixes(${content_name} ${__PARAMS_BINARY_DIR} ${cmake_contentInstallPath})

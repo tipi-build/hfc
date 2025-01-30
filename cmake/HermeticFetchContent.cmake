@@ -390,7 +390,7 @@ include_guard()
 
 #
 # Hermetic FetchContent options
-option(HERMETIC_FETCHCONTENT_LOG_DEBUG "Print debug level logs" OFF)
+
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/modules")
 include(hfc_log)
