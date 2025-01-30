@@ -38,7 +38,7 @@ function(hfc_goldilock_acquire dir success_var)
   __get_env_shell_command(shell)
   hfc_get_goldilock_acquire_command("${lockfile_path}" cmd)
 
-  message(STATUS "Trying to aquire lock ${lockfile_path} for ${dir} running ${cmd}")
+  hfc_log_debug("Trying to aquire lock ${lockfile_path} for ${dir} running ${cmd}")
 
   execute_process(
     COMMAND ${shell} "${cmd}"
@@ -69,7 +69,7 @@ function(hfc_goldilock_release dir success_var)
   __get_lockfile_path("${dir}" lockfile_path)
   __get_env_shell_command(shell)  
   hfc_get_goldilock_release_command("${lockfile_path}" cmd)
-  message(STATUS "Trying to release lock ${lockfile_path} for ${dir}")
+  hfc_log_debug("Trying to release lock ${lockfile_path} for ${dir}")
 
   execute_process(
     COMMAND ${shell} "${cmd}"
