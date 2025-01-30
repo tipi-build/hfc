@@ -100,6 +100,8 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/targets_cache_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/hermetic_dependency_make_executable_findable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/goldilock_provisioning_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_source_build_hfc_prefix.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_CUSTOM_INSTALL_TARGETS.cpp"
 )
 
 foreach(test_file IN LISTS test_source_files)

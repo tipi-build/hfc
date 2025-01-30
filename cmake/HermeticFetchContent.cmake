@@ -249,8 +249,12 @@ Commands
   a library export declaration that will enable Hermetic FetchContent to consume the targets
   as-if the project had provided a proper package configuration.
 
-  Note the use of the template variable ``@HFC_PREFIX_PLACEHOLDER@`` which will be replaced
-  with the final install prefix location when the library is consumed later on. 
+  Note the use of template variable :
+  - ``@HFC_SOURCE_DIR_PLACEHOLDER@`` which will be replaced with the source directory location when the library is consumed later on. 
+  - ``@HFC_BINARY_DIR_PLACEHOLDER@`` which will be replaced with the binaries directory location when the library is consumed later on.
+  - ``@HFC_PREFIX_PLACEHOLDER@`` which will be replaced with the final install prefix location when the library is consumed later on. 
+ 
+
 
   The following example shows how to define the ``Pcap::Pcap`` target properties required
   for Hermetic FetchContent to be able to construct a so-called "targets cache":
