@@ -104,8 +104,6 @@ function(hfc_cmake_register_content_build content_name)
     list(APPEND install_commands_list "${CMAKE_COMMAND} --install .")
   endif()
 
-  list(JOIN install_commands_list " && " install_command)
-  
   #
   # build the install done marker cleaner
   set(install_command_done_marker_cleaner "")
@@ -119,12 +117,13 @@ function(hfc_cmake_register_content_build content_name)
       string(APPEND install_command_done_marker_cleaner " ${found_marker_file}")
     endforeach()
 
-    string(APPEND install_command " && ${install_command_done_marker_cleaner}")
+    list(APPEND install_commands_list "${install_command_done_marker_cleaner}")
   endif()
 
-  # this marks this build as installed
-  string(APPEND install_command " && ${CMAKE_COMMAND} -E make_directory ${installed_marker_parent_path}")
-  string(APPEND install_command " && ${CMAKE_COMMAND} -E touch ${FN_ARG_HFC_INSTALL_MARKER_FILE}")
+  list(APPEND install_commands_list "${CMAKE_COMMAND} -E make_directory ${installed_marker_parent_path}")
+  list(APPEND install_commands_list "${CMAKE_COMMAND} -E touch ${FN_ARG_HFC_INSTALL_MARKER_FILE}")
+
+  list(JOIN install_commands_list " && " install_command)
 
   if (CMAKE_RE_PATH)
 
