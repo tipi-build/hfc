@@ -121,7 +121,7 @@ function(hfc_populate_project_declare content_name)
       )
 
       if((initial_commit_id STREQUAL FN_ARG_GIT_TAG) AND initial_repo_is_clean)
-        hfc_log(STATUS "Repository ${FN_ARG_SOURCE_DIR} already at ${FN_ARG_GIT_TAG} and clean - marking as populated")
+        hfc_log(STATUS "🟢 Repository ${FN_ARG_SOURCE_DIR} at ${FN_ARG_GIT_TAG} and clean")
         set(done TRUE)
       else()
         # We explicitely do not reset, and trust the stamp files

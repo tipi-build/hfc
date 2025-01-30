@@ -11,7 +11,6 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
 )
 
-set(HERMETIC_FETCHCONTENT_LOG_DEBUG ON)
 
 include(HermeticFetchContent)
 

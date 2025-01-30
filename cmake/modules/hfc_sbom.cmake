@@ -37,7 +37,7 @@ if(sbom_found STREQUAL "NOTFOUND")
     )
 
     FetchContent_GetProperties(hfc_cmake_sbom)
-    hfc_log(STATUS " - success - available in: '${hfc_cmake_sbom_SOURCE_DIR}'")
+    hfc_log_debug(STATUS " - HFC cmake-sbom support successfully enabled: '${hfc_cmake_sbom_SOURCE_DIR}'")
     list(APPEND CMAKE_MODULE_PATH "${hfc_cmake_sbom_SOURCE_DIR}/cmake")
 else()
     hfc_log(STATUS "Enabling HFC cmake-sbom support (using cmake-sbom already on CMAKE_MODULE_PATH at ${sbom_found})")

@@ -13,7 +13,7 @@ macro(hfc_provide_dependency method package_name)
   endif()
 endmacro()
 
-hfc_log(STATUS "Registering Hermetic FetchContent as CMake dependency provider")
+hfc_log_debug("Registering Hermetic FetchContent as CMake dependency provider")
 
 cmake_language(
   SET_DEPENDENCY_PROVIDER hfc_provide_dependency

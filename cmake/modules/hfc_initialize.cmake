@@ -27,7 +27,7 @@ function(hfc_initialize_enable_cmake_re_if_requested)
 endfunction()
 
 function(hfc_run_goldilock_version_or_fail)
-  hfc_log(TRACE "Using goldilock found at ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
+  hfc_log_debug("Using goldilock found at ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
     __get_env_shell_command(shell)
     # test that it works  
     execute_process(
@@ -103,7 +103,7 @@ function(hfc_ensure_goldilock_available)
   set(HFC_GOLDILOCK_INSTALL_DIR "${tools_dir_realpath}/goldilock/${FN_ARG_GOLDILOCK_REVISION}")
 
   if(HERMETIC_FETCHCONTENT_TOOLCHAIN_IS_PROXY_TOOLCHAIN)
-    hfc_log(STATUS "Using goldilock set by generated proxy toolchain, not checking as we are in a working dependency build: ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
+    hfc_log_debug("Using goldilock set by generated proxy toolchain, not checking as we are in a working dependency build: ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
     return() # We should never do anything in these case, only use what was provided.
   endif()
 
@@ -132,7 +132,7 @@ function(hfc_ensure_goldilock_available)
 
     hfc_log_debug(" -> ran & matched version expectation: ${goldilock_has_correct_version_and_is_executable}")
     if (goldilock_has_correct_version_and_is_executable)
-      hfc_log(STATUS "Using goldilock : ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
+      hfc_log_debug("Using goldilock : ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
       hfc_run_goldilock_version_or_fail()
       return(PROPAGATE HERMETIC_FETCHCONTENT_goldilock_BIN)
     else()
@@ -153,7 +153,7 @@ function(hfc_ensure_goldilock_available)
       hfc_log_debug(" -> ran & matched version expectation: ${goldilock_has_correct_version_and_is_executable}")
 
       if(goldilock_has_correct_version_and_is_executable)
-        hfc_log(STATUS "golidlock has been found on the system and will be used. It's path is: ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
+        hfc_log(STATUS "goldilock has been found on the system: ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
         set(HERMETIC_FETCHCONTENT_goldilock_BIN "${goldilock_found_on_some_paths}")
         hfc_run_goldilock_version_or_fail()
         return(PROPAGATE HERMETIC_FETCHCONTENT_goldilock_BIN)
@@ -207,7 +207,7 @@ function(hfc_ensure_goldilock_available)
           hfc_log_debug(" -> ran & matched version expectation: ${goldilock_has_correct_version_and_is_executable}")
     
           if(goldilock_has_correct_version_and_is_executable)
-            hfc_log(STATUS "golidlock has been found on the system and will be used. It's path is: ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
+            hfc_log(STATUS "goldilock has been downloaded: ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
             set(HERMETIC_FETCHCONTENT_goldilock_BIN "${goldilock_just_downloaded}")
             hfc_run_goldilock_version_or_fail()
             return(PROPAGATE HERMETIC_FETCHCONTENT_goldilock_BIN)
