@@ -5,6 +5,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/process.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 #include <test_project.hpp>
 #include <test_variant.hpp>
@@ -14,6 +17,8 @@
 #include <pre/file/hash.hpp>
 
 #include <test_helpers.hpp>
+
+#include <optional>
 
 namespace hfc::test { 
   namespace fs = boost::filesystem;
@@ -27,6 +32,7 @@ namespace hfc::test {
     bool expect_configure_success = true;
     bool expect_build_success = true;
     std::string additional_cmake_flags = "";
+    bool inject_random_TESTDATA_INJECTED_value = false;
   };
 
   // make it printable for boost test  
@@ -42,6 +48,9 @@ namespace hfc::test {
 
 
   static auto TEST_DATA_template_expectations = {
+    targets_cache_test_data_set{ "hfc_targets_cache/FORCE_SYSTEM_findModuleforwarding", "Iconv.cmake", false, false, false }, // this needs to fail without FORCE_SYSTEM_Iconv set
+    targets_cache_test_data_set{ "hfc_targets_cache/FORCE_SYSTEM_findModuleforwarding", "Iconv.cmake", true, false, false, "-DFORCE_SYSTEM_Iconv=OFF" },
+    targets_cache_test_data_set{ "hfc_targets_cache/FORCE_SYSTEM_findModuleforwarding", "Iconv.cmake", true, true, true, "-DFORCE_SYSTEM_Iconv=ON", true /* inject_random_TESTDATA_INJECTED_value */  },
     targets_cache_test_data_set{ "hfc_targets_cache/from_cmake_package_config", "mathslib.cmake", true },
     targets_cache_test_data_set{ "hfc_targets_cache/cmake_export_declaration", "mathslib.cmake", true },
     targets_cache_test_data_set{ "hfc_targets_cache/autotools_export_declaration", "Iconv.cmake", true },
@@ -65,11 +74,17 @@ namespace hfc::test {
     fs::path project_path = prepare_project_to_be_tested(td_targets_cache_test_data_set.project_template, td_test_variant.is_cmake_re);
     write_project_tipi_id(project_path);
 
+    std::string TESTDATA_INJECTED_value = to_string(boost::uuids::random_generator()()); // gen it always even if we don't use it.
+
     auto get_configure_cmake_flags = [&]() {
       std::string result = td_makeAvailableAt_flag;
 
       if(td_targets_cache_test_data_set.additional_cmake_flags != "") {
-        result += " "s +  td_targets_cache_test_data_set.additional_cmake_flags;
+        result += " "s + td_targets_cache_test_data_set.additional_cmake_flags;
+      }
+
+      if(td_targets_cache_test_data_set.inject_random_TESTDATA_INJECTED_value) {
+        result += " -DTESTDATA_INJECTED="s + TESTDATA_INJECTED_value;
       }
 
       return result;
@@ -86,8 +101,10 @@ namespace hfc::test {
     std::cout << "⚗️ [Configure]" << std::endl;
     bool configure_success = false;
 
+    std::string configure_output = "";
+
     try {
-      run_command(cmake_configure_command, project_path);
+      configure_output = run_command(cmake_configure_command, project_path);
       configure_success = true;
     }
     catch(...) {
@@ -102,6 +119,13 @@ namespace hfc::test {
       std::cout << "⚗️ [SUCCESS by expected failure]" << std::endl;
       return;
     }
+
+    // so... we expect that injected test data to appear during configure because that's the
+    // most obvious choice for message() to be printed
+    if(td_targets_cache_test_data_set.inject_random_TESTDATA_INJECTED_value) {
+      BOOST_REQUIRE(boost::regex_search(configure_output, boost::regex{TESTDATA_INJECTED_value}));
+    }
+
 
     if(td_targets_cache_test_data_set.targets_file_expected) {
       BOOST_REQUIRE(fs::exists(project_dependency_targets_cache_file));
