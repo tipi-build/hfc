@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27.0)
-project(create_imported_cmake_targets_cache LANGUAGES NONE)
+project(create_imported_cmake_targets_cache LANGUAGES @TEMPLATE_ENABLE_LANGUAGES@)
 
 list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@")
 list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@/modules")

@@ -211,7 +211,7 @@ function(hfc_autotools_restore_or_configure content_name)
   cmake_language(CALL ${FN_ARG_CMAKE_ADAPTER_GENERATOR_FN}_get_install_target install_target_name)
 
   # Toolchain to forward arguments
-  set(proxy_toolchain_path "${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-toolchain/hfc_hermetic_proxy_toolchain.cmake")
+  hfc_get_content_proxy_toolchain_path(${content_name} proxy_toolchain_path)
   hfc_generate_cmake_proxy_toolchain(${content_name}
     # PROJECT_DEPENDENCIES not passed : Autotools cannot have dependencies, it doesn't "cmake-find_package"
     PROJECT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}"

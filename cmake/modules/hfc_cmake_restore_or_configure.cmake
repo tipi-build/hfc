@@ -77,9 +77,8 @@ function(hfc_cmake_restore_or_configure content_name)
     )
   endif()
 
-  set(proxy_toolchain_dir "${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-toolchain")
-  set(proxy_toolchain_path "${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-toolchain/hfc_hermetic_proxy_toolchain.cmake")
-
+  hfc_get_content_proxy_toolchain_dir(${content_name} proxy_toolchain_dir)
+  hfc_get_content_proxy_toolchain_path(${content_name} proxy_toolchain_path)
   file(LOCK ${proxy_toolchain_dir} DIRECTORY GUARD FUNCTION)
 
   hfc_generate_cmake_proxy_toolchain(${content_name}

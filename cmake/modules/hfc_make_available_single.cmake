@@ -4,6 +4,8 @@ include(hfc_cmake_restore_or_configure)
 include(hfc_saved_details)
 include(hfc_determine_cache_id)
 include(hfc_populate_project)
+include(hfc_generate_cmake_proxy_toolchain)
+include(hfc_targets_cache_create)
 
 # This creates prefixes where HermeticFetchContent will reuse buildLocation or installed location
 function(hfc_create_restore_prefixes content_name buildLocation installedLocation)
@@ -148,13 +150,54 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
   if (DEFINED FORCE_SYSTEM_${content_name})
     if (${FORCE_SYSTEM_${content_name}})
+
       hfc_log(WARNING "FORCE_SYSTEM_${content_name} is ON, HermeticFetchContent will only find_package the library on the system.")
       
+      hfc_get_content_proxy_toolchain_path(${content_name} proxy_toolchain_path)
+
+      string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION 
+        [=[
+
+          # FORCE_SYSTEM_<content-name> support bits
+          # 1/ force find_<> to go look at the system
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
+
+          # 2/ forward all CMAKE_MODULE_PATH from the parent project
+          # to enable local project FindModules to do the work and be 
+          # transparent
+        ]=]
+        "\n"
+      )
+
+      # !! Note of caution !!
+      # =====================
+      # this bit CANNOT be injected in any other case than HFC's FORCE_SYSTEM_<content-name>=ON 
+      # because it would break how cache keying works in cmake-re by making a build dependent
+      # on contents that are not tracked neither mirroring nor toolchain mirroring / env
+      foreach(cmake_module_path_item ${CMAKE_MODULE_PATH})
+        if(NOT IS_ABSOLUTE cmake_module_path_item)
+          file(REAL_PATH "${cmake_module_path_item}" "${cmake_module_path_item}")
+        endif()
+        
+        string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "list(APPEND CMAKE_MODULE_PATH \"${cmake_module_path_item}\")\n")
+      endforeach()
+
+      hfc_generate_cmake_proxy_toolchain(${content_name}
+        HERMETIC_FIND_PACKAGES "${__PARAMS_HERMETIC_FIND_PACKAGES}"
+        PROJECT_TOOLCHAIN_EXTENSION "${__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION}"
+        DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
+      ) 
+
       get_hermetic_target_cache_file_path(${content_name} target_cache_file)
       hfc_targets_cache_create_isolated(
+        ${content_name}
         LOAD_TARGETS_CMAKE "[==[find_package(${content_name} REQUIRED ${__PARAMS_FIND_PACKAGE_ARGS} ) \n]==]"
         CACHE_DESTINATION_FILE "${target_cache_file}"
         TEMP_DIR "${HERMETIC_FETCHCONTENT_INSTALL_DIR}/targets_dump_tmp"
+        TOOLCHAIN_FILE ${proxy_toolchain_path}
       )
 
       # Now load the targets in our context

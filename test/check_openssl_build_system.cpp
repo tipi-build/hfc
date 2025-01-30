@@ -55,6 +55,7 @@ namespace hfc::test {
     BOOST_REQUIRE(!fs::exists(test_project_path / "thirdparty" / "cache" / "openssl-src"));
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "OpenSSL-install" / "lib" / "libssl.a"  ));
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "OpenSSL-install" / "lib" / "libcrypto.a"  ));
+    BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "hermetic_targetcaches" / "OpenSSL.cmake"));
 
     std::string ninja_output = run_command(cmake_build_command, test_project_path);
     BOOST_REQUIRE(boost::contains(ninja_output, "ninja: no work to do"));
