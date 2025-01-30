@@ -3,6 +3,16 @@ include_guard()
 include(hfc_log)
 include(hfc_targets_cache_common)
 
+function(hfc_get_content_proxy_toolchain_dir content_name OUT_result)
+  set(${OUT_result} "${FETCHCONTENT_BASE_DIR}/${content_name}-toolchain" PARENT_SCOPE)
+endfunction()
+
+function(hfc_get_content_proxy_toolchain_path content_name OUT_result)
+  hfc_get_content_proxy_toolchain_dir("${content_name}" proxy_toolchain_dir)
+  set(${OUT_result} "${proxy_toolchain_dir}/hfc_hermetic_proxy_toolchain.cmake" PARENT_SCOPE)
+endfunction()
+
+
 #[=======================================================================[.rst:
 hfc_generate_cmake_proxy_toolchain
 ------------------------------------------------------------------------------------------

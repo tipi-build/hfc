@@ -232,7 +232,7 @@ endfunction()
 #   LOAD_TARGETS_CMAKE <cmake code to eval for loading targets>
 #   CACHE_DESTINATION_FILE <path>         # path to the target info cache to write. Parent directory will be created if not already present. Destination file will be overwritten if present
 # )
-function(hfc_targets_cache_create_isolated)  
+function(hfc_targets_cache_create_isolated content_name)  
 
   # arguments parsing
   set(options "")
@@ -252,11 +252,19 @@ function(hfc_targets_cache_create_isolated)
 
   file(MAKE_DIRECTORY "${tmp_proj_dir}")
 
+  # make sure we have the same enabled languages if the FORCE_SYSTEM_<content-name>
+  set(TEMPLATE_ENABLE_LANGUAGES "NONE")
+  if(FORCE_SYSTEM_${content_name})
+    get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+    set(TEMPLATE_ENABLE_LANGUAGES ${languages})
+  endif()
+
   block(SCOPE_FOR VARIABLES PROPAGATE 
     HERMETIC_FETCHCONTENT_ROOT_DIR 
     FN_ARG_LOAD_TARGETS_CMAKE 
     FN_ARG_CACHE_DESTINATION_FILE 
     FN_ARG_CREATE_TARGET_ALIASES
+    TEMPLATE_ENABLE_LANGUAGES
   )
     set(HERMETIC_FETCHCONTENT_ROOT_DIR "${HERMETIC_FETCHCONTENT_ROOT_DIR}")
     set(LOAD_TARGETS_CMAKE "${FN_ARG_LOAD_TARGETS_CMAKE}")
@@ -317,6 +325,7 @@ function(hfc_targets_cache_create_from_export_declaration content_name)
   hfc_log_debug("Generating targets cache for ${content_name} from export declaration at ${${FN_ARG_OUT_TARGETS_CACHE_FILE}}")
 
   hfc_targets_cache_create_isolated(
+    ${content_name}
     LOAD_TARGETS_CMAKE "[==[${FN_ARG_CMAKE_EXPORT_LIBRARY_DECLARATION}]==]"
     TOOLCHAIN_FILE ${FN_ARG_TOOLCHAIN_FILE}
     CACHE_DESTINATION_FILE "${${FN_ARG_OUT_TARGETS_CACHE_FILE}}"
