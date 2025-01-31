@@ -210,4 +210,9 @@ namespace hfc::test {
     outfile << "\n" << to_append << "\n" << std::flush;
     outfile.close();
   }
+
+  inline fs::path get_mirror_test_project_path(fs::path test_project_path ){
+    fs::path build_folder_mirror = fs::read_symlink(test_project_path / "build").parent_path().parent_path();
+    return build_folder_mirror.parent_path() / build_folder_mirror.stem();
+  }
 }
