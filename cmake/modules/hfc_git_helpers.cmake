@@ -50,10 +50,6 @@ function(git_exec)
         set(execute_process_arg_COMMAND_ERROR_IS_FATAL COMMAND_ERROR_IS_FATAL ${FN_ARG_COMMAND_ERROR_IS_FATAL})
     endif()
 
-    if(FN_ARG_OUT_RESULT)
-        set(execute_process_arg_OUTPUT_VARIABLE OUTPUT_VARIABLE cmd_output OUTPUT_STRIP_TRAILING_WHITESPACE)
-    endif()
-
     if(FN_ARG_OUT_RETURN_CODE)
         set(execute_process_arg_RESULT_VARIABLE RESULT_VARIABLE cmd_retcode)
     endif()
@@ -68,11 +64,12 @@ function(git_exec)
 
     execute_process(COMMAND ${shell} "${FN_ARG_COMMAND}"
         WORKING_DIRECTORY "${FN_ARG_WORKING_DIRECTORY}"
-        ECHO_OUTPUT_VARIABLE
+        OUTPUT_VARIABLE cmd_output OUTPUT_STRIP_TRAILING_WHITESPACE
         ${execute_process_arg_COMMAND_ERROR_IS_FATAL}
         ${execute_process_arg_RESULT_VARIABLE}
-        ${execute_process_arg_OUTPUT_VARIABLE}
     )
+
+    hfc_log_debug("Output of ${FN_ARG_COMMAND}: ${cmd_output}")
 
     if(FN_ARG_OUT_RESULT)
         set(${FN_ARG_OUT_RESULT} "${cmd_output}" PARENT_SCOPE)
