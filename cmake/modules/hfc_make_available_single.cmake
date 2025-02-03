@@ -238,9 +238,39 @@ function(hfc_make_available_single content_name build_at_configure_time)
   hfc_create_restore_prefixes(${content_name} ${__PARAMS_BINARY_DIR} ${cmake_contentInstallPath})
 
   # register the content/project specific populate() function
-  hfc_populate_project_declare(${content_name})  
+  set(origin_with_resolved_patch "")
 
+  hfc_populate_project_declare(${content_name})  
   hfc_determine_cache_id(${content_name})
+
+  if(__PARAMS_HERMETIC_PREPATCHED_RESOLVER)
+
+    hfc_evaluate_prepatched_resolver(
+      OUT_VAR_PREFIX prepatched_
+      HERMETIC_PREPATCHED_RESOLVER "${__PARAMS_HERMETIC_PREPATCHED_RESOLVER}"
+
+      URL "${__PARAMS_URL}"
+      URL_HASH "${__PARAMS_URL_HASH}"
+      GIT_REPOSITORY "${__PARAMS_GIT_REPOSITORY}"
+      GIT_TAG "${__PARAMS_GIT_TAG}"
+      GIT_SUBMODULES "${__PARAMS_GIT_SUBMODULES}"
+      SOURCE_DIR "${__PARAMS_SOURCE_DIR}"
+    )
+
+    if(prepatched_RESOLVED_PATCH)
+      if(prepatched_URL)
+        set(origin_with_resolved_patch "${prepatched_URL}")
+      elseif(prepatched_GIT_REPOSITORY)
+        set(origin_with_resolved_patch "${prepatched_GIT_REPOSITORY}")
+      endif()
+    endif()
+
+  endif()
+
+  if(origin_with_resolved_patch)
+    # Use the prepatched origin as cache-key
+    set (${content_name}_origin "${origin_with_resolved_patch}")
+  endif()
 
   # select the project scheme based on build system name info
   if(NOT DEFINED __PARAMS_HERMETIC_BUILD_SYSTEM)

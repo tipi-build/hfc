@@ -1,4 +1,5 @@
 include(hfc_log)
+include(hfc_required_args)
 include(hfc_git_helpers)
 include(hfc_goldilock_helpers)
 include(FetchContent)
@@ -7,6 +8,78 @@ include(hfc_compute_populate_build_path)
 
 function(hfc_populate_project__get_function_name content_name OUT_function_name)
   set(${OUT_function_name} "hfc_populate_project_${content_name}" PARENT_SCOPE)
+endfunction()
+
+
+function(hfc_evaluate_prepatched_resolver)
+
+  set(options_params)
+  set(one_value_params
+    # Official FetchContent arguments
+    URL
+    URL_HASH
+    GIT_REPOSITORY
+    GIT_TAG
+    GIT_SUBMODULES
+    SOURCE_DIR
+
+    # How to prefix variables
+    OUT_VAR_PREFIX
+
+    # Custom Hermetic arguments
+    HERMETIC_PREPATCHED_RESOLVER
+  )
+
+  set(multi_value_params)
+  cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
+  hfc_required_args(FN_ARG OUT_VAR_PREFIX HERMETIC_PREPATCHED_RESOLVER)
+
+  # make just these available in the eval'ed code
+  set(URL "${FN_ARG_URL}")
+  set(URL_HASH "${FN_ARG_URL_HASH}")
+  set(GIT_REPOSITORY "${FN_ARG_GIT_REPOSITORY}")
+  set(GIT_TAG "${FN_ARG_GIT_TAG}")
+  set(SOURCE_DIR "${FN_ARG_SOURCE_DIR}")
+
+  set(RESOLVED_PATCH FALSE)
+  block(SCOPE_FOR VARIABLES PROPAGATE content_name SOURCE_DIR URL URL_HASH GIT_REPOSITORY GIT_TAG RESOLVED_PATCH)
+    hfc_log_debug("Evaluating prepatched resolve : '${FN_ARG_HERMETIC_PREPATCHED_RESOLVER}'")
+    cmake_language(EVAL CODE ${FN_ARG_HERMETIC_PREPATCHED_RESOLVER})
+  endblock()
+
+  set(${FN_ARG_OUT_VAR_PREFIX}RESOLVED_PATCH ${RESOLVED_PATCH})
+
+  if(${FN_ARG_OUT_VAR_PREFIX}RESOLVED_PATCH)
+
+   if(URL)
+      hfc_log_debug(" + Resolved pre-patched source: ${URL} / ${URL_HASH}") 
+    endif()
+
+    if(GIT_REPOSITORY)
+      hfc_log_debug(" + Resolved pre-patched source: ${GIT_REPOSITORY} / ${GIT_TAG}")
+    endif()
+
+    # mirror variable changes back to FN_ARG_*
+    set(${FN_ARG_OUT_VAR_PREFIX}URL "${URL}")
+    set(${FN_ARG_OUT_VAR_PREFIX}URL_HASH "${URL_HASH}")
+    set(${FN_ARG_OUT_VAR_PREFIX}GIT_REPOSITORY "${GIT_REPOSITORY}")
+    set(${FN_ARG_OUT_VAR_PREFIX}GIT_TAG "${GIT_TAG}")
+
+ 
+    return(PROPAGATE
+      ${FN_ARG_OUT_VAR_PREFIX}RESOLVED_PATCH
+
+      ${FN_ARG_OUT_VAR_PREFIX}URL
+      ${FN_ARG_OUT_VAR_PREFIX}URL_HASH
+      ${FN_ARG_OUT_VAR_PREFIX}GIT_REPOSITORY
+      ${FN_ARG_OUT_VAR_PREFIX}GIT_TAG
+    )
+
+  endif()
+
+  return(PROPAGATE
+    ${FN_ARG_OUT_VAR_PREFIX}RESOLVED_PATCH
+  )
 endfunction()
 
 function(hfc_populate_project_declare content_name)
@@ -47,12 +120,11 @@ function(hfc_populate_project_declare content_name)
     )
     cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
 
-    set(RESOLVED_PATCH FALSE)
+    set(prepatched_RESOLVED_PATCH FALSE)
     
     hfc_log_debug("Running populate function for ${content_name}")
 
     if(FN_ARG_HERMETIC_PREPATCHED_RESOLVER)
-      
       if(FN_ARG_URL)
         hfc_log_debug(" - URL = ${FN_ARG_URL}")
         hfc_log_debug(" - URL_HASH = ${FN_ARG_URL_HASH}")
@@ -61,38 +133,24 @@ function(hfc_populate_project_declare content_name)
         hfc_log_debug(" - GIT_TAG = ${FN_ARG_GIT_TAG}")
       endif()
 
-      block(SCOPE_FOR VARIABLES 
-        PROPAGATE content_name RESOLVED_PATCH FN_ARG_URL FN_ARG_URL_HASH FN_ARG_GIT_REPOSITORY FN_ARG_GIT_TAG FN_ARG_SOURCE_DIR
+      hfc_evaluate_prepatched_resolver(
+        OUT_VAR_PREFIX prepatched_
+        HERMETIC_PREPATCHED_RESOLVER "${FN_ARG_HERMETIC_PREPATCHED_RESOLVER}"
+
+        URL "${FN_ARG_URL}"
+        URL_HASH "${FN_ARG_URL_HASH}"
+        GIT_REPOSITORY "${FN_ARG_GIT_REPOSITORY}"
+        GIT_TAG "${FN_ARG_GIT_TAG}"
+        GIT_SUBMODULES "${FN_ARG_GIT_SUBMODULES}"
+        SOURCE_DIR "${FN_ARG_SOURCE_DIR}"
       )
-        # make just these available in the eval'ed code
-        set(URL "${FN_ARG_URL}")
-        set(URL_HASH "${FN_ARG_URL_HASH}")
-        set(GIT_REPOSITORY "${FN_ARG_GIT_REPOSITORY}")
-        set(GIT_TAG "${FN_ARG_GIT_TAG}")
-        set(SOURCE_DIR "${FN_ARG_SOURCE_DIR}")        
 
-        block(SCOPE_FOR VARIABLES PROPAGATE content_name SOURCE_DIR URL URL_HASH GIT_REPOSITORY GIT_TAG RESOLVED_PATCH)
-          cmake_language(EVAL CODE ${__PARAMS_HERMETIC_PREPATCHED_RESOLVER})
-        endblock()
-
-        if(RESOLVED_PATCH)
-          # mirror variable changes back to FN_ARG_*
-          set(FN_ARG_URL "${URL}")
-          set(FN_ARG_URL_HASH "${URL_HASH}")
-          set(FN_ARG_GIT_REPOSITORY "${GIT_REPOSITORY}")
-          set(FN_ARG_GIT_TAG "${GIT_TAG}")
-        endif()
-      endblock()
-
-    endif()
-
-    if(RESOLVED_PATCH)
-      if(FN_ARG_URL)
-        hfc_log_debug(" + Resolved pre-patched source: ${FN_ARG_URL} / ${FN_ARG_URL_HASH}") 
-      endif()
-
-      if(FN_ARG_GIT_REPOSITORY)
-        hfc_log_debug(" + Resolved pre-patched source: ${FN_ARG_GIT_REPOSITORY} / ${FN_ARG_GIT_TAG}")
+      if(prepatched_RESOLVED_PATCH)
+        # mirror variable changes back to FN_ARG_*
+        set(FN_ARG_URL "${prepatched_URL}")
+        set(FN_ARG_URL_HASH "${prepatched_URL_HASH}")
+        set(FN_ARG_GIT_REPOSITORY "${prepatched_GIT_REPOSITORY}")
+        set(FN_ARG_GIT_TAG "${prepatched_GIT_TAG}")
       endif()
 
     endif()
@@ -131,7 +189,7 @@ function(hfc_populate_project_declare content_name)
         #  GIT_REVISION "${FN_ARG_GIT_TAG}"
         #  OUT_SUCCESS done
         #)
-        if (NOT RESOLVED_PATCH AND NOT FN_ARG_PATCH_COMMAND)
+        if (NOT prepatched_RESOLVED_PATCH AND NOT FN_ARG_PATCH_COMMAND)
           hfc_log(WARNING "🔴 Repository ${FN_ARG_SOURCE_DIR} currently at ${initial_commit_id} is not clean. is_clean=${initial_repo_is_clean}. Are the local modifications intentional ?")
         endif()
       endif()
@@ -198,7 +256,7 @@ function(hfc_populate_project_declare content_name)
     list(APPEND populate_args "SUBBUILD_DIR" ${subbuild_path})
     list(APPEND populate_args "BINARY_DIR" ${populate_build_path}) 
 
-    if(RESOLVED_PATCH)
+    if(prepatched_RESOLVED_PATCH)
       list(APPEND populate_args "PATCH_COMMAND" "") # don't try to patch already patched things
     elseif(FN_ARG_PATCH_COMMAND)
       list(APPEND populate_args "PATCH_COMMAND" "${FN_ARG_PATCH_COMMAND}")
