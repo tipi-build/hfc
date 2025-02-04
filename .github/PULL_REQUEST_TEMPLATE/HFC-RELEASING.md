@@ -1,10 +1,9 @@
 ---
-name: [HFC] Release
-about: Checklist to make a release
+name: "[HFC] Release"
+about: "Checklist to make a release"
 title: "[HFC][RELEASE] v0.0."
-labels: ''
-assignees: ''
-
+labels: ""
+assignees: ""
 ---
 
 # How to make a release ?
