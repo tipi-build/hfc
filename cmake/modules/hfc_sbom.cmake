@@ -236,9 +236,10 @@ message(STATUS \"===SBOM===\")
 message(STATUS \"${output_destination_path}\")
 	")
 
+    __get_env_shell_command(shell)
     add_custom_target(hfc_generate_sbom
       COMMENT "Generate the project's SBOM"
-      COMMAND ${CMAKE_COMMAND} "-P ${generate_sbom_script}"
+      COMMAND ${shell} "-c" "${HERMETIC_FETCHCONTENT_goldilock_BIN} --lockfile ${output_destination_path}.lock -- ${CMAKE_COMMAND} -P ${generate_sbom_script}"
     )
 
 endfunction()
