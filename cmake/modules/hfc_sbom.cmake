@@ -189,9 +189,9 @@ cmake_policy(SET CMP0007 NEW)
 function(file)
     list(GET ARGN 0 file_OP)
     list(GET ARGN 1 param_2)
-    list(SUBLIST ARGN 2 -1 remaining_args)
 
     if((\"\${file_OP}\" STREQUAL \"APPEND\") AND (\"\${param_2}\" STREQUAL \"\${spdx_in_file_dest}\"))
+        list(SUBLIST ARGN 2 -1 remaining_args)
         _file(APPEND \"\${spdx_in_file_tmp}\" \${remaining_args})
     elseif(\"\${file_OP}\" STREQUAL \"READ\") 
         _file(\${ARGN})
@@ -220,7 +220,10 @@ message(STATUS \" - generating SBOM\")
 
 set(SBOM_VERIFICATION_CODE \"\")
 configure_file(\"\${spdx_in_file_tmp}\" \"${output_destination_path}.\${tmp_suffix}\")
-file(COPY_FILE \"${output_destination_path}.\${tmp_suffix}\" \"${output_destination_path}\" ONLY_IF_DIFFERENT)
+file(TOUCH \"${output_destination_path}.lock\")
+file(LOCK \"${output_destination_path}.lock\")
+  file(COPY_FILE \"${output_destination_path}.\${tmp_suffix}\" \"${output_destination_path}\" ONLY_IF_DIFFERENT)
+file(LOCK \"${output_destination_path}.lock\" RELEASE)
 
 # clean up temp files
 message(STATUS \"Cleaning up temp files\")
