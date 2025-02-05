@@ -56,7 +56,15 @@ namespace hfc::test {
     targets_cache_test_data_set{ "hfc_targets_cache/autotools_export_declaration", "Iconv.cmake", true },
     targets_cache_test_data_set{ "hfc_targets_cache/cmake_no_install", "mathslib.cmake", false },
     targets_cache_test_data_set{ "hfc_targets_cache/alternate_exports_naming", "mathslib.cmake", true },
-    targets_cache_test_data_set{ "hfc_targets_cache/alternate_exports_naming", "mathslib.cmake", false, false /* expect configure failure */, false, "-DHFCTEST_NEGATIVE_CASE=ON" /* enable the negative test in the project */ }
+    targets_cache_test_data_set{ "hfc_targets_cache/alternate_exports_naming", "mathslib.cmake", false, false /* expect configure failure */, false, "-DHFCTEST_NEGATIVE_CASE=ON" /* enable the negative test in the project */ },
+
+    // check that FIND_PACKAGE_ARGS are correctly forwarded to the underlying find_package() call
+    // > the cases below are just FORCE_SYSTEM_Iconv[ON;OFF] * TEST_INJECT_FIND_PACKAGE_ARGS[ON;OFF] 
+    // > to have the neg cases to validate the test code behavior IRT to expected outcomes
+    targets_cache_test_data_set{ "hfc_targets_cache/FORCE_SYSTEM_find_pagacke_args", "Iconv.cmake", false, false, false, "-DFORCE_SYSTEM_Iconv=OFF -DTEST_INJECT_FIND_PACKAGE_ARGS=ON" },   // neg test
+    targets_cache_test_data_set{ "hfc_targets_cache/FORCE_SYSTEM_find_pagacke_args", "Iconv.cmake", false, false, false, "-DFORCE_SYSTEM_Iconv=ON -DTEST_INJECT_FIND_PACKAGE_ARGS=OFF" },   // neg test
+    targets_cache_test_data_set{ "hfc_targets_cache/FORCE_SYSTEM_find_pagacke_args", "Iconv.cmake", false, false, false, "-DFORCE_SYSTEM_Iconv=OFF -DTEST_INJECT_FIND_PACKAGE_ARGS=OFF" },  // neg test
+    targets_cache_test_data_set{ "hfc_targets_cache/FORCE_SYSTEM_find_pagacke_args", "Iconv.cmake", true,  true, true, "-DFORCE_SYSTEM_Iconv=ON -DTEST_INJECT_FIND_PACKAGE_ARGS=ON" }    
   };
 
   static auto TEST_DATA_hfc_makeAvailableAt_type = {
