@@ -98,6 +98,7 @@ function(hfc_populate_project_declare content_name)
       GIT_REPOSITORY 
       GIT_TAG
       GIT_SUBMODULES
+      GIT_SHALLOW
       SOURCE_DIR 
       BUILD_IN_SOURCE_TREE
       SOURCE_SUBDIR
@@ -261,6 +262,10 @@ function(hfc_populate_project_declare content_name)
     elseif(FN_ARG_PATCH_COMMAND)
       list(APPEND populate_args "PATCH_COMMAND" "${FN_ARG_PATCH_COMMAND}")
       list(APPEND populate_args "UPDATE_DISCONNECTED" "1")  # avoid issues with repeated builds, which would "repatch"
+    endif()
+
+    if(FN_ARG_GIT_SHALLOW) 
+      list(APPEND populate_args "GIT_SHALLOW" ${FN_ARG_GIT_SHALLOW})
     endif()
     
     # we used to fix issues that could occur if the sources are missing but the stamp file were still around
