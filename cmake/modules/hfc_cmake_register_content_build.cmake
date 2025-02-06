@@ -100,7 +100,7 @@ function(hfc_cmake_register_content_build content_name)
 
   endif()
 
-  if ("${FN_ARG_CUSTOM_INSTALL_TARGETS}" STREQUAL "")
+  if (NOT FN_ARG_BUILD_TARGETS AND (NOT FN_ARG_CUSTOM_INSTALL_TARGETS))
     list(APPEND install_commands_list "${CMAKE_COMMAND} --install .")
   endif()
 
