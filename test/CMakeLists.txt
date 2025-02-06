@@ -101,6 +101,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/hermetic_dependency_make_executable_findable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/goldilock_provisioning_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_source_build_hfc_prefix.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_BUILD_TARGETS.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_CUSTOM_INSTALL_TARGETS.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_change_FETCHCONTENT_BASE_DIR.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_delete_build_folder.cpp"
