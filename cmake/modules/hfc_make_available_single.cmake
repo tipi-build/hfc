@@ -68,6 +68,11 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_DISCOVER_TARGETS_FILE_PATTERN
     
     HERMETIC_BUILD_AT_CONFIGURE_TIME
+
+    # Disambiguate parameter parsing with all supported
+    # fetchcontent-details
+    SBOM_LICENSE
+    SBOM_SUPPLIER
   )
 
   set(multi_value_params

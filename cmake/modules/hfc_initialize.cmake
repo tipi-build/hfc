@@ -307,8 +307,8 @@ function(hfc_initialize HFC_ROOT_DIR)
     
     # Note : We don't set the following defaults on purpose as unset it will be evaluated OFF
     #        This allows also overriding with a pure scope variable and not CACHE
-    # set(HERMETIC_FETCHCONTENT_REMOVE_BUILD_DIR_AFTER_INSTALL OFF CACHE BOOL "By default save space by removing build")
-    # set(HERMETIC_FETCHCONTENT_REMOVE_SOURCE_DIR_AFTER_INSTALL OFF CACHE BOOL "By default save space by removing sources after install")
+    # set(HFC_V1_REMOVE_BUILD_DIR_AFTER_INSTALL OFF CACHE BOOL "By default save space by removing build")
+    # set(HFC_V1_REMOVE_SOURCE_DIR_AFTER_INSTALL OFF CACHE BOOL "By default save space by removing sources after install")
 
     set_property(GLOBAL PROPERTY HERMETIC_FETCHCONTENT_INITIALIZED ON)
     set(HERMETIC_FETCHCONTENT_ROOT_DIR "${HFC_ROOT_DIR}" CACHE INTERNAL "Root directory of Hermetic_FetchContent")

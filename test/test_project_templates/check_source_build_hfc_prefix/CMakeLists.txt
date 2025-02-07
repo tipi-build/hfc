@@ -12,8 +12,6 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
 )
 
-set(HERMETIC_FETCHCONTENT_REMOVE_BUILD_DIR_AFTER_INSTALL OFF CACHE INTERNAL "Avoid deletion of the binary dirs to enable detection of cache entries")
-set(HERMETIC_FETCHCONTENT_REMOVE_SOURCE_DIR_AFTER_INSTALL OFF CACHE INTERNAL "Avoid deletion of the source dirs after install")
 include(HermeticFetchContent)
 
 FetchContent_Declare(

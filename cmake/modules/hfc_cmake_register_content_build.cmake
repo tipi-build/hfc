@@ -142,11 +142,17 @@ function(hfc_cmake_register_content_build content_name)
 
   endif()
 
-  if(HERMETIC_FETCHCONTENT_REMOVE_BUILD_DIR_AFTER_INSTALL)
+  if(HFC_V1_REMOVE_BUILD_DIR_AFTER_INSTALL)
     string(APPEND install_command " && ${CMAKE_COMMAND} -E rm -rf ${FN_ARG_PROJECT_BINARY_DIR} ")
   endif()
-  if(HERMETIC_FETCHCONTENT_REMOVE_SOURCE_DIR_AFTER_INSTALL)
+  if(HFC_V1_REMOVE_SOURCE_DIR_AFTER_INSTALL)
     string(APPEND install_command " && ${CMAKE_COMMAND} -E rm -rf ${FN_ARG_PROJECT_SOURCE_DIR} ")
+
+    hfc_compute_subbuild_path(${content_name} subbuild_path
+      SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}"
+    )
+
+    string(APPEND install_command " && ${CMAKE_COMMAND} -E rm -rf ${subbuild_path} ")
   endif()
 
   if(DEFINED FN_ARG_PROJECT_SOURCE_SUBDIR)
