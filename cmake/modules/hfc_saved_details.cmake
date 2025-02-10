@@ -20,7 +20,7 @@ endfunction()
 # intended for use by the HFC function.
 #
 # Retrieves details saved for the specified content in an
-# earlier call to __FetchContent_declareDetails() and 
+# earlier call to __FetchContent_declareDetails() and
 # return NOTFOUND if not found
 function(hfc_details_declared contentName outVar)
   string(TOLOWER ${contentName} contentNameLower)

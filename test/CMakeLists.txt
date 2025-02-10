@@ -9,10 +9,10 @@ FetchContent_Declare(
 
 FetchContent_MakeHermetic(
   Boost
-  HERMETIC_TOOLCHAIN_EXTENSION 
+  HERMETIC_TOOLCHAIN_EXTENSION
   [=[
-    set(BUILD_TESTING OFF CACHE BOOL "" FORCE) 
-    set(BOOST_IOSTREAMS_ENABLE_LZMA OFF CACHE BOOL "" FORCE) 
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    set(BOOST_IOSTREAMS_ENABLE_LZMA OFF CACHE BOOL "" FORCE)
     set(BOOST_IOSTREAMS_ENABLE_ZSTD OFF CACHE BOOL "" FORCE)
     set(BOOST_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
   ]=]
@@ -29,16 +29,16 @@ add_library(hfc_project INTERFACE)
 add_library(hfc_project::test_lib ALIAS hfc_project)
 
 
-target_include_directories(hfc_project INTERFACE 
+target_include_directories(hfc_project INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/>
 )
 
-target_link_libraries(hfc_project INTERFACE     
-  Boost::system 
-  Boost::filesystem 
-  Boost::uuid 
+target_link_libraries(hfc_project INTERFACE
+  Boost::system
+  Boost::filesystem
+  Boost::uuid
   Boost::included_unit_test_framework
-  Boost::process 
+  Boost::process
   Boost::asio
   Threads::Threads
 )
@@ -56,11 +56,11 @@ function(add_test_with_HFC_TOOLS_DIR_ENV test_name source_files env_value)
     set_target_properties(${test_name} PROPERTIES OUTPUT_NAME ${test_name})
 
     target_link_libraries(${test_name} hfc_project::test_lib)
-    
+
     add_test(
-        NAME ${test_name} 
+        NAME ${test_name}
         COMMAND "$<TARGET_FILE:${test_name}>"
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../   # wd = project root      
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../   # wd = project root
     )
 
     # add to all tests
@@ -78,7 +78,7 @@ add_test_with_HFC_TOOLS_DIR_ENV(ensure_goldilock "${CMAKE_CURRENT_LIST_DIR}/boos
 set_property(TEST ensure_goldilock PROPERTY RUN_SERIAL ON) # run first and not in parallel
 
 # forced goldilock bootstrapping
-#add_test_with_HFC_TOOLS_DIR_ENV(bootstrap_goldilock_forced "${CMAKE_CURRENT_LIST_DIR}/boostrap_goldilock_test.cpp" "") 
+#add_test_with_HFC_TOOLS_DIR_ENV(bootstrap_goldilock_forced "${CMAKE_CURRENT_LIST_DIR}/boostrap_goldilock_test.cpp" "")
 
 # all other tests
 # -> those all use the HFC_TEST_SHARED_TOOLS_DIR to avoid re-building goldilock a thousand times over
@@ -111,7 +111,7 @@ set(test_source_files
 
 foreach(test_file IN LISTS test_source_files)
     get_filename_component(test_name ${test_file} NAME_WE) # without .cpp extension
-    add_test_with_HFC_TOOLS_DIR_ENV(${test_name} "${test_file}" "${HFC_TEST_SHARED_TOOLS_DIR}")    
+    add_test_with_HFC_TOOLS_DIR_ENV(${test_name} "${test_file}" "${HFC_TEST_SHARED_TOOLS_DIR}")
 endforeach()
 
 set_tests_properties (goldilock_provisioning_test  PROPERTIES

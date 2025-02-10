@@ -33,16 +33,16 @@ function(generate_openssl_cmake_adapter_get_install_target OUT_INSTALL_TARGET)
 endfunction()
 
 
-function(hfc_autootols_configure 
+function(hfc_autootols_configure
   content_name
   # The path to the generated adapter for the configuration
-  cmake_adapter_parent_path 
-  # The install prefix  
+  cmake_adapter_parent_path
+  # The install prefix
   HERMETIC_PROJECT_INSTALL_PREFIX
   # The autotools in-source-tree build dir (where ./configure lies)
   AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR
   # The toolchain file impacting the build
-  toolchain_file 
+  toolchain_file
   # The original project adapted and getting cache entries
   origin
   # revision
@@ -61,7 +61,7 @@ function(hfc_autootols_configure
 
     cmake_path(GET already_configured_file PARENT_PATH configured_marker_parent_path)
     file(GLOB configure_markers "${configured_marker_parent_path}/hfc.*.configure.done")
-    if(configure_markers) 
+    if(configure_markers)
       hfc_log_debug(" - clearing old configure markers")
       file(REMOVE ${configure_markers})
     endif()
@@ -70,7 +70,7 @@ function(hfc_autootols_configure
       COMMAND ${cmake_command}
       RESULT_VARIABLE CONFIGURE_RESULT
       COMMAND_ECHO STDOUT
-    ) 
+    )
 
     if(${CONFIGURE_RESULT} EQUAL 0)
       file(TOUCH "${already_configured_file}")
@@ -82,23 +82,23 @@ function(hfc_autootols_configure
 endfunction()
 
 # Prepares the mirror and build tree to ensure that ${AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR} can be used to  download + extract the autootools sources.
-# 
-# This is the reason why for autotools we download in an overriden SRC_DIR, namely inside that folder in AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR/src 
+#
+# This is the reason why for autotools we download in an overriden SRC_DIR, namely inside that folder in AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR/src
 # (extraction would otherwise delete the mirror symlink)
 function(hfc_autootols_prepare_mirror_build_tree_to_host_configure
   content_name
   # The path to the generated adapter for the configuration
-  cmake_adapter_parent_path 
-  # The install prefix  
+  cmake_adapter_parent_path
+  # The install prefix
   HERMETIC_PROJECT_INSTALL_PREFIX
   # The autotools in-source-tree build dir (where ./configure lies)
   AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR
   # The toolchain file impacting the build
-  toolchain_file 
+  toolchain_file
   # The original project adapted and getting cache entries
   origin)
 
-  if (CMAKE_RE_ENABLE) 
+  if (CMAKE_RE_ENABLE)
     set(cmake_command ${OVERRIDEN_CMAKE_COMMAND} "--only-mirror" "--host" "-G" "${CMAKE_GENERATOR}" "--install-prefix" "${HERMETIC_PROJECT_INSTALL_PREFIX}" "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}" "-S" "${cmake_adapter_parent_path}" "-B" "${AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR}" "-DCMAKE_TOOLCHAIN_FILE=${toolchain_file}")
 
     # --origin
@@ -108,7 +108,7 @@ function(hfc_autootols_prepare_mirror_build_tree_to_host_configure
       COMMAND ${cmake_command}
       RESULT_VARIABLE CONFIGURE_RESULT
       COMMAND_ECHO STDOUT
-    ) 
+    )
 
     if(NOT ${CONFIGURE_RESULT} EQUAL 0)
       message(FATAL_ERROR "Failed to prepare mirror for ${content_name}")
@@ -128,7 +128,7 @@ hfc_restore_or_configure_autotools
     The build dir, will only be used to run the cmake-adapter build which runs autotools configure.
 
   ``PROJECT_INSTALL_PREFIX``
-    Where the `make install` should be done for the autootols library. 
+    Where the `make install` should be done for the autootols library.
     Passed to `./configure --prefix=`
 
   ``CMAKE_EXPORT_LIBRARY_DECLARATION``
@@ -139,11 +139,11 @@ hfc_restore_or_configure_autotools
       A function respecting the generate_autotools_cmake_adapter or generate_openssl_cmake_adapter calling prototype.
 
   ``FETCH_CONTENT_DETAILS_HASH```
-    The hash of the input parametet to the FetchContent_Declare, this helps creating marker done files to determine 
+    The hash of the input parametet to the FetchContent_Declare, this helps creating marker done files to determine
     if work is required for the specific call or if it was already carried by another configure or build invocation.
-  
-  ``ORIGIN`` 
-    Cache ID 
+
+  ``ORIGIN``
+    Cache ID
 
   ``REVISION``
     Revision to pull from cache
@@ -233,8 +233,8 @@ function(hfc_autotools_restore_or_configure content_name)
   if (dep_need_install)
     hfc_cmake_re_restore_install_tree(
       ${FN_ARG_ORIGIN} ${FN_ARG_REVISION}
-      ${autotools_cmake_adapter_destination} ${FN_ARG_PROJECT_SOURCE_DIR} 
-      ${FN_ARG_PROJECT_INSTALL_PREFIX} 
+      ${autotools_cmake_adapter_destination} ${FN_ARG_PROJECT_SOURCE_DIR}
+      ${FN_ARG_PROJECT_INSTALL_PREFIX}
       "${proxy_toolchain_path}"
       cmake_re_restore_command_return_code)
     if (cmake_re_restore_command_return_code EQUAL 0)
@@ -260,7 +260,7 @@ function(hfc_autotools_restore_or_configure content_name)
 
       if (NOT EXISTS "${FN_ARG_PROJECT_SOURCE_DIR}")
         # If we are here once again, it's because abi-hash changed for example: then the build tree is empty.
-        # And as we download autotools sources in the build tree We need to redownload. 
+        # And as we download autotools sources in the build tree We need to redownload.
         hfc_invalidate_project_population(${content_name} "${FN_ARG_PROJECT_SOURCE_DIR}")
       endif()
 
@@ -268,18 +268,18 @@ function(hfc_autotools_restore_or_configure content_name)
 
         file(READ_SYMLINK  "${FN_ARG_PROJECT_SOURCE_DIR}" symlink_destination)
 
-        if(EXISTS "${symlink_destination}") 
+        if(EXISTS "${symlink_destination}")
           file(REMOVE_RECURSE "${symlink_destination}")
         endif()
 
         file(MAKE_DIRECTORY "${symlink_destination}")
       endif()
-      
+
       # then download the sources
       hfc_populate_project_invoke(${content_name})
     endif()
 
-    # If required by build-systems that do not support in-source-tree build, 
+    # If required by build-systems that do not support in-source-tree build,
     # Do a secondary invoke to copy sources in build tree and do the actual config there
     hfc_populate_project_invoke_clone_in_build_folder_if_required(${content_name})
   endif()
@@ -295,13 +295,13 @@ function(hfc_autotools_restore_or_configure content_name)
 
   hfc_targets_cache_consume(
     ${content_name}
-    TARGETS_CACHE_FILE "${target_cache_file}" 
+    TARGETS_CACHE_FILE "${target_cache_file}"
     TARGET_INSTALL_PREFIX "${FN_ARG_PROJECT_INSTALL_PREFIX}"
     MAKE_EXECUTABLES_FINDABLE "${FN_ARG_MAKE_EXECUTABLES_FINDABLE}"
     HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${FN_ARG_HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
     OUT_IMPORTED_LIBRARIES imported_libraries
     OUT_LIBRARY_BYPRODUCTS library_byproducts
-    
+
   )
 
   if(dep_need_configure)
@@ -314,13 +314,13 @@ function(hfc_autotools_restore_or_configure content_name)
   if (dep_need_install)
     hfc_log_debug(" - need to run install")
 
-    # If not restored Configure and register build targets   
+    # If not restored Configure and register build targets
     hfc_autotools_register_content_build(${content_name}
       ADAPTER_SOURCE_DIR ${autotools_cmake_adapter_destination}
       PROJECT_SOURCE_DIR ${FN_ARG_PROJECT_BINARY_DIR}
       PROJECT_BINARY_DIR ${FN_ARG_PROJECT_BINARY_DIR}
       PROJECT_INSTALL_PREFIX ${FN_ARG_PROJECT_INSTALL_PREFIX}
-      REGISTER_BUILD_AT_CONFIGURE_TIME ${FN_ARG_BUILD_AT_CONFIGURE_TIME} 
+      REGISTER_BUILD_AT_CONFIGURE_TIME ${FN_ARG_BUILD_AT_CONFIGURE_TIME}
       HFC_INSTALL_MARKER_FILE ${FN_ARG_HFC_INSTALL_MARKER_FILE}
       INSTALL_BYPRODUCTS "${library_byproducts}"
       IMPORTED_TARGETS "${imported_libraries}"
@@ -333,8 +333,8 @@ function(hfc_autotools_restore_or_configure content_name)
     )
 
     # if build a configure time is ON we don't need that dependency that
-    # is only there to ensure that the ${registered_build_target_name} target 
-    # is run when someone consumes any of the $imported_libraries 
+    # is only there to ensure that the ${registered_build_target_name} target
+    # is run when someone consumes any of the $imported_libraries
     if(NOT ${FN_ARG_BUILD_AT_CONFIGURE_TIME})
 
       foreach(lib IN LISTS imported_libraries)

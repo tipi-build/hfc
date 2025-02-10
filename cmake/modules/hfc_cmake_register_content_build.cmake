@@ -7,7 +7,7 @@ include(hfc_custom_echo_command)
 include(ProcessorCount)
 
 # Register the libary for build
-# 
+#
 # Usage:
 # hfc_cmake_register_content_build(
 #   HERMETIC_PROJECT_NAME     <name>              # name of the library project
@@ -15,16 +15,16 @@ include(ProcessorCount)
 #   BUILD_AT_CONFIGURE_TIME   <ON|OFF>            # should the build be run at configure time or on demand when the library is consumed
 #   [INSTALL_BYPRODUCTS...]     <byproduct paths>   # for linkable libraries, specify which are the produced binaries/build byproducts
 # )
-function(hfc_cmake_register_content_build content_name)  
+function(hfc_cmake_register_content_build content_name)
 
   # arguments parsing
   set(options "")
-  set(oneValueArgs_required 
+  set(oneValueArgs_required
     PROJECT_SOURCE_DIR
     PROJECT_BINARY_DIR
     PROJECT_INSTALL_PREFIX
     TOOLCHAIN_FILE
-    REGISTER_BUILD_AT_CONFIGURE_TIME   
+    REGISTER_BUILD_AT_CONFIGURE_TIME
     HFC_INSTALL_MARKER_FILE
     OUT_BUILD_TARGET_NAME
 
@@ -33,7 +33,7 @@ function(hfc_cmake_register_content_build content_name)
     REVISION
   )
 
-  set(oneValueArgs 
+  set(oneValueArgs
     ${oneValueArgs_required}
     PROJECT_DEPENDENCIES
     PROJECT_SOURCE_SUBDIR
@@ -47,7 +47,7 @@ function(hfc_cmake_register_content_build content_name)
   )
 
   cmake_parse_arguments(FN_ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  
+
 
   hfc_required_args(FN_ARG ${oneValueArgs_required})
 
@@ -60,7 +60,7 @@ function(hfc_cmake_register_content_build content_name)
 
   # generate the -install project
   hfc_log_debug("Adding '${content_name}' as ExternalProject")
-  
+
   set(build_externalproject_targets_dir "${FN_ARG_PROJECT_BINARY_DIR}-ep")
   set(build_externalproject_targets_cmakelist "${build_externalproject_targets_dir}/CMakeLists.txt")
   set(build_externalproject_project_name "hfc_content_project_${content_name}")
@@ -71,8 +71,8 @@ function(hfc_cmake_register_content_build content_name)
   # to setup the external project to build & install (on demand or at configure time depending on preferences)
   ProcessorCount(NUM_JOBS)
   set(build_command "${CMAKE_COMMAND} --build . -j ${NUM_JOBS}")
-  set(install_commands_list "") 
-  
+  set(install_commands_list "")
+
   # Ensure that before installing we have a clean install tree, not used by anyone
   if (NOT CMAKE_RE_PATH)
     list(APPEND install_commands_list "${CMAKE_COMMAND} -E rm -rf -- ${FN_ARG_PROJECT_INSTALL_PREFIX}" )
@@ -111,7 +111,7 @@ function(hfc_cmake_register_content_build content_name)
   cmake_path(GET FN_ARG_HFC_INSTALL_MARKER_FILE PARENT_PATH installed_marker_parent_path)
   file(GLOB install_done_markers "${installed_marker_parent_path}/hfc.*.install.done")
 
-  if(install_done_markers) 
+  if(install_done_markers)
     set(install_command_done_marker_cleaner "${CMAKE_COMMAND} -E remove ")
     foreach(found_marker_file IN LISTS install_done_markers)
       string(APPEND install_command_done_marker_cleaner " ${found_marker_file}")
@@ -165,7 +165,7 @@ function(hfc_cmake_register_content_build content_name)
   hfc_log_debug(" - build tree at: ${build_externalproject_targets_dir}")
   hfc_log_debug(" - build command: ${build_command}")
   hfc_log_debug(" - install command: ${install_command}")
-  hfc_log_debug(" - build byproducts: ${FN_ARG_INSTALL_BYPRODUCTS}")  
+  hfc_log_debug(" - build byproducts: ${FN_ARG_INSTALL_BYPRODUCTS}")
   hfc_log_debug(" - PROJECT_SOURCE_DIR = ${FN_ARG_PROJECT_SOURCE_DIR}")
   hfc_log_debug(" - PROJECT_BINARY_DIR = ${FN_ARG_PROJECT_BINARY_DIR}")
   hfc_log_debug(" - PROJECT_INSTALL_PREFIX = ${FN_ARG_PROJECT_INSTALL_PREFIX}")
@@ -174,7 +174,7 @@ function(hfc_cmake_register_content_build content_name)
 
   hfc_generate_external_project(${content_name}
     EP_TARGETS_DIR ${build_externalproject_targets_dir}
-    TARGET_NAME ${build_externalproject_target_name} 
+    TARGET_NAME ${build_externalproject_target_name}
     SOURCE_DIR ${FN_ARG_PROJECT_SOURCE_DIR}
 
     BINARY_DIR ${FN_ARG_PROJECT_BINARY_DIR}
@@ -202,10 +202,10 @@ function(hfc_cmake_register_content_build content_name)
       WORKING_DIRECTORY "${build_externalproject_targets_dir}"
       COMMAND_ECHO STDOUT
       COMMAND_ERROR_IS_FATAL ANY
-    ) 
-    
+    )
+
     hfc_log_debug(" - Build at configure time / building ${content_name}")
-    
+
     # cmake --build
     execute_process(
       COMMAND ${CMAKE_COMMAND} --build .
@@ -218,12 +218,12 @@ function(hfc_cmake_register_content_build content_name)
 
   else()
 
-    # Register to Build later in main project build graph 
+    # Register to Build later in main project build graph
     hfc_log_debug("Adding subdirectory ${build_externalproject_targets_dir}")
     add_subdirectory(${build_externalproject_targets_dir} ${build_externalproject_targets_dir})
 
     # We have to create the include directories of the imported targets ahead
-    # of time even if they are empty    
+    # of time even if they are empty
     foreach(target IN LISTS FN_ARG_IMPORTED_TARGETS)
       hfc_log_debug("Creating INTERFACE_INCLUDE_DIRECTORIES for target '${target}' ahead of time")
 
@@ -231,7 +231,7 @@ function(hfc_cmake_register_content_build content_name)
 
       if(include_directories)
         foreach(dir IN LISTS include_directories)
-          file(MAKE_DIRECTORY ${dir})        
+          file(MAKE_DIRECTORY ${dir})
         endforeach()
       endif()
 

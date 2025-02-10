@@ -17,7 +17,7 @@ set(HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES "Threads;dl;m")
 
 include(HermeticFetchContent)
 
-if(HFC_ENABLE_CMAKE_SBOM) 
+if(HFC_ENABLE_CMAKE_SBOM)
   include(hfc_sbom)
 
   hfc_generate_sbom(

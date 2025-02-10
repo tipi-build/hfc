@@ -25,7 +25,7 @@ FetchContent_MakeHermetic(
   HERMETIC_BUILD_SYSTEM cmake
   HERMETIC_TOOLCHAIN_EXTENSION [=[
     # XXXX TEST XXXX
-    # this is the actual modification - should trigger a change bc the hash of the hermetic 
+    # this is the actual modification - should trigger a change bc the hash of the hermetic
     # configuration will be modified.
     # XXXX TEST XXXX
     set(SOME_BUILD_OPTION ON                 CACHE BOOL "")

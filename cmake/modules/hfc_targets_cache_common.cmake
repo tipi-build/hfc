@@ -1,11 +1,11 @@
 # HermeticFetchContent / targets cache common
-# 
+#
 
 include(hfc_log)
 include(hfc_required_args)
 
 #
-# 
+#
 set(HERMETIC_FETCHCONTENT_TARGET_LIST_NAME "HERMETIC_FETCHCONTENT_all_targets")
 set(HERMETIC_FETCHCONTENT_TARGET_VARIABLE_PREFIX "HERMETIC_FETCHCONTENT_target_var_")
 set(HERMETIC_FETCHCONTENT_TARGET_FOUND_PROPERTIES_PREFIX "HERMETIC_FETCHCONTENT_")
@@ -26,19 +26,19 @@ set_property(GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function
 set_property(GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_GetFilenameComponentOverride_Enabled OFF)
 
 # if set to OFF FATAL_ERROR messages will be output as warnings, otherwise they will be silenced
-set_property(GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Message_Override_Silent ON)    
+set_property(GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Message_Override_Silent ON)
 
 
 #
 # Replaces :: with _ in target names
-function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_target_name input OUT_result) 
+function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_target_name input OUT_result)
   string(REPLACE "::" "_" escaped_target_name "${input}")
   set("${OUT_result}" "${escaped_target_name}" PARENT_SCOPE)
 endfunction()
 
 #
 # Replace chars that cannot be used in function names or variables
-function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_content_name input OUT_result) 
+function(Hermetic_FetchContent_CMakeTargetsDiscover_escape_content_name input OUT_result)
   string(REGEX REPLACE "[^A-Za-z0-9_]" "_" escaped_content_name "${input}")
   set("${OUT_result}" "${escaped_content_name}" PARENT_SCOPE)
 endfunction()
@@ -54,13 +54,13 @@ endfunction()
 #
 # compute the variable name for a found target property
 function(Hermetic_FetchContent_TargetsCache_get_found_property_variable_name target_name OUT_result)
-  Hermetic_FetchContent_CMakeTargetsDiscover_escape_target_name("${target_name}" escaped_target_name) 
+  Hermetic_FetchContent_CMakeTargetsDiscover_escape_target_name("${target_name}" escaped_target_name)
   set(${OUT_result} "${HERMETIC_FETCHCONTENT_TARGET_FOUND_PROPERTIES_PREFIX}${escaped_target_name}${HERMETIC_FETCHCONTENT_TARGET_FOUND_PROPERTIES_SUFFIX}" PARENT_SCOPE)
 endfunction()
 
 
 #
-# compute the export variable name 
+# compute the export variable name
 #
 # Usage:
 # Hermetic_FetchContent_TargetsCache_getExportVariableName(
@@ -69,7 +69,7 @@ endfunction()
 #     EXPORT_VARIABLE_PREFIX <prefix>
 #     RESULT <output variable name>
 # )
-function(Hermetic_FetchContent_TargetsCache_getExportVariableName) 
+function(Hermetic_FetchContent_TargetsCache_getExportVariableName)
 
   # arguments parsing
   set(options "")
@@ -87,7 +87,7 @@ function(Hermetic_FetchContent_TargetsCache_getExportVariableName)
 endfunction()
 
 #
-# compute the export variable name 
+# compute the export variable name
 #
 # Usage:
 # Hermetic_FetchContent_TargetsCache_getExportVariable(
@@ -96,7 +96,7 @@ endfunction()
 #     EXPORT_VARIABLE_PREFIX <prefix>
 #     RESULT <output value>
 # )
-function(Hermetic_FetchContent_TargetsCache_getExportVariable) 
+function(Hermetic_FetchContent_TargetsCache_getExportVariable)
 
   # arguments parsing
   set(options "")
@@ -134,13 +134,13 @@ endfunction()
 
 #
 # Registers a target cache file for later consumption by the Hermetic FetchContent's dependency_provider
-# 
+#
 # Usage:
 # hfc_targets_cache_register_dependency_for_provider(
 #   TARGETS_INSTALL_PREFIX <target install prefix> # path to the installed/ tree
 #   TARGETS_CACHE_FILE <library cache file>       # library cache file
 # )
-function(hfc_targets_cache_register_dependency_for_provider content_name) 
+function(hfc_targets_cache_register_dependency_for_provider content_name)
 
   # arguments parsing
   set(options "")
@@ -162,21 +162,21 @@ function(hfc_targets_cache_register_dependency_for_provider content_name)
 
   set(HERMETIC_FETCHCONTENT_${content_name}_FOUND ON CACHE INTERNAL "Hermetic dependency ${content_name} is known")
   set(HERMETIC_FETCHCONTENT_${content_name}_INSTALL_PREFIX "${FN_ARG_TARGETS_INSTALL_PREFIX}" CACHE INTERNAL "Hermetic dependency install prefix for ${content_name}")
-  set(HERMETIC_FETCHCONTENT_${content_name}_TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}" CACHE INTERNAL "Hermetic dependency targets cache files for ${content_name}") 
+  set(HERMETIC_FETCHCONTENT_${content_name}_TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}" CACHE INTERNAL "Hermetic dependency targets cache files for ${content_name}")
 
 endfunction()
 
 
 #
 # Retrieve info for registered target cache dependencies for a given content_name
-# 
+#
 # Usage:
 # hfc_targets_cache_register_dependency_for_provider(
 #   OUT_FOUND <variable name>                           # TRUE if the dependency was found
 #   OUT_TARGETS_INSTALL_PREFIX <target install prefix>  # path to the installed/ tree
 #   OUT_TARGETS_CACHE_FILE <library cache file>         # path to the targets cache file
 # )
-function(hfc_targets_cache_get_registered_info content_name) 
+function(hfc_targets_cache_get_registered_info content_name)
 
   # arguments parsing
   set(options "")
@@ -202,13 +202,13 @@ function(hfc_targets_cache_get_registered_info content_name)
   else()
     set(package_found FALSE)
   endif()
-  
+
   if(package_found)
-    set(${FN_ARG_OUT_FOUND} TRUE PARENT_SCOPE) 
+    set(${FN_ARG_OUT_FOUND} TRUE PARENT_SCOPE)
     set(${FN_ARG_OUT_TARGETS_INSTALL_PREFIX} "${HERMETIC_FETCHCONTENT_${content_name}_INSTALL_PREFIX}" PARENT_SCOPE)
     set(${FN_ARG_OUT_TARGETS_CACHE_FILE} "${HERMETIC_FETCHCONTENT_${content_name}_TARGETS_CACHE_FILE}" PARENT_SCOPE)
   else()
-    set(${FN_ARG_OUT_FOUND} FALSE PARENT_SCOPE) 
+    set(${FN_ARG_OUT_FOUND} FALSE PARENT_SCOPE)
   endif()
 
 endfunction()

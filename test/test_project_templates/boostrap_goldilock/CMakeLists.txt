@@ -21,7 +21,7 @@ endif()
 
 message(STATUS "Goldilock found at ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
 
-# test that it works  
+# test that it works
 __get_env_shell_command(shell)
 execute_process(
   COMMAND ${shell} "-c" "${HERMETIC_FETCHCONTENT_goldilock_BIN} --version"

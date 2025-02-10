@@ -52,7 +52,7 @@
 #       ${CMAKE_COMMAND} -E copy "@HUNTER_PACKAGE_SCRIPT_DIR@/patch.sh" "@HUNTER_PACKAGE_SOURCE_DIR@"
 #       COMMAND "./patch.sh"
 #     BOOTSTRAP                               # add a bootstrap command to be run
-#       "./autogen.sh"                        # before ./configure such as 
+#       "./autogen.sh"                        # before ./configure such as
 #                                             # ./autogen.sh or ./bootstrap
 # )
 

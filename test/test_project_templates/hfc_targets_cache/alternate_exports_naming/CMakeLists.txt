@@ -1,5 +1,5 @@
 #
-# Base hfc targets cache functionality test 
+# Base hfc targets cache functionality test
 # ensures that packages and properties can be read from package config exports even if the
 # file name does not comply with the expected naming by using HERMETIC_DISCOVER_TARGETS_FILE_PATTERN
 #
@@ -37,7 +37,7 @@ endif()
 if(HFCTEST_CONFIGURETIME_DEPENDENCY AND HFCTEST_BUILDTIME_DEPENDENCY)
   set(param_error ON)
 else()
-  if(HFCTEST_CONFIGURETIME_DEPENDENCY) 
+  if(HFCTEST_CONFIGURETIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtConfigureTime(mathslib)
   elseif(HFCTEST_BUILDTIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtBuildTime(mathslib)

@@ -2,7 +2,7 @@ include(hfc_log)
 
 
 # Print all targets of a (sub) directory to the console
-# Use like : 
+# Use like :
 # hfc_print_directory_targets(DIR <project directory> RESULT_LIST <out_variable>)
 function(hfc_print_directory_targets)
 
@@ -15,7 +15,7 @@ function(hfc_print_directory_targets)
   if(NOT FN_ARGS_DIR AND FN_ARGS_RESULT_LIST)
     Hermetic_FetchContent_SetFunctionOverride_Enabled(OFF)
     hfc_log(FATAL_ERROR "hfc_print_directory_targets needs DIR and RESULT_LIST parameters to be set")
-  endif() 
+  endif()
 
   set(result "")
 

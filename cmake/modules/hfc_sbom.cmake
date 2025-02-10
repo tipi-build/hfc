@@ -32,7 +32,7 @@ if(sbom_found STREQUAL "NOTFOUND")
         hfc_cmake_sbom
         GIT_REPOSITORY "${cmake_sbom_GIT_REPOSITORY}"
         GIT_TAG "${cmake_sbom_GIT_TAG}"
-        SOURCE_DIR "${cmake_sbom_clone_dir_root}/${cmake_sbom_clone_dir_name}"     
+        SOURCE_DIR "${cmake_sbom_clone_dir_root}/${cmake_sbom_clone_dir_name}"
         BINARY_DIR "${cmake_sbom_clone_dir_root}/${cmake_sbom_clone_dir_name}-bin"
     )
 
@@ -51,7 +51,7 @@ include(hfc_log)
 
 function(hfc_generate_sbom)
 
-    set(fn_options_params 
+    set(fn_options_params
         NO_VERIFY
         VERIFY
     )
@@ -83,13 +83,13 @@ function(hfc_generate_sbom)
 
     set(sbom_generated_fragments "")
     list(APPEND sbom_generated_fragments "${CMAKE_CURRENT_BINARY_DIR}/SPDXRef-DOCUMENT.spdx.in") # sadly here, the trick using ${SBOM_LAST_SPDXID} doesn't work vs. the use case below where sbom_add() sets this to a useful value
-    
+
     foreach(content_name IN LISTS HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS)
         hfc_details_declared(${content_name} ${content_name}_content_defined)
-        if (${content_name}_content_defined) 
+        if (${content_name}_content_defined)
           hfc_saved_details_get(${content_name} __fetchcontent_arguments)
 
-          set(options_params "")  
+          set(options_params "")
           set(one_value_params
               URL
               URL_HASH
@@ -114,7 +114,7 @@ function(hfc_generate_sbom)
           set(sbom_version "${HFC_ARG_SBOM_VERSION}")
           set(sbom_license "${HFC_ARG_SBOM_LICENSE}")
           set(sbom_supplier "${HFC_ARG_SBOM_SUPPLIER}")
-          
+
           set(sbom_license "${HFC_ARG_SBOM_LICENSE}")
           if(NOT HFC_ARG_SBOM_LICENSE)
               hfc_log(WARNING "HFC Content ${content_name} has no definition of SBOM_LICENSE")
@@ -127,7 +127,7 @@ function(hfc_generate_sbom)
               set(sbom_supplier "Unknown")
           endif()
 
-          if(HFC_ARG_GIT_REPOSITORY AND HFC_ARG_URL) 
+          if(HFC_ARG_GIT_REPOSITORY AND HFC_ARG_URL)
               hfc_log(WARNING "HFC Content ${content_name} has definitions for both GIT_REPOSITORY and URL")
           endif()
 
@@ -138,7 +138,7 @@ function(hfc_generate_sbom)
               set(download_location "${HFC_ARG_URL}")
               set(sbom_version "${HFC_ARG_URL_HASH}")
           endif()
-          
+
           hfc_log_debug("Adding SBOM entry for ${content_name} (PACKAGE ${content_name} DOWNLOAD_LOCATION ${download_location} LICENSE ${sbom_license} SUPPLIER ${sbom_supplier} VERSION ${sbom_version})")
 
           sbom_add(
@@ -151,13 +151,13 @@ function(hfc_generate_sbom)
               SUPPLIER "${sbom_supplier}"
               VERSION "${sbom_version}"
           )
-          
+
           set(spdx_ID_${content_name} "${SBOM_LAST_SPDXID}")
 
           hfc_log_debug(" - gather generated SPDX fragment generator ${SBOM_LAST_SPDXID}")
           list(APPEND sbom_generated_fragments "${CMAKE_CURRENT_BINARY_DIR}/${SBOM_LAST_SPDXID}.cmake")
         endif()
-        
+
     endforeach()
 
     #
@@ -177,7 +177,7 @@ function(hfc_generate_sbom)
 # > ${output_destination_path}
 #
 # To execute it build the custom target hfc_generate_sbom of your project:
-# > cmake --build . --target hfc_generate_sbom 
+# > cmake --build . --target hfc_generate_sbom
 
 # note: create a temp copy of the generate input file so we do not end up coliding
 # if this custom target is run concurrently
@@ -193,13 +193,13 @@ function(file)
     if((\"\${file_OP}\" STREQUAL \"APPEND\") AND (\"\${param_2}\" STREQUAL \"\${spdx_in_file_dest}\"))
         list(SUBLIST ARGN 2 -1 remaining_args)
         _file(APPEND \"\${spdx_in_file_tmp}\" \${remaining_args})
-    elseif(\"\${file_OP}\" STREQUAL \"READ\") 
+    elseif(\"\${file_OP}\" STREQUAL \"READ\")
         _file(\${ARGN})
         list(GET ARGN -1 out_variable_name)
         set(\${out_variable_name} \${\${out_variable_name}} PARENT_SCOPE)
     else()
         _file(\${ARGN})
-    endif()    
+    endif()
 endfunction()
 
 file(WRITE \"\${spdx_in_file_tmp}\" \"\")
@@ -208,11 +208,11 @@ foreach(fragment IN LISTS sbom_generated_fragments)
 
     if(fragment MATCHES \"\\\\.spdx\\\\.in$\")
         message(STATUS \" - copying contents from \${fragment}\")
-        file(READ \"\${fragment}\" contents)     
+        file(READ \"\${fragment}\" contents)
         file(APPEND \"\${spdx_in_file_tmp}\" \"\${contents}\")
     else()
         message(STATUS \" - including \${fragment}\")
-        include(\${fragment})        
+        include(\${fragment})
     endif()
 
 endforeach()
@@ -227,8 +227,8 @@ file(LOCK \"${output_destination_path}.lock\" RELEASE)
 
 # clean up temp files
 message(STATUS \"Cleaning up temp files\")
-file(REMOVE 
-    \"\${spdx_in_file_tmp}\" 
+file(REMOVE
+    \"\${spdx_in_file_tmp}\"
     \"${output_destination_path}.\${tmp_suffix}\"
 )
 

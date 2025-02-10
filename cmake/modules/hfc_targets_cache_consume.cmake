@@ -1,5 +1,5 @@
 # HermeticFetchContent / targets cache common
-# 
+#
 
 include(hfc_log)
 include(hfc_custom_echo_command)
@@ -7,12 +7,12 @@ include(hfc_custom_echo_command)
 
 #
 # Consumes a cache file and creates libraries
-# 
+#
 # Usage:
 # hfc_targets_cache_consume(
 #   TARGETS_CACHE_FILE <library cache file>       # library cache file
 #   TARGET_INSTALL_PREFIX <target install prefix> # path to the installed/ tree
-#   TARGET_SOURCE_DIR 
+#   TARGET_SOURCE_DIR
 #   MAKE_EXECUTABLES_FINDABLE <ON/OFF> set to truth-y value to add the found executables to the find_package search set
 #   HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING              # flag parameter to specificy if the consumed target should be added to the data used to fill the hfc_list_dependencies_install_dirs custom target
 # )
@@ -29,7 +29,7 @@ function(hfc_targets_cache_consume content_name)
     return()
   endif()
 
-  
+
   if(NOT FN_ARG_TARGETS_CACHE_FILE)
     Hermetic_FetchContent_SetFunctionOverride_Enabled(OFF)
     hfc_log(FATAL_ERROR "hfc_targets_cache_consume needs a value for TARGETS_CACHE_FILE parameter to be defined")
@@ -43,7 +43,7 @@ function(hfc_targets_cache_consume content_name)
   #
   # check if we need to load nested/consumed contents by consuming the summary file
   get_hermetic_target_cache_summary_file_path(${content_name} cache_summary_file)
-  
+
   include("${cache_summary_file}" OPTIONAL RESULT_VARIABLE cache_summary_loaded)
 
   if(cache_summary_loaded AND HERMETIC_FETCHCONTENT_SUMMARY_consumed_contents)
@@ -55,11 +55,11 @@ function(hfc_targets_cache_consume content_name)
         ${consumed_content_name}
         MAKE_EXECUTABLES_FINDABLE "${FN_ARG_MAKE_EXECUTABLES_FINDABLE}"
         HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${FN_ARG_HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
-        TARGETS_CACHE_FILE "${HERMETIC_FETCHCONTENT_SUMMARY_${safe_consumed_content_name}_TARGETS_CACHE_FILE}" 
+        TARGETS_CACHE_FILE "${HERMETIC_FETCHCONTENT_SUMMARY_${safe_consumed_content_name}_TARGETS_CACHE_FILE}"
         TARGET_INSTALL_PREFIX "${HERMETIC_FETCHCONTENT_SUMMARY_${safe_consumed_content_name}_TARGETS_INSTALL_PREFIX}"
       )
-      
-    endforeach()    
+
+    endforeach()
 
   endif()
 
@@ -72,7 +72,7 @@ function(hfc_targets_cache_consume content_name)
   set(processed_targets "")
 
   if ((NOT "${FN_ARG_HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}") AND (NOT "${FORCE_SYSTEM_${content_name}}"))
-  
+
     #
     # custom commands for "list locations for this content"
     hfc_custom_echo_command_create(hfc_list_${content_name}_STATIC_LIBRARY_locations_cmd  "Dependency: ${content_name}\n===STATIC_LIBRARIES_locations===")
@@ -88,21 +88,21 @@ function(hfc_targets_cache_consume content_name)
 
     hfc_log_debug("Processing target '${target_name}'")
 
-    set(visited_target_properties "NAME;IMPORTED_GLOBAL") # ignoring bc basically read-only    
-    list(APPEND visited_target_properties "TYPE" "IMPORTED") 
+    set(visited_target_properties "NAME;IMPORTED_GLOBAL") # ignoring bc basically read-only
+    list(APPEND visited_target_properties "TYPE" "IMPORTED")
 
     #
     # get all properties required for lib decl
     Hermetic_FetchContent_TargetsCache_getExportVariable(
-      TARGET_NAME "${target_name}" 
-      PROPERTY_NAME "TYPE" 
+      TARGET_NAME "${target_name}"
+      PROPERTY_NAME "TYPE"
       EXPORT_VARIABLE_PREFIX "${HERMETIC_FETCHCONTENT_TARGET_VARIABLE_PREFIX}"
       RESULT target_TYPE
     )
 
     Hermetic_FetchContent_TargetsCache_getExportVariable(
-      TARGET_NAME "${target_name}" 
-      PROPERTY_NAME "IMPORTED" 
+      TARGET_NAME "${target_name}"
+      PROPERTY_NAME "IMPORTED"
       EXPORT_VARIABLE_PREFIX "${HERMETIC_FETCHCONTENT_TARGET_VARIABLE_PREFIX}"
       RESULT target_IMPORTED
     )
@@ -120,10 +120,10 @@ function(hfc_targets_cache_consume content_name)
 
     elseif("${target_TYPE}" STREQUAL "STATIC_LIBRARY")
       add_library("${target_name}" ${add_library_ARG_IMPORTED} STATIC GLOBAL)
-    
+
     elseif("${target_TYPE}" STREQUAL "SHARED_LIBRARY")
       add_library("${target_name}" ${add_library_ARG_IMPORTED} SHARED GLOBAL)
-    
+
     elseif("${target_TYPE}" STREQUAL "MODULE_LIBRARY")
       add_library("${target_name}" ${add_library_ARG_IMPORTED} MODULE GLOBAL)
 
@@ -149,31 +149,31 @@ function(hfc_targets_cache_consume content_name)
       list(APPEND visited_target_properties "LOCATION" "LOCATION_<CONFIG>" "IMPORTED_LOCATION")
 
       Hermetic_FetchContent_TargetsCache_getExportVariable(
-        TARGET_NAME "${target_name}" 
-        PROPERTY_NAME "LOCATION" 
+        TARGET_NAME "${target_name}"
+        PROPERTY_NAME "LOCATION"
         EXPORT_VARIABLE_PREFIX "${HERMETIC_FETCHCONTENT_TARGET_VARIABLE_PREFIX}"
         RESULT target_LOCATION
       )
 
       string(
-        REPLACE 
-        "${HERMETIC_FETCHCONTENT_CONST_PREFIX_PLACEHOLDER}" 
+        REPLACE
+        "${HERMETIC_FETCHCONTENT_CONST_PREFIX_PLACEHOLDER}"
         "${FN_ARG_TARGET_INSTALL_PREFIX}"
         target_LOCATION_real
         "${target_LOCATION}"
       )
 
       string(
-        REPLACE 
-        "${HERMETIC_FETCHCONTENT_CONST_BINARY_DIR_PLACEHOLDER}" 
+        REPLACE
+        "${HERMETIC_FETCHCONTENT_CONST_BINARY_DIR_PLACEHOLDER}"
         "${FN_ARG_TARGET_BINARY_DIR}"
         target_LOCATION_real
         "${target_LOCATION_real}"
       )
 
       string(
-        REPLACE 
-        "${HERMETIC_FETCHCONTENT_CONST_SOURCE_DIR_PLACEHOLDER}" 
+        REPLACE
+        "${HERMETIC_FETCHCONTENT_CONST_SOURCE_DIR_PLACEHOLDER}"
         "${FN_ARG_TARGET_SOURCE_DIR}"
         target_LOCATION_real
         "${target_LOCATION_real}"
@@ -192,8 +192,8 @@ function(hfc_targets_cache_consume content_name)
 
       # take care of find_packaging transitive depedencies if required
       Hermetic_FetchContent_TargetsCache_getExportVariable(
-        TARGET_NAME "${target_name}" 
-        PROPERTY_NAME "INTERFACE_LINK_LIBRARIES" 
+        TARGET_NAME "${target_name}"
+        PROPERTY_NAME "INTERFACE_LINK_LIBRARIES"
         EXPORT_VARIABLE_PREFIX "${HERMETIC_FETCHCONTENT_TARGET_VARIABLE_PREFIX}"
         RESULT target_INTERFACE_LINK_LIBRARIES
       )
@@ -218,9 +218,9 @@ function(hfc_targets_cache_consume content_name)
 
         if(NOT TARGET ${link_lib})
 
-          # 
+          #
           # extract information from generator expressions like '$<LINK_ONLY:OpenSSL::Crypto>'
-          #                                                                  ^^^^^^^^^^^^^^^ 
+          #                                                                  ^^^^^^^^^^^^^^^
           string(REGEX MATCH "^\\$<.+:(.+::.+)>$" match_generator ${link_lib})
 
           if(match_generator AND CMAKE_MATCH_1) # CMAKE_MATCH_n magic - the group matching the marked library above is in group 1 (group 0 == whole match)
@@ -231,7 +231,7 @@ function(hfc_targets_cache_consume content_name)
             string(REPLACE "::" ";" link_lib_parts "${link_lib}")
             list(GET link_lib_parts 0 link_lib_package_name)
 
-            if(link_lib_package_name) 
+            if(link_lib_package_name)
               # try our luck with find_package()
               hfc_log_debug("   - trying to find_package() '${link_lib_package_name}'")
               find_package(${link_lib_package_name} QUIET)
@@ -246,7 +246,7 @@ function(hfc_targets_cache_consume content_name)
         else()
           hfc_log_debug("   - failed to find transitive target '${link_lib}' - proceeding anyway")
         endif()
-        
+
       endforeach()
 
     endif()
@@ -258,8 +258,8 @@ function(hfc_targets_cache_consume content_name)
         continue()
       else()
         Hermetic_FetchContent_TargetsCache_getExportVariable(
-          TARGET_NAME "${target_name}" 
-          PROPERTY_NAME "${property_name}" 
+          TARGET_NAME "${target_name}"
+          PROPERTY_NAME "${property_name}"
           EXPORT_VARIABLE_PREFIX "${HERMETIC_FETCHCONTENT_TARGET_VARIABLE_PREFIX}"
           RESULT property_value
         )
@@ -267,24 +267,24 @@ function(hfc_targets_cache_consume content_name)
         hfc_log_debug(" P - ${property_name} raw = ${property_value}")
 
         string(
-          REPLACE 
-          "${HERMETIC_FETCHCONTENT_CONST_PREFIX_PLACEHOLDER}" 
+          REPLACE
+          "${HERMETIC_FETCHCONTENT_CONST_PREFIX_PLACEHOLDER}"
           "${FN_ARG_TARGET_INSTALL_PREFIX}"
           property_value
           "${property_value}"
         )
 
         string(
-          REPLACE 
-          "${HERMETIC_FETCHCONTENT_CONST_BINARY_DIR_PLACEHOLDER}" 
+          REPLACE
+          "${HERMETIC_FETCHCONTENT_CONST_BINARY_DIR_PLACEHOLDER}"
           "${FN_ARG_TARGET_BINARY_DIR}"
           property_value
           "${property_value}"
         )
 
         string(
-          REPLACE 
-          "${HERMETIC_FETCHCONTENT_CONST_SOURCE_DIR_PLACEHOLDER}" 
+          REPLACE
+          "${HERMETIC_FETCHCONTENT_CONST_SOURCE_DIR_PLACEHOLDER}"
           "${FN_ARG_TARGET_SOURCE_DIR}"
           property_value
           "${property_value}"
@@ -312,7 +312,7 @@ function(hfc_targets_cache_consume content_name)
       set(CMAKE_PROGRAM_PATH "${new_CMAKE_PROGRAM_PATH}" CACHE INTERNAL "CMAKE_PROGRAM_PATH")
 
     endif()
-    
+
   endforeach()
 
 
@@ -325,28 +325,28 @@ function(hfc_targets_cache_consume content_name)
     set(${FN_ARG_OUT_LIBRARY_BYPRODUCTS} "${out_byproducts}" PARENT_SCOPE)
   endif()
 
-  # store global state info 
+  # store global state info
   set(all_consumed_target_contents ${HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS} ${content_name})
   list(REMOVE_DUPLICATES all_consumed_target_contents)
   set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS ${all_consumed_target_contents} CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
   hfc_targets_cache_register_dependency_for_provider(
-    ${content_name} 
+    ${content_name}
     TARGETS_INSTALL_PREFIX "${FN_ARG_TARGET_INSTALL_PREFIX}"
     TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}"
   )
 
-  # 
+  #
   set(all_available_target_contents ${HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS} ${content_name})
   list(REMOVE_DUPLICATES all_available_target_contents)
   set(HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS ${all_available_target_contents} CACHE INTERNAL "All contents that can be made available to dependent projects")
-  
+
   # don't output a path if we are using the system provided $content
   if ((NOT "${FN_ARG_HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}") AND (NOT "${FORCE_SYSTEM_${content_name}}"))
 
     set(all_public_consumed_target_contents ${HERMETIC_FETCHCONTENT_TARGETS_CACHE_PUBLIC_CONTENTS} ${content_name})
     list(REMOVE_DUPLICATES all_public_consumed_target_contents)
     set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_PUBLIC_CONTENTS ${all_public_consumed_target_contents} CACHE INTERNAL "PUBLIC marked Cache target files consumed by Hermetic_FetchContent")
-    
+
     hfc_custom_echo_command_append("hfc_list_dependencies_install_dirs_echo_cmd" "${FN_ARG_TARGET_INSTALL_PREFIX}")
     hfc_custom_echo_command_append("hfc_list_dependencies_target_cache_files_echo_cmd" "${FN_ARG_TARGETS_CACHE_FILE}")
 

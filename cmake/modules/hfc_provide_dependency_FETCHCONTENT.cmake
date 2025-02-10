@@ -15,11 +15,11 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
                           "${multiValueArgs}" ${ARGN} )
 
   set(CONTENT_SOURCE_HASH "")
-  
+
   if(FN_ARG_GIT_REPOSITORY)
     set(CONTENT_SOURCE_HASH "${FN_ARG_GIT_TAG}")
   else()
-    set(CONTENT_SOURCE_HASH "${FN_ARG_URL_HASH}") 
+    set(CONTENT_SOURCE_HASH "${FN_ARG_URL_HASH}")
 
     if(CONTENT_SOURCE_HASH MATCHES ".+:.+")
       string(REGEX REPLACE ".+:" "" CONTENT_SOURCE_HASH "${CONTENT_SOURCE_HASH}")
@@ -49,8 +49,8 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
   list(REMOVE_ITEM populate_args "EXCLUDE_FROM_ALL")
   list(REMOVE_ITEM populate_args "SYSTEM")
   list(REMOVE_ITEM populate_args "OVERRIDE_FIND_PACKAGE")
-  
-  if("FIND_PACKAGE_ARGS" IN_LIST populate_args) 
+
+  if("FIND_PACKAGE_ARGS" IN_LIST populate_args)
     # special cookie: (from the doc)
     # Everything after the FIND_PACKAGE_ARGS keyword is appended to the find_package() call, so all other <contentOptions> must come before the FIND_PACKAGE_ARGS keyword.
     #
@@ -58,7 +58,7 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
     list(FIND populate_args "FIND_PACKAGE_ARGS" FIND_PACKAGE_ARGS_ix)
     list(SUBLIST populate_args 0 ${FIND_PACKAGE_ARGS_ix} populate_args)
   endif()
-  
+
   FetchContent_Populate(${package_name}
     ${populate_args}
     SOURCE_DIR ${content_source_dir}

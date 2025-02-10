@@ -62,16 +62,16 @@ Commands
       [HERMETIC_TOOLCHAIN_EXTENSION <cmake code>]
       [HERMETIC_FIND_PACKAGES <list of hermetic content names>]
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
-      [HERMETIC_PREPATCHED_RESOLVER <cmake code>]      
+      [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
       [HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION <cmake code>]
       [HERMETIC_DISCOVER_TARGETS_FILE_PATTERN <regex pattern>]
     )
 
-  The ``FetchContent_MakeHermetic()`` function records options that describe the additional 
+  The ``FetchContent_MakeHermetic()`` function records options that describe the additional
   parameters required to populate and consume the specified content in a hermetic way.
 
   The content ``<name>`` can be any string without spaces, but good practice
-  would be to use only letters, numbers and underscores.  
+  would be to use only letters, numbers and underscores.
 
   The ``HERMETIC_BUILD_SYSTEM`` allows selecting which build system scheme will be used to
   configure and build the specified content. Currently the available choices are:
@@ -112,7 +112,7 @@ Commands
 
   .. code-block:: cmake
 
-    set(HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES 
+    set(HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES
       "CMAKE_BUILD_TYPE"
       "CMAKE_EXE_LINKER_FLAGS"
       "CMAKE_CXX_FLAGS"
@@ -120,14 +120,14 @@ Commands
     )
 
 
-  The ``HERMETIC_FIND_PACKAGES`` option enables specifying which packages that are provided 
-  by other Hermetic FetchContent declarations will be able to be ``find_package``-ed by the 
+  The ``HERMETIC_FIND_PACKAGES`` option enables specifying which packages that are provided
+  by other Hermetic FetchContent declarations will be able to be ``find_package``-ed by the
   content being specified. This enables controlling the packages available in the individual
   builds by other means than by just order of declaration.
 
   In this example, the library ``libxml2`` gets to ``find_package()`` ``Ìconv`` and ``ZLIB``.
   These libraries have to be made available using Hermetic FetchContent in the same build.
-  Such a call to ``find_package()`` will fail for other packages that are not explicitely 
+  Such a call to ``find_package()`` will fail for other packages that are not explicitely
   whitelisted, either using the ``HERMETIC_FIND_PACKAGES`` option OR by adding said library
   to the global ``HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES`` setting which allows
   ``find_package()`` to fall-back to CMake's native implementation if it cannot resolve the
@@ -147,11 +147,11 @@ Commands
       ]=]
     )
 
-  The ``HERMETIC_CREATE_TARGET_ALIASES`` options allows defining aliases for target during 
-  the configure phase. The CMake code provided will be invoked for every CMake target library 
-  that is exported by the content. The scope in which this code will be run contains the 
+  The ``HERMETIC_CREATE_TARGET_ALIASES`` options allows defining aliases for target during
+  the configure phase. The CMake code provided will be invoked for every CMake target library
+  that is exported by the content. The scope in which this code will be run contains the
   variable ``TARGET_NAME`` which will be set to the exported target name. The provided code
-  fragment **must** set the ``list`` ``TARGET_ALIASES`` to contain **all** the names under 
+  fragment **must** set the ``list`` ``TARGET_ALIASES`` to contain **all** the names under
   which the exported target will be imported when it is consumed.
 
   It is recommended to test for specific values of ``TARGET_NAME`` instead of doing blanket
@@ -160,7 +160,7 @@ Commands
   time.
 
   In the example below, we will be renaming the target ``ZLIB::zlib`` that is exported by the
-  project to ``ZLIB::ZLIB`` (notice the difference in casing). This can be required if for 
+  project to ``ZLIB::ZLIB`` (notice the difference in casing). This can be required if for
   example another project is unable to find the library in it's original casing.
 
   .. code-block:: cmake
@@ -204,14 +204,14 @@ Commands
       List of paths and/or URL(s) of the external project's source.
 
     ``URL_HASH``
-      Hash of the archive file to be downloaded. Should be of the form <algo>=<hashValue> where algo can be any of 
-      the hashing algorithms supported by the file() command. 
+      Hash of the archive file to be downloaded. Should be of the form <algo>=<hashValue> where algo can be any of
+      the hashing algorithms supported by the file() command.
 
   The CMake code can redefine any of these variables to change the source of the content.
   The CMake code must set ``RESOLVED_PATCH`` to a truthy value if it is able to set an alternate source for the content.
 
   If ``RESOLVED_PATCH`` is set to a truthy value the source populate operation will rely on the new information
-  provided an skip the execution of the ``PATCH_COMMAND``. Otherwise the normal expected behavior is executed (e.g. 
+  provided an skip the execution of the ``PATCH_COMMAND``. Otherwise the normal expected behavior is executed (e.g.
   downloading from the original source and running any specified ``PATCH_COMMAND``)
 
   In the following example we will assume that the project is storing a patched copy of the specified repository
@@ -223,7 +223,7 @@ Commands
       boost
       GIT_REPOSITORY https://github.com/boostorg/boost.git
       # that's v1.84
-      GIT_TAG        ad09f667e61e18f5c31590941e748ac38e5a81bf   
+      GIT_TAG        ad09f667e61e18f5c31590941e748ac38e5a81bf
       # apply the patch "some.patch"
       PATCH_COMMAND cmake -E patch < ${CMAKE_CURRENT_LIST_DIR}/patchtest/some.patch
     )
@@ -244,48 +244,48 @@ Commands
     HermeticFetchContent_MakeAvailableAtBuildTime(boost)
 
 
-  The developer can use the options ``HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION``  to provide a 
+  The developer can use the options ``HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION``  to provide a
   a library export declaration that will enable Hermetic FetchContent to consume the targets
   as-if the project had provided a proper package configuration. This is useful in cases in which
-  no such information is available (for example in the case of `HERMETIC_BUILD_SYSTEM == autotools` 
+  no such information is available (for example in the case of `HERMETIC_BUILD_SYSTEM == autotools`
   or `HERMETIC_BUILD_SYSTEM == openssl` or if the project's CMake buildsystem does not install and
   export targets)
 
   The following example shows how to define the ``Pcap::Pcap`` target properties required
   for Hermetic FetchContent to be able to construct a so-called "targets cache":
-  
+
   .. code-block:: cmake
 
     FetchContent_MakeHermetic(
       Pcap
       HERMETIC_BUILD_SYSTEM autotools
-      HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION 
+      HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
         [=[
           add_library(Pcap::Pcap STATIC IMPORTED)
           set_property(
-            TARGET Pcap::Pcap 
-            PROPERTY IMPORTED_LOCATION 
+            TARGET Pcap::Pcap
+            PROPERTY IMPORTED_LOCATION
             "@HFC_PREFIX_PLACEHOLDER@/lib/libpcap.a"
-          )    
+          )
           set_property(
-            TARGET Pcap::Pcap 
-            PROPERTY INTERFACE_INCLUDE_DIRECTORIES 
+            TARGET Pcap::Pcap
+            PROPERTY INTERFACE_INCLUDE_DIRECTORIES
             "@HFC_PREFIX_PLACEHOLDER@/include"
           )
         ]=]
     )
 
   The following template variables are available to define the targets:
-  
-  - ``@HFC_SOURCE_DIR_PLACEHOLDER@`` which will be replaced with the source directory location when the library is consumed later on. 
+
+  - ``@HFC_SOURCE_DIR_PLACEHOLDER@`` which will be replaced with the source directory location when the library is consumed later on.
   - ``@HFC_BINARY_DIR_PLACEHOLDER@`` which will be replaced with the binaries directory location when the library is consumed later on.
-  - ``@HFC_PREFIX_PLACEHOLDER@`` which will be replaced with the final install prefix location when the library is consumed later on. 
+  - ``@HFC_PREFIX_PLACEHOLDER@`` which will be replaced with the final install prefix location when the library is consumed later on.
 
   In cases in which the dependencie's CMake build system does provide target exports files
   but is not complying to the common file nameming scheme for those exports (hermetic fetchContent
-  uses the following by default ``([Tt]argets|[Ee]xport(s?))\.cmake``), another pattern can be 
+  uses the following by default ``([Tt]argets|[Ee]xport(s?))\.cmake``), another pattern can be
   supplied using the ``HERMETIC_DISCOVER_TARGETS_FILE_PATTERN`` option.
-    
+
 .. command:: HermeticFetchContent_MakeAvailableAtBuildTime
 
   .. code-block:: cmake
@@ -310,7 +310,7 @@ Commands
 
   The ``HermeticFetchContent_MakeAvailableAtConfigureTime()`` function makes the content ``<name>`` available
   to the project an other Hermetic FetchContent contents by running the complete build when this statement
-  gets executed. 
+  gets executed.
 
   This is particularly useful when integrating with other build systems that cannot be integrated in the
   project's build graph seamlessly and that - thus - require headers and libraries to be available in an
@@ -328,14 +328,14 @@ Commands
   Set the base directory for all the hermetic dependency build directory and related folders
 
 Build introspection
-^^^^^^^^^^^^^^^^^^^ 
+^^^^^^^^^^^^^^^^^^^
 
 HermeticFetchContent adds a number of cmake build targets to the build system that can be executed after the project configuration to enable
 some build introspection:
 
 .. command:: build target "hfc_list_dependencies_build_dirs"
 
-Prints all project's dependencies build directories to the console. Warning! This list might be incomplete if the project build at hand 
+Prints all project's dependencies build directories to the console. Warning! This list might be incomplete if the project build at hand
 did not actually build the whole list of dependencies
 
 .. command:: build target "hfc_list_dependencies_install_dirs"
@@ -349,23 +349,23 @@ Prints the install directory for ``${content_name}`` on the console. Warning! De
 
 .. command:: build target "hfc_list_${content_name}_STATIC_LIBRARIES_locations"
 
-Prints the list of static libraries of ``${content_name}`` on the console. 
+Prints the list of static libraries of ``${content_name}`` on the console.
 
 .. command:: build target "hfc_list_${content_name}_SHARED_LIBRARIES_locations"
 
-Prints the list of shared libraries of ``${content_name}`` on the console. 
+Prints the list of shared libraries of ``${content_name}`` on the console.
 
 .. command:: build target "hfc_list_${content_name}_MODULE_LIBRARIES_locations"
 
-Prints the list of module libraries of ``${content_name}`` on the console. 
+Prints the list of module libraries of ``${content_name}`` on the console.
 
 .. command:: build target "hfc_list_${content_name}_UNKNOWN_LIBRARIES_locations"
 
-Prints the list of 'unknown type' libraries of ``${content_name}`` on the console. 
+Prints the list of 'unknown type' libraries of ``${content_name}`` on the console.
 
 .. command:: build target "hfc_list_${content_name}_EXECUTABLES_locations"
 
-Prints the list of executables of ``${content_name}`` on the console. 
+Prints the list of executables of ``${content_name}`` on the console.
 
 
 Rationale
@@ -380,12 +380,12 @@ libraries found via `find_package` allows reusing the same libraries across proj
 before the configure of the dependent project might even be started. However not all target depend directly of the said dependencies.
 
 With this techniques it can integrate the clean build of the dependencies in the graph, effectively building at the finest granularity
-of dependencies everything  that isn't dependent of the dependencies.  Possibly allowing building earlier parts of the project that do 
+of dependencies everything  that isn't dependent of the dependencies.  Possibly allowing building earlier parts of the project that do
 not depend on the dependency itself.
 
 Plain add_subdirectory allows this but lacks the isolation from the parent CMake project, hindering the reuse of the dependent
 library install tree without the presence of the sources, which is a big speedup in CI workflows, and new developer computer setup,
-optimizing avoid the need of cloning the actual dependencies source files with all the git history and every private implementation files. 
+optimizing avoid the need of cloning the actual dependencies source files with all the git history and every private implementation files.
 
 #]=======================================================================]
 
@@ -419,9 +419,9 @@ function(FetchContent_MakeHermetic content_name)
   endif()
 
   __FetchContent_getSavedDetails(${content_name} __fetchcontent_arguments)
-  
+
   # extract som of the Generic FetchContent details so we can patch in information
-  
+
   list(LENGTH __fetchcontent_arguments __fetchcontent_arguments_len)
   set(__fetchcontent_arguments_ix 0)
 
@@ -432,9 +432,9 @@ function(FetchContent_MakeHermetic content_name)
     list(GET __fetchcontent_arguments ${__fetchcontent_arguments_ix} __cmake_item)
     MATH(EXPR next_ix "${__fetchcontent_arguments_ix}+1")
 
-    # we want to potentially rewrite the SOURCE_DIR property that is automatically set by 
-    # fetchcontent in order to place the source directory in the source cache location 
-    # set using 
+    # we want to potentially rewrite the SOURCE_DIR property that is automatically set by
+    # fetchcontent in order to place the source directory in the source cache location
+    # set using
     if(__cmake_item STREQUAL "SOURCE_DIR")
       list(GET __fetchcontent_arguments ${next_ix} SOURCE_DIR_VALUE)
 
@@ -469,7 +469,7 @@ function(FetchContent_MakeHermetic content_name)
   string(SUBSTRING "${CONTENT_SOURCE_HASH}" 0 8 source_hash_short)
   set(clone_dir_name "${content_name}-${source_hash_short}-src")
 
-  # We need to know if this is an autotools/openssl build to supply an BUILD_IN_SOURCE_TREE parameter 
+  # We need to know if this is an autotools/openssl build to supply an BUILD_IN_SOURCE_TREE parameter
   # so that this gets populated into the vicinities of the build directory and not into the clone cache
   cmake_parse_arguments(FN_ARG "" "HERMETIC_BUILD_SYSTEM" "" ${ARGN})
   if("${FN_ARG_HERMETIC_BUILD_SYSTEM}" STREQUAL "autotools" OR "${FN_ARG_HERMETIC_BUILD_SYSTEM}" STREQUAL "openssl")
@@ -481,7 +481,7 @@ function(FetchContent_MakeHermetic content_name)
   set(SOURCE_DIR_VALUE "${HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR}/${clone_dir_name}")
 
   string(APPEND __cmdArgs " [==[SOURCE_DIR]==]")
-  string(APPEND __cmdArgs " [==[${SOURCE_DIR_VALUE}]==]")  
+  string(APPEND __cmdArgs " [==[${SOURCE_DIR_VALUE}]==]")
 
   # Store HERMETIC_ details
   foreach(__item IN LISTS ARGN)
@@ -499,7 +499,7 @@ endfunction()
 # HermeticFetchContent_MakeAvailableAtBuildTime
 function(HermeticFetchContent_MakeAvailableAtBuildTime)
   hfc_initialize_enable_cmake_re_if_requested()
-  
+
   foreach(content_name IN ITEMS ${ARGV})
     hfc_make_available_single(${content_name} OFF)
   endforeach()
@@ -509,14 +509,14 @@ endfunction()
 # HermeticFetchContent_MakeAvailableAtConfigureTime
 function(HermeticFetchContent_MakeAvailableAtConfigureTime)
   hfc_initialize_enable_cmake_re_if_requested()
-  
+
   foreach(content_name IN ITEMS ${ARGV})
     hfc_make_available_single(${content_name} ON)
   endforeach()
 endfunction()
 
 
-macro(hfc_FetchContent_MakeAvailable_interlocked) 
+macro(hfc_FetchContent_MakeAvailable_interlocked)
 
   foreach(content_name IN ITEMS ${ARGV})
 
@@ -544,7 +544,7 @@ macro(HermeticFetchContent_SetBaseDir directory)
 
   #set(FETCHCONTENT_BASE_DIR "${dependency_base_dir}" CACHE INTERNAL "HFC's base dir")
   set(HERMETIC_FETCHCONTENT_INSTALL_DIR "${dependency_base_dir}" CACHE INTERNAL "HFC's dependencies installation dir")
-  
+
 endmacro()
 
 
@@ -561,7 +561,7 @@ macro(HermeticFetchContent_SetSouceCacheDir directory)
   endif()
 
   set(HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR "${directory_abs}" CACHE INTERNAL "Hermetic-FetchContent source cache dir")
-  
+
 endmacro()
 
 

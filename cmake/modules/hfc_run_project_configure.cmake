@@ -1,5 +1,5 @@
 # HermeticFetchContent / hfc_cmake_re_restore_install_tree
-# 
+#
 
 #[=======================================================================[.rst:
 hfc_run_project_configure
@@ -11,7 +11,7 @@ function(hfc_run_project_configure content_name)
   # arguments parsing
   set(options "")
 
-  set(oneValueArgs_required 
+  set(oneValueArgs_required
      PROJECT_SOURCE_DIR
      PROJECT_BINARY_DIR
      PROJECT_INSTALL_PREFIX
@@ -20,7 +20,7 @@ function(hfc_run_project_configure content_name)
      HFC_CONFIGURE_MARKER_FILE
    )
 
-  set(oneValueArgs 
+  set(oneValueArgs
     PROJECT_SOURCE_SUBDIR
     ${oneValueArgs_required}
   )
@@ -45,7 +45,7 @@ function(hfc_run_project_configure content_name)
 
   cmake_path(GET FN_ARG_HFC_CONFIGURE_MARKER_FILE PARENT_PATH configured_marker_parent_path)
   file(GLOB configure_markers "${configured_marker_parent_path}/hfc.*.configure.done")
-  if(configure_markers) 
+  if(configure_markers)
     hfc_log_debug(" - clearing old configure markers")
     file(REMOVE ${configure_markers})
   endif()
@@ -58,18 +58,18 @@ function(hfc_run_project_configure content_name)
     list(APPEND cmake_command "--host") # TODO: we should somehow be able to detect if this is actually a "sub-build" already
     list(APPEND cmake_command "-v")
   endif()
- 
+
   # make sure to avoid issues that could occur when reconfiguring an existing tree
   if(EXISTS "${FN_ARG_PROJECT_BINARY_DIR}")
     file(REMOVE_RECURSE "${FN_ARG_PROJECT_BINARY_DIR}")
   endif()
 
   execute_process(
-    COMMAND ${cmake_command} 
+    COMMAND ${cmake_command}
     WORKING_DIRECTORY ${FN_ARG_PROJECT_SOURCE_DIR}
     RESULT_VARIABLE cmd_return_code
     COMMAND_ECHO STDOUT
-  ) 
+  )
 
   if(NOT ${cmd_return_code} EQUAL 0)
     message(FATAL_ERROR "Failed to configure ${content_name}")

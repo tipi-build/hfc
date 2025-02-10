@@ -29,7 +29,7 @@ endfunction()
 function(hfc_run_goldilock_version_or_fail)
   hfc_log_debug("Using goldilock found at ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
     __get_env_shell_command(shell)
-    # test that it works  
+    # test that it works
     execute_process(
       COMMAND ${shell} "-c" "${HERMETIC_FETCHCONTENT_goldilock_BIN} --version"
       RESULT_VARIABLE ret_code
@@ -49,18 +49,18 @@ endfunction()
 #
 # hfc_ensure_goldilock_available(
 #  GOLDILOCK_REVISION <git-commit-hash>
-#  GOLDILOCK_MINIMUM_VERSION <X.X.X> 
+#  GOLDILOCK_MINIMUM_VERSION <X.X.X>
 #
 #  GOLDILOCK_URL_PREBUILT_Darwin_arm64 <URL>
 #  GOLDILOCK_SHA_PREBUILT_Darwin_arm64 <SHA1>
 #
 #  GOLDILOCK_URL_PREBUILT_Darwin_x86_64 <URL>
 #  GOLDILOCK_SHA_PREBUILT_Darwin_x86_64 <SHA1>
-# 
+#
 #  GOLDILOCK_URL_PREBUILT_Linux_x86_64 <URL>
 #  GOLDILOCK_SHA_PREBUILT_Linux_x86_64 <SHA1>
 #)
-# 
+#
 # This provisions goldilock as follow :
 #  1. Check if there is a compatible goldilock on PATH
 #  2. If there is none, try to download it
@@ -68,22 +68,22 @@ endfunction()
 #  4. If downloaded goldilock doesn't work fetch and build it from sources
 #  5. Fail if none can be used
 #
-function(hfc_ensure_goldilock_available) 
+function(hfc_ensure_goldilock_available)
 
   # arguments parsing
   set(options "")
-  set(oneValueArgs 
+  set(oneValueArgs
     GOLDILOCK_REVISION
     GOLDILOCK_MINIMUM_VERSION
 
-    GOLDILOCK_URL_PREBUILT_Darwin_arm64 
-    GOLDILOCK_SHA_PREBUILT_Darwin_arm64 
-    
+    GOLDILOCK_URL_PREBUILT_Darwin_arm64
+    GOLDILOCK_SHA_PREBUILT_Darwin_arm64
+
     GOLDILOCK_URL_PREBUILT_Darwin_x86_64
     GOLDILOCK_SHA_PREBUILT_Darwin_x86_64
 
-    GOLDILOCK_URL_PREBUILT_Linux_x86_64 
-    GOLDILOCK_SHA_PREBUILT_Linux_x86_64 
+    GOLDILOCK_URL_PREBUILT_Linux_x86_64
+    GOLDILOCK_SHA_PREBUILT_Linux_x86_64
   )
   set(multiValueArgs
   )
@@ -113,12 +113,12 @@ function(hfc_ensure_goldilock_available)
 
   hfc_log_debug("Provisioning goldilock")
 
-  # try to find the goldilock at the path that we will build it or download it 
+  # try to find the goldilock at the path that we will build it or download it
 
   if (NOT DEFINED CMAKE_HOST_EXECUTABLE_SUFFIX)
-    # Before CMake 3.31 CMAKE_HOST_EXECUTABLE_SUFFIX doesn't exists 
+    # Before CMake 3.31 CMAKE_HOST_EXECUTABLE_SUFFIX doesn't exists
     set (CMAKE_HOST_EXECUTABLE_SUFFIX "${CMAKE_EXECUTABLE_SUFFIX}")
-  endif() 
+  endif()
   set(HERMETIC_FETCHCONTENT_goldilock_BIN "${HFC_GOLDILOCK_INSTALL_DIR}/bin/goldilock${CMAKE_HOST_EXECUTABLE_SUFFIX}")
 
   hfc_log_debug("Checking if ${HERMETIC_FETCHCONTENT_goldilock_BIN} is available and compatible")
@@ -193,7 +193,7 @@ function(hfc_ensure_goldilock_available)
           file(ARCHIVE_EXTRACT
             INPUT "${download_test}"
             DESTINATION "${HFC_GOLDILOCK_INSTALL_DIR}"
-          ) 
+          )
           file(RENAME "${HFC_GOLDILOCK_INSTALL_DIR}/goldilock/bin" "${HFC_GOLDILOCK_INSTALL_DIR}/bin")
           file(REMOVE ${download_test})
           file(REMOVE_RECURSE "${HFC_GOLDILOCK_INSTALL_DIR}/goldilock")
@@ -205,7 +205,7 @@ function(hfc_ensure_goldilock_available)
             MINIMUM_VERSION "${FN_ARG_GOLDILOCK_MINIMUM_VERSION}"
           )
           hfc_log_debug(" -> ran & matched version expectation: ${goldilock_has_correct_version_and_is_executable}")
-    
+
           if(goldilock_has_correct_version_and_is_executable)
             hfc_log(STATUS "goldilock has been downloaded: ${HERMETIC_FETCHCONTENT_goldilock_BIN}")
             set(HERMETIC_FETCHCONTENT_goldilock_BIN "${goldilock_just_downloaded}")
@@ -236,7 +236,7 @@ function(hfc_ensure_goldilock_available)
       SOURCE_DIR    "${CMAKE_CURRENT_BINARY_DIR}/.hfc_tools/hfc_goldilock-src"
       BINARY_DIR    "${CMAKE_CURRENT_BINARY_DIR}/.hfc_tools/hfc_goldilock-build"
     )
-    
+
     hfc_log_debug(" - Configuring goldilock")
     set(toolchain_for_goldilock "")
     if(DEFINED CMAKE_TOOLCHAIN_FILE AND NOT CMAKE_CROSSCOMPILING)
@@ -249,10 +249,10 @@ function(hfc_ensure_goldilock_available)
       WORKING_DIRECTORY "${hfc_goldilock_BINARY_DIR}"
       COMMAND_ECHO STDOUT
       COMMAND_ERROR_IS_FATAL ANY
-    ) 
-    
+    )
+
     hfc_log_debug(" - Building goldilock")
-    
+
     # cmake --build
     execute_process(
       COMMAND ${CMAKE_COMMAND} --build ${hfc_goldilock_BINARY_DIR} --config Release
@@ -262,7 +262,7 @@ function(hfc_ensure_goldilock_available)
     )
 
     hfc_log_debug(" - Installing goldilock")
-    
+
     # cmake --install
     execute_process(
       COMMAND ${CMAKE_COMMAND} --install ${hfc_goldilock_BINARY_DIR} --prefix ${HFC_GOLDILOCK_INSTALL_DIR}
@@ -288,7 +288,7 @@ function(hfc_ensure_goldilock_available)
       return()
     endif()
   endif()
-    
+
   hfc_run_goldilock_version_or_fail()
 
 endfunction()
@@ -297,14 +297,14 @@ endfunction()
 
 # initializes important base settings of Hermetic FetchContent
 function(hfc_initialize HFC_ROOT_DIR)
-  
+
   # enable modern CMake IN_LIST support
   cmake_policy(SET CMP0057 NEW)
 
   get_property(hfc_initialized GLOBAL PROPERTY HERMETIC_FETCHCONTENT_INITIALIZED SET)
 
   if(NOT hfc_initialized)
-    
+
     # Note : We don't set the following defaults on purpose as unset it will be evaluated OFF
     #        This allows also overriding with a pure scope variable and not CACHE
     # set(HFC_V1_REMOVE_BUILD_DIR_AFTER_INSTALL OFF CACHE BOOL "By default save space by removing build")
@@ -350,26 +350,26 @@ function(hfc_initialize HFC_ROOT_DIR)
   # it in case someone wanted to customize it
   set(hfc_wd_gitignore_file "${HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR}/.gitignore")
   if(NOT EXISTS "${hfc_wd_gitignore_file}")
-    file(WRITE 
-      "${hfc_wd_gitignore_file}" 
-      "**\n" 
+    file(WRITE
+      "${hfc_wd_gitignore_file}"
+      "**\n"
     )
   endif()
 
   set(hfc_wd_tipiignore_file "${HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR}/.tipiignore")
   if(NOT EXISTS "${hfc_wd_tipiignore_file}")
-    file(WRITE 
-      "${hfc_wd_tipiignore_file}" 
-      "**\n" 
+    file(WRITE
+      "${hfc_wd_tipiignore_file}"
+      "**\n"
     )
   endif()
-  
+
 
   include("${HERMETIC_FETCHCONTENT_ROOT_DIR}/modules/hfc_goldilock_base_value.cmake")
   #HERMETIC_FETCHCONTENT_goldilock_BIN is set by the include of hfc_goldilock_base_value, but we need to set this variable to the parent scope
   set(HERMETIC_FETCHCONTENT_goldilock_BIN ${HERMETIC_FETCHCONTENT_goldilock_BIN} PARENT_SCOPE)
 
-  hfc_initialize_enable_cmake_re_if_requested()  
+  hfc_initialize_enable_cmake_re_if_requested()
 
   if(NOT TARGET hfc_list_dependencies_build_dirs)
 
