@@ -1,7 +1,7 @@
 # HermeticFetchContent / discover CMake targets
-# 
+#
 # Extracts target information from configure or install trees
-# by provinging the Targets/Exports files a way to continue executing 
+# by provinging the Targets/Exports files a way to continue executing
 # even if target files are (not yet) built
 #
 # Overrides CMake's message() function to specially handle FATAL_ERROR messages
@@ -17,10 +17,10 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
 
   # inject ourselves only once
   get_property(override_applied GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_Overrides_Applied)
-  
-  if(NOT override_applied) 
+
+  if(NOT override_applied)
     hfc_log_debug("Overriding CMake built-in message() and get_filename_component()")
-    set_property(GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_Overrides_Applied ON)  
+    set_property(GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_Overrides_Applied ON)
 
     #
     # redefine message() with a version that doesn't stop on FATAL_ERROR
@@ -31,7 +31,7 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
       get_property(override_enabled GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_MessageOverride_Enabled)
       get_property(silent GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Message_Override_Silent)
 
-      if(override_enabled AND "${log_category}" STREQUAL "FATAL_ERROR")    
+      if(override_enabled AND "${log_category}" STREQUAL "FATAL_ERROR")
         if(NOT silent)
           _message(WARNING "Ignoring fatal error: ${remaining_args}")
         endif()
@@ -45,7 +45,7 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
     # this relies on *Targets.cmake files using that variable name to build _IMPORT_PREFIX from the CMAKE_CURRENT_LIST_FILE
     function(get_filename_component)
       list(GET ARGN 0 out_variable_name)
-      
+
       get_property(override_enabled GLOBAL PROPERTY Hermetic_FetchContent_CMakeTargetsDiscover_Function_GetFilenameComponentOverride_Enabled)
 
       if(override_enabled AND "${CMAKE_IMPORT_FILE_VERSION}" EQUAL 1 AND "${out_variable_name}" STREQUAL "_IMPORT_PREFIX")
@@ -62,7 +62,7 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
         endif()
 
         list(FIND ARGN "BASE_DIR" ix_BASE_DIR)
-        if("${ix_BASE_DIR}" GREATER_EQUAL 0)          
+        if("${ix_BASE_DIR}" GREATER_EQUAL 0)
           MATH(EXPR ix_BASE_DIR_value "${ix_BASE_DIR}+1")
           list(GET ARGN ${ix_BASE_DIR_value} arg_BASE_DIR_VALUE)
           set(arg_BASE_DIR_ARG "BASE_DIR")
@@ -73,7 +73,7 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
           MATH(EXPR ix_PROGRAM_ARGS_value "${ix_PROGRAM_ARGS}+1")
           list(GET ARGN ${ix_PROGRAM_ARGS_value} arg_PROGRAM_ARGS_VARIABLE)
           set(arg_PROGRAM_ARGS_FOUND ON)
-        endif()          
+        endif()
 
         if("${arg_PROGRAM_ARGS_FOUND}")
           _get_filename_component(result "${arg_FileName}" "${arg_mode}" PROGRAM_ARGS result_program_args "${arg_BASE_DIR_ARG}" "${arg_BASE_DIR_VALUE}")
@@ -81,8 +81,8 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
           _get_filename_component(result "${arg_FileName}" "${arg_mode}" "${arg_BASE_DIR_ARG}" "${arg_BASE_DIR_VALUE}")
         endif()
 
-        if("${arg_CACHE}") 
-          if(DEFINED CACHE{${out_variable_name}}) 
+        if("${arg_CACHE}")
+          if(DEFINED CACHE{${out_variable_name}})
             set(${out_variable_name} "$CACHE{${out_variable_name}}" PARENT_SCOPE)
           else()
             set(${out_variable_name} "${result}" PARENT_SCOPE)
@@ -92,8 +92,8 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
           set(${out_variable_name} "${result}" PARENT_SCOPE)
         endif()
 
-        if("${arg_CACHE}" AND "${arg_PROGRAM_ARGS_FOUND}") 
-          if(DEFINED CACHE{${arg_PROGRAM_ARGS_VARIABLE}}) 
+        if("${arg_CACHE}" AND "${arg_PROGRAM_ARGS_FOUND}")
+          if(DEFINED CACHE{${arg_PROGRAM_ARGS_VARIABLE}})
             set(${arg_PROGRAM_ARGS_VARIABLE} "$CACHE{${arg_PROGRAM_ARGS_VARIABLE}}" PARENT_SCOPE)
           else()
             set(${arg_PROGRAM_ARGS_VARIABLE} "${result_program_args}" PARENT_SCOPE)
@@ -102,7 +102,7 @@ function(__override_cmake_inbuild_functions_for_discover_cmake_targets)
         else()
           set(${arg_PROGRAM_ARGS_VARIABLE} "${result_program_args}" PARENT_SCOPE)
         endif()
-        
+
       endif()
     endfunction()
 
@@ -113,7 +113,7 @@ endfunction()
 
 #
 # Scans for target files in the specified directory
-# 
+#
 # Usage:
 # hfc_cmake_targets_discover_find_target_files(
 #   SEARCH_PATH <path to search for target files>
@@ -142,13 +142,13 @@ function(hfc_cmake_targets_discover_find_target_files)
 
     set(file_matches FALSE)
 
-    if(NOT "${FN_ARGS_TARGETS_FILE_PATTERN}" STREQUAL "" AND found_file MATCHES "${FN_ARGS_TARGETS_FILE_PATTERN}") 
-      set(file_matches TRUE)      
+    if(NOT "${FN_ARGS_TARGETS_FILE_PATTERN}" STREQUAL "" AND found_file MATCHES "${FN_ARGS_TARGETS_FILE_PATTERN}")
+      set(file_matches TRUE)
     elseif(found_file MATCHES "([Tt]argets|[Ee]xport(s?))\\.cmake$")
       set(file_matches TRUE)
     endif()
-    
-    if(file_matches)    
+
+    if(file_matches)
       if(found_file MATCHES "^${FN_ARGS_SEARCH_PATH}/_deps")
         hfc_log_debug("Skipping target file in nested fetchcontent subfolder: ${found_file}")
         continue()
@@ -167,21 +167,21 @@ endfunction()
 
 
 #
-# load target information from <library>Targets.cmake (or exports.cmake) files in a 
+# load target information from <library>Targets.cmake (or exports.cmake) files in a
 # library build or install tree
-# 
+#
 # Usage:
 # hfc_cmake_targets_discover(
 #   RESULT <output_list>      # variable to write the found target names to
 #
-#   SEARCH_PATH <path>        # absolute path to scan for targets/export files in 
+#   SEARCH_PATH <path>        # absolute path to scan for targets/export files in
 #
 #   EXPORT_VARIABLE_PREFIX    # prefix to add to the exported variable names, defaults to "DiscoverTargets_"
 #
 #   EXPORT_PROPERTIES <list>  # list of TARGET_PROPERTIES to set in the PARENT_SCOPE
 #                             # if "NAME;TYPE" is provided and the found target name is "BoringSSL::ssl"
-#                             # then the variables "${EXPORT_VARIABLE_PREFIX}BoringSSL_ssl_NAME" and 
-#                             # "${EXPORT_VARIABLE_PREFIX}BoringSSL_ssl_TYPE" will be available in the 
+#                             # then the variables "${EXPORT_VARIABLE_PREFIX}BoringSSL_ssl_NAME" and
+#                             # "${EXPORT_VARIABLE_PREFIX}BoringSSL_ssl_TYPE" will be available in the
 #                             # caller scope after executing load_targets()
 #
 #   CMAKE_ADDITIONAL_EXPORTS  # <cmake code to create additional targets>
@@ -200,11 +200,11 @@ function(hfc_cmake_targets_discover)
   set(multiValueArgs EXPORT_PROPERTIES)
   cmake_parse_arguments(LOAD_TARGETS_ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  if(NOT LOAD_TARGETS_ARGS_EXPORT_PROPERTIES) 
+  if(NOT LOAD_TARGETS_ARGS_EXPORT_PROPERTIES)
     set(LOAD_TARGETS_ARGS_EXPORT_PROPERTIES "")
   endif()
 
-  if(NOT LOAD_TARGETS_ARGS_EXPORT_VARIABLE_PREFIX) 
+  if(NOT LOAD_TARGETS_ARGS_EXPORT_VARIABLE_PREFIX)
     set(LOAD_TARGETS_ARGS_EXPORT_VARIABLE_PREFIX "DiscoverTargets_")
   endif()
 
@@ -222,7 +222,7 @@ function(hfc_cmake_targets_discover)
   get_property(targets_before_scan DIRECTORY PROPERTY IMPORTED_TARGETS)
   Hermetic_FetchContent_SetFunctionOverride_Enabled(ON)
 
-  if(LOAD_TARGETS_ARGS_TARGETS_FILE_PATTERN) 
+  if(LOAD_TARGETS_ARGS_TARGETS_FILE_PATTERN)
     set(discover_find_target_files_additional_arg TARGETS_FILE_PATTERN "${LOAD_TARGETS_ARGS_TARGETS_FILE_PATTERN}")
   else()
     set(discover_find_target_files_additional_arg "")
@@ -241,28 +241,28 @@ function(hfc_cmake_targets_discover)
     hfc_log_debug(" -> aliases: ${aliases}")
   endif()
 
-  # gather imported targets  
+  # gather imported targets
   get_property(targets_after_scan DIRECTORY PROPERTY IMPORTED_TARGETS)
 
   foreach(target IN LISTS targets_after_scan)
 
-    if(NOT "${target}" IN_LIST targets_before_scan) 
+    if(NOT "${target}" IN_LIST targets_before_scan)
       list(APPEND OUT_targets_list "${target}")
 
       hfc_log_debug("Found target: '${target}'")
 
       # publish properties in the parent scope
-      if(NOT "${LOAD_TARGETS_ARGS_EXPORT_PROPERTIES}" EQUAL "") 
+      if(NOT "${LOAD_TARGETS_ARGS_EXPORT_PROPERTIES}" EQUAL "")
 
         foreach(property_name IN LISTS LOAD_TARGETS_ARGS_EXPORT_PROPERTIES)
           get_target_property(property_value ${target} "${property_name}")
 
-          if(NOT "${property_value}" STREQUAL "property_value-NOTFOUND") 
+          if(NOT "${property_value}" STREQUAL "property_value-NOTFOUND")
             hfc_log_debug(" - target property: ${property_name} = ${property_value}")
 
             Hermetic_FetchContent_TargetsCache_getExportVariableName(
-              TARGET_NAME "${target}" 
-              PROPERTY_NAME "${property_name}" 
+              TARGET_NAME "${target}"
+              PROPERTY_NAME "${property_name}"
               EXPORT_VARIABLE_PREFIX "${LOAD_TARGETS_ARGS_EXPORT_VARIABLE_PREFIX}"
               RESULT export_variable_name
             )
@@ -466,26 +466,26 @@ if(${HERMETIC_FETCHCONTENT_RUN_INTERNAL_DISCOVER_TARGETS_TEST})
 
 
 
-    if(${override_enabled}) 
+    if(${override_enabled})
 
       unset(CMAKE_IMPORT_FILE_VERSION)
-      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)       
+      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)
       check("import prefix override" "${_IMPORT_PREFIX}" "/some")
-      
+
       unset(_IMPORT_PREFIX)
       set(CMAKE_IMPORT_FILE_VERSION "1")
-      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)       
+      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)
       check("import prefix override" "${_IMPORT_PREFIX}" "${HERMETIC_FETCHCONTENT_CONST_PREFIX_PLACEHOLDER}")
 
     else()
 
       unset(CMAKE_IMPORT_FILE_VERSION)
-      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)       
+      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)
       check("import prefix override" "${_IMPORT_PREFIX}" "/some")
-      
+
       unset(_IMPORT_PREFIX)
       set(CMAKE_IMPORT_FILE_VERSION "1")
-      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)       
+      get_filename_component(_IMPORT_PREFIX "/some/path" PATH)
       check("import prefix override" "${_IMPORT_PREFIX}" "/some")
 
     endif()

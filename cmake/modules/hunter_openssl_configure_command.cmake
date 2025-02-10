@@ -75,7 +75,7 @@ function(hunter_openssl_configure_command out_command_line)
     else()
       set(configure_opts mingw)
     endif()
-  
+
   elseif(ANDROID)
     string(COMPARE EQUAL "${CMAKE_ANDROID_ARCH}" "" _has_old_cmake)
     string(COMPARE EQUAL "${ANDROID_ARCH_NAME}" "" _has_unexpected_toolchain)
@@ -86,7 +86,7 @@ function(hunter_openssl_configure_command out_command_line)
     else()
       hunter_user_error("Could not find android architecture. Please set ANDROID_ARCH_NAME in your toolchain or use CMake 3.7+")
     endif()
-  
+
     # Building OpenSSL with Android:
     # * https://wiki.openssl.org/index.php/Android#Build_the_OpenSSL_Library
     # Set environment variables similar to 'setenv-android.sh' script:
@@ -122,7 +122,7 @@ function(hunter_openssl_configure_command out_command_line)
   elseif(APPLE)
     set(configure_opts "darwin64-${CMAKE_SYSTEM_PROCESSOR}-cc")
   endif()
-  
+
   list(APPEND configure_command ${configure_opts})
   list(APPEND configure_command MACHINE=${CMAKE_SYSTEM_PROCESSOR})
 
@@ -252,7 +252,7 @@ function(hunter_openssl_configure_command out_command_line)
   else()
     set(shared_flag no-shared)
   endif()
-  
+
   list(APPEND configure_command threads)
   list(APPEND configure_command ${shared_flag})
   list(APPEND configure_command "--prefix=${PARAM_PACKAGE_INSTALL_DIR}")

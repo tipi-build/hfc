@@ -5,7 +5,7 @@ project(
   VERSION 1.0
   LANGUAGES CXX)
 
-if(NOT DEFINED TEST_PARAMETER_DEFINE_ALIAS) 
+if(NOT DEFINED TEST_PARAMETER_DEFINE_ALIAS)
   message(FATAL_ERROR "This test needs a value for TEST_PARAMETER_DEFINE_ALIAS to be defined (ON/OFF)")
 endif()
 
@@ -32,8 +32,8 @@ FetchContent_Declare(
   GIT_TAG 20f983e688fd77961445608d44bc90df15f38e76
 )
 
-# In the test case in which we are defining the alias we make the 
-# targets defined in "different-mathlib" apear as both the original mathlib target names 
+# In the test case in which we are defining the alias we make the
+# targets defined in "different-mathlib" apear as both the original mathlib target names
 # as well as their alternative name
 #
 # In the else case we straight up rename them so that they are not findable
@@ -45,7 +45,7 @@ if(TEST_PARAMETER_DEFINE_ALIAS)
       list(APPEND TARGET_ALIASES "MathFunctionscbrt::MathFunctionscbrt" "AltMath::AltMathCbrt")
     endif()
 
-    # MathFunctions::MathFunctions  
+    # MathFunctions::MathFunctions
     if("${TARGET_NAME}" STREQUAL "MathFunctions::MathFunctions")
       list(APPEND TARGET_ALIASES "MathFunctions::MathFunctions" "AltMath::MathFunctions")
     endif()
@@ -75,7 +75,7 @@ FetchContent_MakeHermetic(
 
 HermeticFetchContent_MakeAvailableAtConfigureTime(different-mathlib)
 
-# for the positive test we're aliasing the different-mathlib as "mathlib" so 
+# for the positive test we're aliasing the different-mathlib as "mathlib" so
 # we can verify only one is used!
 if(TEST_PARAMETER_DEFINE_ALIAS)
   HermeticFetchContent_AddContentAliases(different-mathlib "mathlib")
@@ -84,7 +84,7 @@ endif()
 FetchContent_Declare(
   other_math
   GIT_REPOSITORY https://github.com/tipi-build/unit-test-cmake-template-use-hfc-cmake
-  GIT_TAG 11da31f30d81ce6eaa64dc32e1918ac091201283 
+  GIT_TAG 11da31f30d81ce6eaa64dc32e1918ac091201283
 )
 
 FetchContent_MakeHermetic(

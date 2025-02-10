@@ -20,7 +20,7 @@ find_program(tool dep-as-tool)
 
 if(tool_FOUND)
   message(FATAL_ERROR "For some reason dep-as-tool is already on the PATH but it shouldn't!")
-endif() 
+endif()
 
 
 include(FetchContent)
@@ -35,9 +35,9 @@ FetchContent_Declare(
 # the MAKE_EXECUTABLES_FINDABLE parameter is not required to be present
 # test if it defaults to the correct result (i.e. not findable)
 if(DEFINED TEST_INPUT_MAKE_EXECUTABLE_FINDABLE)
-    
+
   set(expecting_to_find_tool "${TEST_INPUT_MAKE_EXECUTABLE_FINDABLE}")
-  
+
   FetchContent_MakeHermetic(unit-test-dep-as-tool
     MAKE_EXECUTABLES_FINDABLE "${TEST_INPUT_MAKE_EXECUTABLE_FINDABLE}"
   )
@@ -54,7 +54,7 @@ HermeticFetchContent_MakeAvailableAtConfigureTime(unit-test-dep-as-tool)
 
 if(expecting_to_find_tool)
 
-  if(NOT CMAKE_PROGRAM_PATH) 
+  if(NOT CMAKE_PROGRAM_PATH)
     message(FATAL_ERROR "Expected CMAKE_PROGRAM_PATH to not be empty!")
   endif()
 

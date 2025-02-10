@@ -9,7 +9,7 @@ function(ensure_targets_EXIST target_name)
   foreach(targetname IN LISTS ARGN)
     if(NOT TARGET ${targetname})
       message(FATAL_ERROR "Target ${targetname} does not exist")
-    endif()    
+    endif()
   endforeach()
 endfunction()
 
@@ -17,7 +17,7 @@ function(ensure_targets_UNDEFINED target_name)
   foreach(targetname IN LISTS ARGN)
     if(TARGET ${targetname})
       message(FATAL_ERROR "Target ${targetname} is defined unexpectedly")
-    endif()    
+    endif()
   endforeach()
 endfunction()
 
@@ -33,7 +33,7 @@ include(HermeticFetchContent)
 FetchContent_Declare(
   print_tipi
   GIT_REPOSITORY https://github.com/tipi-build/unit-test-cmake-template-use-hfc-autotools.git
-  GIT_TAG e181239cde6f0c0767b6cedecb253dc16ca1b900 
+  GIT_TAG e181239cde6f0c0767b6cedecb253dc16ca1b900
 )
 
 FetchContent_MakeHermetic(

@@ -5,7 +5,7 @@ project(
   VERSION 1.0
   LANGUAGES CXX)
 
-if(NOT DEFINED TEST_PARAMETER_RUN_NEGATIVE_CASE) 
+if(NOT DEFINED TEST_PARAMETER_RUN_NEGATIVE_CASE)
   message(FATAL_ERROR "This test needs a value for TEST_PARAMETER_RUN_NEGATIVE_CASE to be defined (ON/OFF)")
 endif()
 
@@ -14,7 +14,7 @@ endif()
 #
 # In that case we expect that the "first record wins"
 #
-# In this case we are providing a "mathlib" within a nested HFC project 
+# In this case we are providing a "mathlib" within a nested HFC project
 # and ensure that an (erroneous) definition from the project level
 # does not get used.
 #
@@ -32,7 +32,7 @@ if(NOT TEST_PARAMETER_RUN_NEGATIVE_CASE)
   FetchContent_Declare(
     other_math
     GIT_REPOSITORY https://github.com/tipi-build/unit-test-cmake-template-use-hfc-cmake
-    GIT_TAG 11da31f30d81ce6eaa64dc32e1918ac091201283 
+    GIT_TAG 11da31f30d81ce6eaa64dc32e1918ac091201283
   )
 
   FetchContent_MakeHermetic(
@@ -55,7 +55,7 @@ FetchContent_Declare(
 FetchContent_MakeHermetic(
   mathlib
   HERMETIC_BUILD_SYSTEM cmake
-  HERMETIC_TOOLCHAIN_EXTENSION 
+  HERMETIC_TOOLCHAIN_EXTENSION
   [=[
     message(FATAL_ERROR "Duh!")
   ]=]

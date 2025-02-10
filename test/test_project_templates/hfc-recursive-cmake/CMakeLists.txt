@@ -9,7 +9,7 @@ function(ensure_targets_EXIST target_name)
   foreach(targetname IN LISTS ARGN)
     if(NOT TARGET ${targetname})
       message(FATAL_ERROR "Target ${targetname} does not exist")
-    endif()    
+    endif()
   endforeach()
 endfunction()
 
@@ -17,7 +17,7 @@ function(ensure_targets_UNDEFINED target_name)
   foreach(targetname IN LISTS ARGN)
     if(TARGET ${targetname})
       message(FATAL_ERROR "Target ${targetname} is defined unexpectedly")
-    endif()    
+    endif()
   endforeach()
 endfunction()
 
@@ -32,7 +32,7 @@ include(HermeticFetchContent)
 FetchContent_Declare(
   other_math
   GIT_REPOSITORY https://github.com/tipi-build/unit-test-cmake-template-use-hfc-cmake
-  GIT_TAG 11da31f30d81ce6eaa64dc32e1918ac091201283 
+  GIT_TAG 11da31f30d81ce6eaa64dc32e1918ac091201283
 )
 
 FetchContent_MakeHermetic(

@@ -5,9 +5,9 @@ include(hfc_targets_cache_create)
 include(hfc_targets_cache_common)
 
 #
-# load target information from <library>Targets.cmake (or exports.cmake) files in a 
+# load target information from <library>Targets.cmake (or exports.cmake) files in a
 # library build or install tree
-# 
+#
 # Usage:
 # hfc_cmake_targets_cache(
 #   TARGET_SEARCH_PATH <search_path>      # library build or install tree to scan
@@ -36,19 +36,19 @@ function(hfc_cmake_targets_cache)
   set(temp_fn_name "hfc_tmpfn_discover_targets_${random_fn_suffix}")
 
   #
-  # declare a "temporary" function that does the call to hfc_cmake_targets_discover() to load 
+  # declare a "temporary" function that does the call to hfc_cmake_targets_discover() to load
   # target files
   function(${temp_fn_name})
     hfc_log_debug("Calling ${temp_fn_name} to discover targets in ${FN_ARG_TARGET_SEARCH_PATH}")
 
-    if(FN_ARG_TARGETS_FILE_PATTERN) 
+    if(FN_ARG_TARGETS_FILE_PATTERN)
       set(discover_find_target_files_additional_arg TARGETS_FILE_PATTERN "${FN_ARG_TARGETS_FILE_PATTERN}")
     else()
       set(discover_find_target_files_additional_arg "")
     endif()
 
     hfc_cmake_targets_discover(
-      SEARCH_PATH "${FN_ARG_TARGET_SEARCH_PATH}" 
+      SEARCH_PATH "${FN_ARG_TARGET_SEARCH_PATH}"
       CMAKE_ADDITIONAL_EXPORTS "${FN_ARG_CMAKE_ADDITIONAL_EXPORTS}"
       ${discover_find_target_files_additional_arg}
       RESULT found_targets
@@ -68,14 +68,14 @@ endfunction()
 
 #
 # runs hfc_cmake_targets_cache in an isolated context (in a separate CMake process)
-# 
+#
 # Usage:
 # hfc_cmake_targets_cache_isolated(
 #   TARGET_SEARCH_PATH <search_path>      # library build or install tree to scan
 #   CACHE_DESTINATION_FILE <path>         # path to the target info cache to write. Parent directory will be created if not already present. Destination file will be overwritten if present
-#   TEMP_DIR                              # temporary folder to 
+#   TEMP_DIR                              # temporary folder to
 # )
-function(hfc_cmake_targets_cache_isolated)  
+function(hfc_cmake_targets_cache_isolated)
 
   # arguments parsing
   set(options "")
@@ -106,17 +106,17 @@ function(hfc_cmake_targets_cache_isolated)
   set(HERMETIC_FETCHCONTENT_CMAKE_ADDITIONAL_EXPORTS "${FN_ARG_CMAKE_ADDITIONAL_EXPORTS}")
   set(HERMETIC_FETCHCONTENT_TARGETS_FILE_PATTERN "${FN_ARG_TARGETS_FILE_PATTERN}")
 
-  string(RANDOM LENGTH 10 rand_str)  
+  string(RANDOM LENGTH 10 rand_str)
   set(tmp_proj_dir "${FN_ARG_TEMP_DIR}/tmp_${rand_str}")
 
   file(MAKE_DIRECTORY "${tmp_proj_dir}")
 
   configure_file(
-    "${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/dump_build_targets.CMakeLists.txt.in" 
-    "${tmp_proj_dir}/CMakeLists.txt" 
+    "${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/dump_build_targets.CMakeLists.txt.in"
+    "${tmp_proj_dir}/CMakeLists.txt"
     @ONLY
   )
-  
+
   hfc_log_debug(" - Dump build project in: ${tmp_proj_dir}")
 
   execute_process(

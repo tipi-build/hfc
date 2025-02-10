@@ -19,7 +19,7 @@ FetchContent_Declare(
   GIT_REPOSITORY "https://github.com/tipi-build/unit-test-cmake-template-2libs.git"
   GIT_TAG "ecc756a4c3f1811cdfd637bd6d8f4e3feb6aff92"
   PATCH_COMMAND ${CMAKE_COMMAND} -E rename "MathFunctionscbrt.h" "MathFunctionscbrt-MOVED-BY-PATCH_COMMAND.h"
-        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/thirdparty/patch/CMakeLists.txt"  "CMakeLists.txt" 
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/thirdparty/patch/CMakeLists.txt"  "CMakeLists.txt"
         COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/thirdparty/patch/CMakeLists.txt"  "CMakeLists.txt"
 )
 

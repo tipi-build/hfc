@@ -19,7 +19,7 @@ function(HermeticFetchContent_AddContentAliases content_name)
 
   foreach(alias_name IN ITEMS ${ARGN})
     __HermeticFetchContent_GetAliasVariableName("${alias_name}" alias_variable_name)
-    
+
     # $HERMETIC_FETCHCONTENT_${alias_name}_IS_ALIAS_OF=${content_name}
     set(${alias_variable_name} "${content_name}" CACHE INTERNAL "HFC alias for ${content_name} = ${alias_name} for reverse lookup")
     list(APPEND all_aliases "${alias_name}")
@@ -29,10 +29,10 @@ function(HermeticFetchContent_AddContentAliases content_name)
   list(REMOVE_DUPLICATES all_aliases)
   set(${state_all_aliases_variable_name} "${all_aliases}" CACHE INTERNAL "HFC all aliases of ${content_name}")
 
-  # 
+  #
   set(aliased_contents_all ${HERMETIC_FETCHCONTENT_ALIASED_CONTENTS} ${content_name})
   list(REMOVE_DUPLICATES aliased_contents_all)
-  set(HERMETIC_FETCHCONTENT_ALIASED_CONTENTS "${aliased_contents_all}" CACHE INTERNAL "HFC all aliased content names")  
+  set(HERMETIC_FETCHCONTENT_ALIASED_CONTENTS "${aliased_contents_all}" CACHE INTERNAL "HFC all aliased content names")
 
 endfunction()
 
@@ -47,5 +47,5 @@ function(HermeticFetchContent_ResolveContentNameAlias content_name OUT_result)
   else()
     set(${OUT_result} "${content_name}" PARENT_SCOPE)
   endif()
-  
+
 endfunction()

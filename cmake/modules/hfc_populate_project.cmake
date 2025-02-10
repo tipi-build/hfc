@@ -52,7 +52,7 @@ function(hfc_evaluate_prepatched_resolver)
   if(${FN_ARG_OUT_VAR_PREFIX}RESOLVED_PATCH)
 
    if(URL)
-      hfc_log_debug(" + Resolved pre-patched source: ${URL} / ${URL_HASH}") 
+      hfc_log_debug(" + Resolved pre-patched source: ${URL} / ${URL_HASH}")
     endif()
 
     if(GIT_REPOSITORY)
@@ -65,7 +65,7 @@ function(hfc_evaluate_prepatched_resolver)
     set(${FN_ARG_OUT_VAR_PREFIX}GIT_REPOSITORY "${GIT_REPOSITORY}")
     set(${FN_ARG_OUT_VAR_PREFIX}GIT_TAG "${GIT_TAG}")
 
- 
+
     return(PROPAGATE
       ${FN_ARG_OUT_VAR_PREFIX}RESOLVED_PATCH
 
@@ -93,13 +93,13 @@ function(hfc_populate_project_declare content_name)
     set(options_params)
     set(one_value_params
       # Official FetchContent arguments
-      URL 
+      URL
       URL_HASH
-      GIT_REPOSITORY 
+      GIT_REPOSITORY
       GIT_TAG
       GIT_SUBMODULES
       GIT_SHALLOW
-      SOURCE_DIR 
+      SOURCE_DIR
       BUILD_IN_SOURCE_TREE
       SOURCE_SUBDIR
       BINARY_DIR
@@ -122,7 +122,7 @@ function(hfc_populate_project_declare content_name)
     cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
 
     set(prepatched_RESOLVED_PATCH FALSE)
-    
+
     hfc_log_debug("Running populate function for ${content_name}")
 
     if(FN_ARG_HERMETIC_PREPATCHED_RESOLVER)
@@ -196,9 +196,9 @@ function(hfc_populate_project_declare content_name)
       endif()
 
       if(done)
-      
+
         # note: this function might be invoked from a scripted context
-        # so we might not be able to FetchContent_SetPopulated() because it internally 
+        # so we might not be able to FetchContent_SetPopulated() because it internally
         # set_property(GLOBAL) which is not scriptable
         if(NOT CMAKE_SCRIPT_MODE_FILE)
 
@@ -220,7 +220,7 @@ function(hfc_populate_project_declare content_name)
     # build arguments for FetchContent_populate()
     set(populate_args "")
 
-    if(FN_ARG_URL)          
+    if(FN_ARG_URL)
       hfc_log_debug(" - URL = ${FN_ARG_URL}")
       hfc_log_debug(" - URL_HASH = ${FN_ARG_URL_HASH}")
       list(APPEND populate_args "URL" ${FN_ARG_URL} "URL_HASH" ${FN_ARG_URL_HASH})
@@ -233,12 +233,12 @@ function(hfc_populate_project_declare content_name)
     endif()
 
     if (FN_ARG_GIT_SUBMODULES)
-      list(APPEND populate_args "GIT_SUBMODULES" ${FN_ARG_GIT_SUBMODULES}) 
+      list(APPEND populate_args "GIT_SUBMODULES" ${FN_ARG_GIT_SUBMODULES})
     endif()
 
-    if (NOT "${FN_ARG_BUILD_IN_SOURCE_TREE}" STREQUAL "") 
-    
-      if(FN_ARG_URL)          
+    if (NOT "${FN_ARG_BUILD_IN_SOURCE_TREE}" STREQUAL "")
+
+      if(FN_ARG_URL)
         list(APPEND populate_args "DOWNLOAD_NO_EXTRACT" TRUE)
       endif()
       list(APPEND populate_args "SOURCE_DIR" ${FN_ARG_SOURCE_DIR})
@@ -255,7 +255,7 @@ function(hfc_populate_project_declare content_name)
     )
 
     list(APPEND populate_args "SUBBUILD_DIR" ${subbuild_path})
-    list(APPEND populate_args "BINARY_DIR" ${populate_build_path}) 
+    list(APPEND populate_args "BINARY_DIR" ${populate_build_path})
 
     if(prepatched_RESOLVED_PATCH)
       list(APPEND populate_args "PATCH_COMMAND" "") # don't try to patch already patched things
@@ -264,16 +264,16 @@ function(hfc_populate_project_declare content_name)
       list(APPEND populate_args "UPDATE_DISCONNECTED" "1")  # avoid issues with repeated builds, which would "repatch"
     endif()
 
-    if(FN_ARG_GIT_SHALLOW) 
+    if(FN_ARG_GIT_SHALLOW)
       list(APPEND populate_args "GIT_SHALLOW" ${FN_ARG_GIT_SHALLOW})
     endif()
-    
+
     # we used to fix issues that could occur if the sources are missing but the stamp file were still around
     # we now explictely trust the stamps file, this allow better debugging for developers
     # as this allows modifying the sources of a dependency while debugging configure step
     #hfc_invalidate_project_population(${content_name} "${FN_ARG_SOURCE_DIR}")
 
-    # 
+    #
     hfc_log_debug(" - populating (${populate_args})")
     FetchContent_Populate(
       ${content_name}
@@ -287,22 +287,22 @@ function(hfc_populate_project_declare content_name)
 
     hfc_goldilock_release("${lock_dir}" success)
 
-    # Remove extraneous folder after population 
+    # Remove extraneous folder after population
     file(REMOVE_RECURSE ${populate_build_path})
   endfunction()
-  
-  
+
+
   function(${populate_project_function_name}_clone_in_build_folder_if_required)
 
     set(options_params)
     set(one_value_params
       # Official FetchContent arguments
-      URL 
+      URL
       URL_HASH
-      GIT_REPOSITORY 
+      GIT_REPOSITORY
       GIT_TAG
       GIT_SUBMODULES
-      SOURCE_DIR 
+      SOURCE_DIR
       BUILD_IN_SOURCE_TREE
       SOURCE_SUBDIR
       BINARY_DIR
@@ -324,14 +324,14 @@ function(hfc_populate_project_declare content_name)
     )
     cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
 
-    if (NOT "${FN_ARG_BUILD_IN_SOURCE_TREE}" STREQUAL "") 
+    if (NOT "${FN_ARG_BUILD_IN_SOURCE_TREE}" STREQUAL "")
 
       set(lock_dir "${FN_ARG_SOURCE_DIR}")
       hfc_goldilock_acquire("${lock_dir}" lock_success)
       set(content_name_clone_in_build_folder ${content_name}_clone_to_build_folder)
       set(clone_source_in_build_populate_args "")
 
-      if(FN_ARG_URL)          
+      if(FN_ARG_URL)
         hfc_log_debug(" - URL = ${FN_ARG_URL}")
         hfc_log_debug(" - URL_HASH = ${FN_ARG_URL_HASH}")
         cmake_path(GET FN_ARG_URL FILENAME DOWNLOAD_NO_EXTRACT_archive_name)
@@ -358,25 +358,25 @@ function(hfc_populate_project_declare content_name)
       )
 
       list(APPEND clone_source_in_build_populate_args "SUBBUILD_DIR" ${subbuild_path})
-      list(APPEND clone_source_in_build_populate_args "BINARY_DIR" ${populate_build_path}) 
+      list(APPEND clone_source_in_build_populate_args "BINARY_DIR" ${populate_build_path})
 
       # fix issues that could occur if the sources are missing but the stamp file is still around
       hfc_invalidate_project_population(${content_name_clone_in_build_folder} "${SOURCE_DIR_IN_BINARY_DIR}")
 
-      # 
+      #
       hfc_log_debug(" - populating (${clone_source_in_build_populate_args})")
       FetchContent_Populate(
         ${content_name_clone_in_build_folder}
         ${clone_source_in_build_populate_args}
       )
-  
+
       FetchContent_SetPopulated(${content_name_clone_in_build_folder}_to_build_folder
         SOURCE_DIR "${SOURCE_DIR_IN_BINARY_DIR}"
         BINARY_DIR "${FN_ARG_BINARY_DIR}"
-      )     
+      )
 
       hfc_goldilock_release("${lock_dir}" success)
-      # Remove extraneous folder after population 
+      # Remove extraneous folder after population
       file(REMOVE_RECURSE ${populate_build_path})
     endif()
 
@@ -387,7 +387,7 @@ endfunction()
 function(hfc_populate_project_invoke_internal content_name)
   hfc_log_debug("Invoking project populate function for ${content_name}")
   hfc_populate_project__get_function_name(content_name populate_project_function_name)
-  cmake_language(CALL ${populate_project_function_name} ${ARGN})    
+  cmake_language(CALL ${populate_project_function_name} ${ARGN})
 endfunction()
 
 # Invoke the populate function for ${content_name}
@@ -400,7 +400,7 @@ endfunction()
 function(hfc_populate_project_invoke_clone_in_build_folder_if_required_internal content_name)
   hfc_log_debug("Invoking project populate function for ${content_name}_clone_in_build_folder_if_required")
   hfc_populate_project__get_function_name(content_name populate_project_function_name)
-  cmake_language(CALL ${populate_project_function_name}_clone_in_build_folder_if_required ${ARGN})    
+  cmake_language(CALL ${populate_project_function_name}_clone_in_build_folder_if_required ${ARGN})
 endfunction()
 
 # Invoke the populate function for ${content_name}

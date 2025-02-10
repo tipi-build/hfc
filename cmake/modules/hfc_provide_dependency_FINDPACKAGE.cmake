@@ -12,7 +12,7 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
     hfc_log_debug(" - resolved to alias ${package_name}")
   endif()
 
-  string(TOUPPER "${package_name}" package_name_uppercase)  
+  string(TOUPPER "${package_name}" package_name_uppercase)
 
   hfc_targets_cache_get_registered_info(
     ${package_name}
@@ -33,7 +33,7 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
       OUT_LIBRARY_BYPRODUCTS library_byproducts
     )
 
-    hfc_log_debug(" - emulating found package: ${package_name}") 
+    hfc_log_debug(" - emulating found package: ${package_name}")
     set(${package_name_uppername}_ROOT_DIR "${targetcache_install_prefix}")
     list(APPEND CMAKE_FIND_ROOT_PATH "${targetcache_install_prefix}")
 
@@ -57,16 +57,16 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
       # link libraries
       get_target_property(tgt_location ${target} LOCATION)
       if(tgt_location)
-        list(APPEND package_LIBRARIES ${tgt_location})    
-      endif()  
+        list(APPEND package_LIBRARIES ${tgt_location})
+      endif()
     endforeach()
 
     #
     # note for the below: it is technically required by some findPackage modules
-    # to have both singular and plural variables availabe if exactly *one* 
+    # to have both singular and plural variables availabe if exactly *one*
     # LIBRARY / INCLUDE_DIR is exported
 
-    list(REMOVE_DUPLICATES package_INCLUDE_DIRS)    
+    list(REMOVE_DUPLICATES package_INCLUDE_DIRS)
     list(LENGTH package_INCLUDE_DIRS include_dirs_len)
 
     if(include_dirs_len EQUAL 1)
@@ -83,7 +83,7 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
     if(libraries_len EQUAL 1)
       set(${package_name_uppercase}_LIBRARY "${package_LIBRARIES}")
     endif()
-    
+
     if(libraries_len GREATER_EQUAL 1)
       set(${package_name_uppercase}_LIBRARIES "${package_LIBRARIES}")
     endif()
@@ -102,12 +102,12 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
       set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
       set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
       set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
-      find_package(${package_name} ${ARGN} BYPASS_PROVIDER)    
+      find_package(${package_name} ${ARGN} BYPASS_PROVIDER)
       # Get back to isolated sysroot
       set (CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_PROGRAM})
       set (CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_LIBRARY})
       set (CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_INCLUDE})
-      set (CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_PACKAGE}) 
+      set (CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_PACKAGE})
     else()
       hfc_log_debug(" - not in list of hermetic dependencies")
     endif()

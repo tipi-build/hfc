@@ -21,11 +21,11 @@ hfc_cmake_restore_or_configure
     The build dir, will only be used to run the cmake-adapter build which runs autotools configure.
 
   ``PROJECT_INSTALL_PREFIX``
-    Where the `make install` should be done for the autootols library. 
+    Where the `make install` should be done for the autootols library.
     Passed to `./configure --prefix=`
 
-  ``ORIGIN`` 
-    Cache ID 
+  ``ORIGIN``
+    Cache ID
 
   ``REVISION``
     Revision to pull from cache
@@ -87,7 +87,7 @@ function(hfc_cmake_restore_or_configure content_name)
     DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
     PROJECT_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}"
     PROJECT_SOURCE_SUBDIR "${FN_ARG_PROJECT_SOURCE_SUBDIR}"
-  )  
+  )
 
   make_directory(${FN_ARG_PROJECT_INSTALL_PREFIX})
   make_directory(${FN_ARG_PROJECT_BINARY_DIR})
@@ -105,7 +105,7 @@ function(hfc_cmake_restore_or_configure content_name)
     hfc_cmake_re_restore_install_tree(
         ${FN_ARG_ORIGIN} ${FN_ARG_REVISION}
         ${FN_ARG_PROJECT_SOURCE_DIR} ${FN_ARG_PROJECT_BINARY_DIR}
-        ${FN_ARG_PROJECT_INSTALL_PREFIX} 
+        ${FN_ARG_PROJECT_INSTALL_PREFIX}
         "${proxy_toolchain_path}"
         cmake_re_restore_command_return_code)
     if (cmake_re_restore_command_return_code EQUAL 0)
@@ -118,7 +118,7 @@ function(hfc_cmake_restore_or_configure content_name)
   if(EXISTS ${FN_ARG_HFC_CONFIGURE_MARKER_FILE})
     set(dep_need_configure OFF)
   endif()
-  
+
 
 
   # we may need to start with a populate then
@@ -156,7 +156,7 @@ function(hfc_cmake_restore_or_configure content_name)
   get_hermetic_target_cache_file_path(${content_name} target_cache_file)
 
   if(FN_ARG_CMAKE_EXPORT_LIBRARY_DECLARATION)
-  
+
     # Create imported targets for autotools build
     hfc_targets_cache_create_from_export_declaration(
       ${content_name}
@@ -170,10 +170,10 @@ function(hfc_cmake_restore_or_configure content_name)
     set(targets_cache_created TRUE)
 
   else()
-  
+
     hfc_log_debug(" + discovering target files in: ${targets_search_path}")
 
-    if(FN_ARG_HERMETIC_DISCOVER_TARGETS_FILE_PATTERN) 
+    if(FN_ARG_HERMETIC_DISCOVER_TARGETS_FILE_PATTERN)
       set(discover_find_target_files_additional_arg TARGETS_FILE_PATTERN "${FN_ARG_HERMETIC_DISCOVER_TARGETS_FILE_PATTERN}")
     else()
       set(discover_find_target_files_additional_arg "")
@@ -183,8 +183,8 @@ function(hfc_cmake_restore_or_configure content_name)
 
     if(found_target_files_list)
 
-      hfc_log_debug(" - target files found / generating targets cache in isolated context")  
-      
+      hfc_log_debug(" - target files found / generating targets cache in isolated context")
+
       hfc_cmake_targets_cache_isolated(
         TARGET_SEARCH_PATH "${targets_search_path}"
         CACHE_DESTINATION_FILE "${target_cache_file}"
@@ -207,7 +207,7 @@ function(hfc_cmake_restore_or_configure content_name)
     hfc_log_debug(" - reading targets cache from ${target_cache_file}")
     hfc_targets_cache_consume(
       ${content_name}
-      TARGETS_CACHE_FILE "${target_cache_file}" 
+      TARGETS_CACHE_FILE "${target_cache_file}"
       TARGET_INSTALL_PREFIX "${FN_ARG_PROJECT_INSTALL_PREFIX}"
       TARGET_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}"
       TARGET_BINARY_DIR "${FN_ARG_PROJECT_BINARY_DIR}"
@@ -242,8 +242,8 @@ function(hfc_cmake_restore_or_configure content_name)
       )
 
       # if build a configure time is ON we don't need that dependency that
-      # is only there to ensure that the ${registered_build_target_name} target 
-      # is run when someone consumes any of the $imported_libraries 
+      # is only there to ensure that the ${registered_build_target_name} target
+      # is run when someone consumes any of the $imported_libraries
       if(NOT ${FN_ARG_BUILD_AT_CONFIGURE_TIME})
 
         foreach(lib IN LISTS imported_libraries)
@@ -259,24 +259,24 @@ function(hfc_cmake_restore_or_configure content_name)
 
     hfc_log_debug(" - no target files found / using project with add_subdirectory()")
 
-    # If not restored download the sources 
+    # If not restored download the sources
     if(NOT ${content_name}_POPULATED)
       hfc_populate_project_invoke(${content_name})
-    endif()    
+    endif()
 
     #
     # rationale: in order to not polute the current directory scope with
     # HERMETIC_TOOLCHAIN_EXTENSION variables we are generating a CMakeLists.txt
-    # that will contain the toolchain extension code before add_subdirectory()-ing 
+    # that will contain the toolchain extension code before add_subdirectory()-ing
     # the project
     set(no_target_extension_dir "${HERMETIC_FETCHCONTENT_INSTALL_DIR}/${content_name}-toolchain/no_target_ext_add_subdirectory")
     set(no_target_extension_bin_dir "${no_target_extension_dir}/bin")
     set(no_target_extension_src_dir "${no_target_extension_dir}/src")
     set(no_target_extension_cmakelist "${no_target_extension_src_dir}/CMakeLists.txt")
 
-    block(SCOPE_FOR VARIABLES PROPAGATE 
+    block(SCOPE_FOR VARIABLES PROPAGATE
       no_target_extension_dir
-      no_target_extension_cmakelist 
+      no_target_extension_cmakelist
       content_name
       FN_ARG_PROJECT_SOURCE_DIR
       FN_ARG_PROJECT_SOURCE_SUBDIR
@@ -290,19 +290,19 @@ function(hfc_cmake_restore_or_configure content_name)
         string(REPLACE "//" "/" TEMPLATE_SOURCE_DIR "${TEMPLATE_SOURCE_DIR}")
       endif()
 
-      set(TEMPLATE_HERMETIC_TOOLCHAIN_EXTENSION "${FN_ARG_HERMETIC_TOOLCHAIN_EXTENSION}") 
-      set(TEMPLATE_CONTENT_NAME ${content_name})      
+      set(TEMPLATE_HERMETIC_TOOLCHAIN_EXTENSION "${FN_ARG_HERMETIC_TOOLCHAIN_EXTENSION}")
+      set(TEMPLATE_CONTENT_NAME ${content_name})
       set(TEMPLATE_BINARY_DIR ${FN_ARG_PROJECT_BINARY_DIR})
 
-      file(MAKE_DIRECTORY "${no_target_extension_src_dir}")  
+      file(MAKE_DIRECTORY "${no_target_extension_src_dir}")
       configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/no_target_ext_add_subdirectory.CMakeLists.txt.in" "${no_target_extension_cmakelist}" @ONLY)
 
       hfc_log_debug("Generate 'no target extension cmakelist' at ${no_target_extension_cmakelist}")
-    
-    endblock()  
 
-    add_subdirectory("${no_target_extension_src_dir}" "${no_target_extension_bin_dir}")  
-   
+    endblock()
+
+    add_subdirectory("${no_target_extension_src_dir}" "${no_target_extension_bin_dir}")
+
   endif()
 
 endfunction()

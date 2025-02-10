@@ -2,12 +2,12 @@
 function(__get_lockfile_path dir result_var)
   cmake_path(GET dir PARENT_PATH lock_location)
   cmake_path(GET dir FILENAME dir_name)
-  set(${result_var} "${lock_location}/${dir_name}.v2.lock" PARENT_SCOPE) 
+  set(${result_var} "${lock_location}/${dir_name}.v2.lock" PARENT_SCOPE)
 endfunction()
 
 
 function(__get_unlockfile_path lockfile_path result_var)
-  set(${result_var} "${lockfile_path}.clear" PARENT_SCOPE) 
+  set(${result_var} "${lockfile_path}.clear" PARENT_SCOPE)
 endfunction()
 
 # get the executing shell for safe execute_process() in this environment
@@ -16,8 +16,8 @@ function(__get_env_shell_command result_var)
     set(${result_var} cmd /C PARENT_SCOPE)
   else()
     set(${result_var} bash -c PARENT_SCOPE)
-  endif()  
-  
+  endif()
+
 endfunction()
 
 
@@ -29,7 +29,7 @@ function(hfc_get_goldilock_acquire_command lockfile_path result_var)
   set(${result_var} "${HERMETIC_FETCHCONTENT_goldilock_BIN} --lockfile ${lockfile_path} --unlockfile ${unlock_file_path} --no-timeout --watch-parent-process ninja,make,cmake --detach" PARENT_SCOPE)
 endfunction()
 
-# acquire a directory (goldi)lock 
+# acquire a directory (goldi)lock
 #
 # usage: hfc_goldilock_acquire(<dir> <success_variable)
 function(hfc_goldilock_acquire dir success_var)
@@ -61,13 +61,13 @@ function(hfc_get_goldilock_release_command lockfile_path result_var)
   set(${result_var} "${CMAKE_COMMAND} -E touch ${unlock_file_path}" PARENT_SCOPE)
 endfunction()
 
-# release a directory (goldi)lock 
+# release a directory (goldi)lock
 #
 # usage: hfc_goldilock_release(<dir> <success_variable)
 function(hfc_goldilock_release dir success_var)
 
   __get_lockfile_path("${dir}" lockfile_path)
-  __get_env_shell_command(shell)  
+  __get_env_shell_command(shell)
   hfc_get_goldilock_release_command("${lockfile_path}" cmd)
   hfc_log_debug("Trying to release lock ${lockfile_path} for ${dir}")
 

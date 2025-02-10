@@ -6,9 +6,9 @@ defining parameters.
 
   ``origin``
   The origin of the project sources used to generate that install tree
-  
+
   ``revision```
-  The revisions of the sources for which the install tree cache is wished. 
+  The revisions of the sources for which the install tree cache is wished.
 
   ``project_sources_dir```
   Where the top-level CMakeLists of the project resides
@@ -17,7 +17,7 @@ defining parameters.
   Where the build folder is expected and should be created
 
   ``project_install_prefix``
-  Where the install folder is expected and should be created 
+  Where the install folder is expected and should be created
 
   ``toolchain_file``
   The CMAKE_TOOLCHAIN_FILE to use to determine the projects ABI-HASH
@@ -43,9 +43,9 @@ defining parameters.
 
   ``origin``
   The origin of the project sources used to generate that install tree
-  
+
   ``revision```
-  The revisions of the sources for which the install tree cache is wished. 
+  The revisions of the sources for which the install tree cache is wished.
 
   ``project_sources_dir```
   Where the top-level CMakeLists of the project resides
@@ -54,7 +54,7 @@ defining parameters.
   Where the build folder is expected and should be created
 
   ``project_install_prefix``
-  Where the install folder is expected and should be created 
+  Where the install folder is expected and should be created
 
   ``toolchain_file``
   The CMAKE_TOOLCHAIN_FILE to use to determine the projects ABI-HASH
