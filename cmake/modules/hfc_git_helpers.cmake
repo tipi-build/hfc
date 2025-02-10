@@ -1,4 +1,4 @@
-if(CMAKE_SCRIPT_MODE_FILE) 
+if(CMAKE_SCRIPT_MODE_FILE)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
     cmake_policy(SET CMP0054 NEW)
 endif()
@@ -7,8 +7,8 @@ endif()
 include(hfc_log)
 include(hfc_required_args)
 
-find_program(git_executable 
-    NAMES git 
+find_program(git_executable
+    NAMES git
     REQUIRED
 )
 
@@ -81,7 +81,7 @@ function(git_exec)
 
 endfunction()
 
-function(repo_has_revision) 
+function(repo_has_revision)
     set(options_params)
 
     set(oneValueArgs_required
@@ -90,7 +90,7 @@ function(repo_has_revision)
         OUT_RESULT
     )
 
-    set(one_value_params   
+    set(one_value_params
         ${oneValueArgs_required}
     )
 
@@ -123,7 +123,7 @@ function(repo_has_revision)
 
 endfunction()
 
-function(repo_has_revision) 
+function(repo_has_revision)
     set(options_params)
 
     set(oneValueArgs_required
@@ -132,7 +132,7 @@ function(repo_has_revision)
         OUT_RESULT
     )
 
-    set(one_value_params   
+    set(one_value_params
         ${oneValueArgs_required}
     )
 
@@ -165,8 +165,8 @@ function(repo_has_revision)
 
 endfunction()
 
-function(repo_is_clean) 
-    set(options_params 
+function(repo_is_clean)
+    set(options_params
         CHECK_IGNORED
     )
 
@@ -175,7 +175,7 @@ function(repo_is_clean)
         OUT_RESULT
     )
 
-    set(one_value_params        
+    set(one_value_params
         ${oneValueArgs_required}
     )
 
@@ -197,12 +197,12 @@ function(repo_is_clean)
         )
     endif()
 
-    if(FN_ARG_CHECK_IGNORED) 
+    if(FN_ARG_CHECK_IGNORED)
         set(process_arg_CHECK_IGNORED "--ignored")
     endif()
 
     hfc_log_debug("Checking if repository '${FN_ARG_REPOSITORY_DIR}' has any changes (CHECK_IGNORED = ${FN_ARG_CHECK_IGNORED})")
-    git_exec(COMMAND "${git_executable} status ${process_arg_CHECK_IGNORED} --porcelain" 
+    git_exec(COMMAND "${git_executable} status ${process_arg_CHECK_IGNORED} --porcelain"
         WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}"
         OUT_RESULT cmd_output
         OUT_RETURN_CODE return_code
@@ -216,7 +216,7 @@ function(repo_is_clean)
 
 endfunction()
 
-function(repo_get_head_id) 
+function(repo_get_head_id)
     set(options_params)
 
     set(oneValueArgs_required
@@ -224,7 +224,7 @@ function(repo_get_head_id)
         OUT_COMMIT_ID
     )
 
-    set(one_value_params   
+    set(one_value_params
         ${oneValueArgs_required}
     )
 
@@ -247,8 +247,8 @@ function(repo_get_head_id)
     endif()
 
     git_exec(
-        COMMAND "${git_executable} rev-parse HEAD" 
-        WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" 
+        COMMAND "${git_executable} rev-parse HEAD"
+        WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}"
         COMMAND_ERROR_IS_FATAL ANY
         OUT_RESULT cmd_output
     )
@@ -266,7 +266,7 @@ function(checkout_revision_force_clean)
         GIT_REVISION
     )
 
-    set(one_value_params   
+    set(one_value_params
         OUT_SUCCESS
         ${oneValueArgs_required}
 
@@ -301,7 +301,7 @@ function(checkout_revision_force_clean)
 
     if(initial_commit_id STREQUAL FN_ARG_GIT_REVISION AND initial_repo_is_clean)
         hfc_log_debug("Repository ${FN_ARG_REPOSITORY_DIR} already at ${FN_ARG_GIT_REVISION} and clean - skipping")
-        
+
         if(FN_ARG_OUT_SUCCESS)
             set(${FN_ARG_OUT_SUCCESS} TRUE PARENT_SCOPE)
         endif()
@@ -318,7 +318,7 @@ function(checkout_revision_force_clean)
         if(FN_ARG_OUT_SUCCESS AND (ret_stage0_clean_repo GREATER 0 OR ret_stage0_clean_submodules GREATER 0))
             set(${FN_ARG_OUT_SUCCESS} FALSE PARENT_SCOPE)
             return()
-        endif()        
+        endif()
     endif()
 
     hfc_log_debug("Checking is destination revision ${FN_ARG_GIT_REVISION} is available locally")
@@ -340,15 +340,15 @@ function(checkout_revision_force_clean)
     # checkout the destination revision
     hfc_log(STATUS "Checking out ${FN_ARG_REPOSITORY_DIR}")
     git_exec(COMMAND "${git_executable} checkout -f ${FN_ARG_GIT_REVISION}" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" OUT_RETURN_CODE ret_stage1_checkout)
-    
-    if(FN_ARG_OUT_SUCCESS AND ret_stage1_checkout GREATER 0) 
+
+    if(FN_ARG_OUT_SUCCESS AND ret_stage1_checkout GREATER 0)
         set(${FN_ARG_OUT_SUCCESS} FALSE PARENT_SCOPE)
         return()
     endif()
 
     git_exec(COMMAND "${git_executable} clean -xfdf" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" COMMAND_ERROR_IS_FATAL ANY)
     git_exec(COMMAND "${git_executable} submodule foreach --recursive ${git_executable} clean -xfdf" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" COMMAND_ERROR_IS_FATAL ANY)
-    
+
     # make sure the submodules are up-to-date
     git_exec(COMMAND "${git_executable} submodule update --init --recursive" WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}" COMMAND_ERROR_IS_FATAL ANY)
 
@@ -378,10 +378,10 @@ function(is_git_repository)
         )
     endif()
 
-    if(IS_DIRECTORY "${FN_ARG_REPOSITORY_DIR}/.git") 
+    if(IS_DIRECTORY "${FN_ARG_REPOSITORY_DIR}/.git")
 
         hfc_log_debug("Checking if folder '${FN_ARG_REPOSITORY_DIR}' contains a git repository")
-        git_exec(COMMAND "${git_executable} rev-parse --is-inside-work-tree" 
+        git_exec(COMMAND "${git_executable} rev-parse --is-inside-work-tree"
             WORKING_DIRECTORY "${FN_ARG_REPOSITORY_DIR}"
             OUT_RETURN_CODE return_code
         )

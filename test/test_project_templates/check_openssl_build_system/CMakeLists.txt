@@ -23,7 +23,7 @@ find_package(Threads REQUIRED)
 FetchContent_MakeHermetic(
   OpenSSL
   FIND_PACKAGE_ARGS
-  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION 
+  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
   [=[
 
   function(_OpenSSL_target_add_dependencies target)
@@ -54,7 +54,7 @@ FetchContent_MakeHermetic(
     IMPORTED_LINK_INTERFACE_LANGUAGES "C"
     IMPORTED_LOCATION "${OPENSSL_CRYPTO_LIBRARY}")
   _OpenSSL_target_add_dependencies(OpenSSL::Crypto)
-  
+
   add_library(OpenSSL::SSL UNKNOWN IMPORTED)
   set_target_properties(OpenSSL::SSL PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}")
@@ -64,7 +64,7 @@ FetchContent_MakeHermetic(
     set_target_properties(OpenSSL::SSL PROPERTIES
       INTERFACE_LINK_LIBRARIES OpenSSL::Crypto)
   _OpenSSL_target_add_dependencies(OpenSSL::SSL)
-  
+
   add_library(OpenSSL::applink INTERFACE IMPORTED)
   set_property(TARGET OpenSSL::applink APPEND
     PROPERTY INTERFACE_SOURCES
@@ -72,11 +72,11 @@ FetchContent_MakeHermetic(
 
   ]=]
 
-  HERMETIC_TOOLCHAIN_EXTENSION 
+  HERMETIC_TOOLCHAIN_EXTENSION
   [=[
   ]=]
 
-  HERMETIC_BUILD_SYSTEM openssl 
+  HERMETIC_BUILD_SYSTEM openssl
 )
 
 HermeticFetchContent_MakeAvailableAtConfigureTime(OpenSSL)

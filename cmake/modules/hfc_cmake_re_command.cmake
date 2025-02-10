@@ -1,20 +1,20 @@
 include(hfc_log)
 include(hfc_required_args)
 
-# 
+#
 # Create a cmake-re command (as list)
-# 
+#
 # Usage:
 # hfc_get_cmake_re_command(
 #   <OUT_result>
-#   INSTALL_PREFIX <value> 
+#   INSTALL_PREFIX <value>
 #   CMAKE_BUILD_TYPE <value>
 #   PROJECT_SOURCE_DIR <value>
 #   PROJECT_BINARY_DIR <value>
-#   TOOLCHAIN_FILE <value> 
+#   TOOLCHAIN_FILE <value>
 #   GENERATOR <value>
 #   ORIGIN <value>
-#   [ 
+#   [
 #     BUILD <value>
 #     [ BUILD_TARGET <target-name> ]
 #     [ BUILD_CLEAN_FIRST ]
@@ -66,7 +66,7 @@ function(hfc_get_cmake_re_command OUT_result)
     list(APPEND result_cmd "-j${FN_ARG_CPU_JOBS}")
   endif()
 
-  if(FN_ARG_BUILD) 
+  if(FN_ARG_BUILD)
     list(APPEND result_cmd "--build" "${FN_ARG_BUILD}")
 
     if(FN_ARG_BUILD_TARGET)
@@ -91,7 +91,7 @@ function(hfc_get_cmake_re_command OUT_result)
   endif()
 
   if(FN_ARG_CMAKE_BUILD_TYPE)
-    # -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} 
+    # -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     list(APPEND result_cmd "-DCMAKE_BUILD_TYPE=${FN_ARG_CMAKE_BUILD_TYPE}")
   endif()
 
@@ -101,7 +101,7 @@ function(hfc_get_cmake_re_command OUT_result)
   endif()
 
   if(FN_ARG_PROJECT_BINARY_DIR)
-    # -B ${project_build_dir} 
+    # -B ${project_build_dir}
     list(APPEND result_cmd "-B" "${FN_ARG_PROJECT_BINARY_DIR}")
   endif()
 
@@ -111,22 +111,22 @@ function(hfc_get_cmake_re_command OUT_result)
   endif()
 
   # -C / initial cache
-  if(FN_ARG_INITIAL_CACHE) 
+  if(FN_ARG_INITIAL_CACHE)
     list(APPEND result_cmd "-C" "${FN_ARG_INITIAL_CACHE}")
   endif()
 
 
-  if(FN_ARG_CACHE_OP_RESTORE AND FN_ARG_CACHE_OP_POPULATE) 
+  if(FN_ARG_CACHE_OP_RESTORE AND FN_ARG_CACHE_OP_POPULATE)
     hfc_log(FATAL_ERROR "Cannot specify cache restore and populate operations at the same time")
   endif()
-  
 
-  if(FN_ARG_CACHE_OP_RESTORE OR FN_ARG_CACHE_OP_POPULATE) 
+
+  if(FN_ARG_CACHE_OP_RESTORE OR FN_ARG_CACHE_OP_POPULATE)
 
     if(NOT FN_ARG_REVISION)
       hfc_log(FATAL_ERROR "CMake RE cache restore and populate operations require a value for the REVISION to be set")
     endif()
-    
+
     list(APPEND result_cmd "--cache")
 
     if(FN_ARG_CACHE_OP_RESTORE)
@@ -138,26 +138,26 @@ function(hfc_get_cmake_re_command OUT_result)
     list(APPEND result_cmd "--revision" "${FN_ARG_REVISION}")
 
   endif()
-  
+
   set(${OUT_result} "${result_cmd}")
   return(PROPAGATE ${OUT_result})
 endfunction()
 
 
-# 
+#
 # Create a cmake-re command (as string)
-# 
+#
 # Usage:
 # hfc_get_cmake_re_command(
 #   <OUT_result>
-#   INSTALL_PREFIX <value> 
+#   INSTALL_PREFIX <value>
 #   CMAKE_BUILD_TYPE <value>
 #   PROJECT_SOURCE_DIR <value>
 #   PROJECT_BINARY_DIR <value>
-#   TOOLCHAIN_FILE <value> 
+#   TOOLCHAIN_FILE <value>
 #   GENERATOR <value>
 #   ORIGIN <value>
-#   [ 
+#   [
 #     BUILD <value>
 #     [ BUILD_TARGET <target-name> ]
 #     [ BUILD_CLEAN_FIRST ]

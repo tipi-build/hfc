@@ -21,18 +21,18 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeHermetic(
-  components 
-  
+  components
+
   BUILD_TARGETS "some-component;another-component"
-  
+
   HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION  [=[
     add_executable(some-component IMPORTED )
-    set_target_properties(some-component PROPERTIES 
+    set_target_properties(some-component PROPERTIES
       IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/bin/some-component")
     add_executable(another-component IMPORTED )
-    set_target_properties(another-component PROPERTIES 
+    set_target_properties(another-component PROPERTIES
       IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/bin/another-component")
-  ]=]  
+  ]=]
 
 )
 

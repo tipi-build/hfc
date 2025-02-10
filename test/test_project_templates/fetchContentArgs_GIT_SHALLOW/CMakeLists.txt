@@ -15,7 +15,7 @@ set(CMAKE_MODULE_PATH
 include(HermeticFetchContent)
 
 set(git_shallow_arg_value "")
-if(HFCTEST_DATA_GIT_SHALLOW_VALUE) 
+if(HFCTEST_DATA_GIT_SHALLOW_VALUE)
   set(git_shallow_arg_value "GIT_SHALLOW" "${HFCTEST_DATA_GIT_SHALLOW_VALUE}")
 endif()
 
@@ -36,8 +36,8 @@ FetchContent_MakeHermetic(
 HermeticFetchContent_MakeAvailableAtConfigureTime(dependency)
 
 
-FetchContent_GetProperties(dependency 
-  POPULATED result_dependency_POPULATED 
+FetchContent_GetProperties(dependency
+  POPULATED result_dependency_POPULATED
   SOURCE_DIR result_dependency_SOURCE_DIR
 )
 

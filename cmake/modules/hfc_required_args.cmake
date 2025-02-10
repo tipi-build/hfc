@@ -2,7 +2,7 @@
 include_guard()
 
 # Function that crashes on fatal error if any arguments passed to it is missing
-# Use like : 
+# Use like :
 # cmake_parse_arguments(PARAM "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 #  hfc_required_args(PARAM ${oneValueArgs})
 #

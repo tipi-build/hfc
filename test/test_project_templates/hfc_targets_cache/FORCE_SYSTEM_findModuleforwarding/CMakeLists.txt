@@ -24,7 +24,7 @@ endif()
 
 # test if data from this build's CMakeCache get forwarded, there's a message() outputtting TESTDATA_INJECTED in our custom findIconv.cmake
 # and the test checks if it can find that info
-set(HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES "TESTDATA_INJECTED;CMAKE_BUILD_TYPE;CMAKE_CXX_STANDARD;CMAKE_CXX_STANDARD_REQUIRED") 
+set(HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES "TESTDATA_INJECTED;CMAKE_BUILD_TYPE;CMAKE_CXX_STANDARD;CMAKE_CXX_STANDARD_REQUIRED")
 
 FetchContent_Declare(
   Iconv
@@ -34,10 +34,10 @@ FetchContent_Declare(
 
 FetchContent_MakeHermetic(
   Iconv
-  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION 
+  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
   [=[
     add_library(Iconv::Iconv STATIC IMPORTED)
-    set_property(TARGET Iconv::Iconv PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libiconv.a")    
+    set_property(TARGET Iconv::Iconv PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libiconv.a")
     set_property(TARGET Iconv::Iconv PROPERTY INTERFACE_INCLUDE_DIRECTORIES @HFC_PREFIX_PLACEHOLDER@/include)
   ]=]
   HERMETIC_BUILD_SYSTEM autotools

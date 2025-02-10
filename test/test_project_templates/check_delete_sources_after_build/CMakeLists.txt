@@ -22,7 +22,7 @@ FetchContent_Declare(
 )
 
 
-string(CONFIGURE 
+string(CONFIGURE
   [=[
   set(test_data_injected "@TEST_DATA_INJECTED@")
   if(test_data_injected STREQUAL "")
@@ -47,8 +47,8 @@ else()
   message(FATAL_ERROR "Wrong value of TEST_DATA_MAKE_AVAILABLE_AT")
 endif()
 
-FetchContent_GetProperties(mathlib 
-  POPULATED result_mathlib_POPULATED 
+FetchContent_GetProperties(mathlib
+  POPULATED result_mathlib_POPULATED
   SOURCE_DIR result_mathlib_SOURCE_DIR
   BINARY_DIR result_mathlib_BINARY_DIR
 )

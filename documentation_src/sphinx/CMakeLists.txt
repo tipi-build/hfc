@@ -128,7 +128,7 @@ foreach(format IN LISTS doc_formats)
   else()
     set(doctrees "doctrees")
   endif()
-  
+
   set(_args
       -c ${CMAKE_CURRENT_BINARY_DIR}
       -d ${CMAKE_CURRENT_BINARY_DIR}/${doctrees}

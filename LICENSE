@@ -36,3 +36,4 @@ The following individuals and institutions are among the Contributors:
   * Parts of `HermeticFetchContent` rely on CMake modules extracted from
     Ruslan Baratov's [hunter](https://github.com/ruslo/hunter)
     (BSD 2-Clause "Simplified" License)
+* Edward Nolan [@enolan-maystreet](https://github.com/enolan-maystreet)

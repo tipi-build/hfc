@@ -30,18 +30,18 @@ HermeticFetchContent_MakeAvailableAtBuildTime("mathlib")
 FetchContent_Declare(
   Iconv
   GIT_REPOSITORY https://github.com/tipi-build/unittest-autotools-sample.git
-  GIT_TAG ad80b024eeda8f4c0a96eedf669dc453ed33a094 
+  GIT_TAG ad80b024eeda8f4c0a96eedf669dc453ed33a094
 )
 
 FetchContent_MakeHermetic(
   Iconv
-  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION 
+  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
      [=[
        add_library(Iconv::Iconv STATIC IMPORTED)
-       set_property(TARGET Iconv::Iconv PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libiconv.a")    
+       set_property(TARGET Iconv::Iconv PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libiconv.a")
        set_property(TARGET Iconv::Iconv PROPERTY INTERFACE_INCLUDE_DIRECTORIES @HFC_PREFIX_PLACEHOLDER@/include)
      ]=]
-  HERMETIC_TOOLCHAIN_EXTENSION 
+  HERMETIC_TOOLCHAIN_EXTENSION
     [=[
         add_compile_definitions(
           TIPI_TEAM=1

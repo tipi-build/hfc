@@ -40,7 +40,7 @@ function(hfc_custom_echo_command_append command_name entry)
   # Note:
   # the script at ${data_script_name} contains a single variable named "custom_command_data"
   # we load the existing contents and then append $entry, remove all dupes and save it again
-  
+
   set(custom_command_data "")
   include(${data_script_name})
 
@@ -51,6 +51,6 @@ function(hfc_custom_echo_command_append command_name entry)
 
   block(SCOPE_FOR VARIABLES PROPAGATE HERMETIC_FETCHCONTENT_ROOT_DIR TEMPLATE_custom_command_data)
     configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/hfc_custom_echo_command.data.cmake.in" "${data_script_name}" @ONLY)
-  endblock()  
+  endblock()
 
 endfunction()

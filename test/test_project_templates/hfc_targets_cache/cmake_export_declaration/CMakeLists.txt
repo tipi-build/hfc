@@ -1,6 +1,6 @@
 #
-# Base hfc targets cache functionality test 
-# ensures that packages and properties can be read from package config exports 
+# Base hfc targets cache functionality test
+# ensures that packages and properties can be read from package config exports
 #
 
 cmake_minimum_required(VERSION 3.27.6)
@@ -26,10 +26,10 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeHermetic(mathslib
-  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION 
+  HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
     [=[
       add_library(Another::Mathslib STATIC IMPORTED)
-      set_property(TARGET Another::Mathslib PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libMathFunctions.a")    
+      set_property(TARGET Another::Mathslib PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libMathFunctions.a")
       set_property(TARGET Another::Mathslib PROPERTY INTERFACE_INCLUDE_DIRECTORIES @HFC_PREFIX_PLACEHOLDER@/include)
     ]=]
   HERMETIC_BUILD_SYSTEM cmake
@@ -38,7 +38,7 @@ FetchContent_MakeHermetic(mathslib
 if(HFCTEST_CONFIGURETIME_DEPENDENCY AND HFCTEST_BUILDTIME_DEPENDENCY)
   set(param_error ON)
 else()
-  if(HFCTEST_CONFIGURETIME_DEPENDENCY) 
+  if(HFCTEST_CONFIGURETIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtConfigureTime(mathslib)
   elseif(HFCTEST_BUILDTIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtBuildTime(mathslib)

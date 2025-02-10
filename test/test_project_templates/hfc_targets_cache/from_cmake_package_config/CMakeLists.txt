@@ -1,6 +1,6 @@
 #
-# Base hfc targets cache functionality test 
-# ensures that packages and properties can be read from package config exports 
+# Base hfc targets cache functionality test
+# ensures that packages and properties can be read from package config exports
 #
 
 cmake_minimum_required(VERSION 3.27.6)
@@ -30,7 +30,7 @@ FetchContent_MakeHermetic(mathslib)
 if(HFCTEST_CONFIGURETIME_DEPENDENCY AND HFCTEST_BUILDTIME_DEPENDENCY)
   set(param_error ON)
 else()
-  if(HFCTEST_CONFIGURETIME_DEPENDENCY) 
+  if(HFCTEST_CONFIGURETIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtConfigureTime(mathslib)
   elseif(HFCTEST_BUILDTIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtBuildTime(mathslib)

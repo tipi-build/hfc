@@ -1,5 +1,5 @@
 # HermeticFetchContent / project hooks
-# 
+#
 include_guard()
 include(hfc_log)
 include(hfc_required_args)
@@ -26,11 +26,11 @@ list(APPEND HERMETIC_FETCHCONTENT_KNOWN_HOOKS "AFTER_RESOLVE_FINDPACKAGE")
 # log informations at supplied LEVEL
 function(hfc_project_hooks_invoke hook content_name)
   string(TOLOWER ${content_name} lower_case_content_name)
-  
+
   if(NOT ${hook} IN_LIST HERMETIC_FETCHCONTENT_KNOWN_HOOKS)
     hfc_log(FATAL_ERROR "Unkown hook name '${hook}'")
   endif()
-  
+
   set(command_name "${lower_case_content_name}_hfc_hook_${hook}")
   if(COMMAND ${command_name})
     # invoke the hook and just forward everything after the named params above

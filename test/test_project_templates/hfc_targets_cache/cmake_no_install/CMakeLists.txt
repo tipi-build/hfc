@@ -1,5 +1,5 @@
 #
-# Base hfc targets cache functionality test 
+# Base hfc targets cache functionality test
 # ensures we can use projects that do not install using add_subdirectory
 #
 
@@ -30,7 +30,7 @@ FetchContent_MakeHermetic(mathslib)
 if(HFCTEST_CONFIGURETIME_DEPENDENCY AND HFCTEST_BUILDTIME_DEPENDENCY)
   set(param_error ON)
 else()
-  if(HFCTEST_CONFIGURETIME_DEPENDENCY) 
+  if(HFCTEST_CONFIGURETIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtConfigureTime(mathslib)
   elseif(HFCTEST_BUILDTIME_DEPENDENCY)
     HermeticFetchContent_MakeAvailableAtBuildTime(mathslib)

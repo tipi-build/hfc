@@ -154,4 +154,9 @@ Please refer to [Contributing](./CONTRIBUTING.md) for details.
 
 Authored with love, blood and tears in Zürich, Switzerland by team **[tipi.build](https://tipi.build)**.
 
-Parts of `HermeticFetchContent` rely on CMake modules extracted from Ruslan Baratov's [hunter](https://github.com/ruslo/hunter) project (BSD 2-Clause "Simplified" License: [link](https://github.com/ruslo/hunter/blob/master/LICENSE)).
+See all awesome contributors in [LICENSE](./LICENSE) :
+* Ruslan Baratov
+  * Parts of `HermeticFetchContent` rely on CMake modules extracted from
+    Ruslan Baratov's [hunter](https://github.com/ruslo/hunter)
+    (BSD 2-Clause "Simplified" License)
+* Edward Nolan [@enolan-maystreet](https://github.com/enolan-maystreet)

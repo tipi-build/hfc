@@ -5,7 +5,7 @@ include(hfc_log)
 include(hfc_goldilock_helpers)
 function(hfc_ensure_executable_version_greater_equal is_executable_and_correct_version)
   set(options "")
-  set(oneValueArgs 
+  set(oneValueArgs
     EXECUTABLE_PATH
     MINIMUM_VERSION
   )
@@ -30,10 +30,10 @@ function(hfc_ensure_executable_version_greater_equal is_executable_and_correct_v
     if("${current_goldilock_version}" VERSION_LESS  "${FN_ARG_MINIMUM_VERSION}")
       hfc_log(WARNING "${FN_ARG_EXECUTABLE_PATH} is at version v${current_goldilock_version} and does not meet the minimum version which is v${FN_ARG_MINIMUM_VERSION}")
     else()
-      hfc_log(TRACE "- goldilock version info: ${command_stdoutput}") 
+      hfc_log(TRACE "- goldilock version info: ${command_stdoutput}")
       set(correct_version_and_is_executable TRUE)
     endif()
   endif()
-  
+
   set(${is_executable_and_correct_version} "${correct_version_and_is_executable}" PARENT_SCOPE)
 endfunction()

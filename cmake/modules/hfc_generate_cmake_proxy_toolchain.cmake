@@ -38,12 +38,12 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     DESTINATION_TOOLCHAIN_PATH
   )
 
-  set(multi_value_params 
+  set(multi_value_params
     HERMETIC_FIND_PACKAGES
   )
 
   cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
-  
+
   # replicate the behavior of cmake when it resolves the toolchain path
   # as per documentations this is:
   # "Relative paths are allowed and are interpreted first as relative to the build directory, and if not found, relative to the source directory."
@@ -79,9 +79,9 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   # gather targets information
   set(project_dependency_contents "include(hfc_targets_cache_common)\n")
   foreach(package IN LISTS FN_ARG_HERMETIC_FIND_PACKAGES)
-  
-    string(APPEND 
-      project_dependency_contents 
+
+    string(APPEND
+      project_dependency_contents
       "hfc_targets_cache_register_dependency_for_provider(${package} "
         "TARGETS_INSTALL_PREFIX \"${HERMETIC_FETCHCONTENT_${package}_INSTALL_PREFIX}\" "
         "TARGETS_CACHE_FILE \"${HERMETIC_FETCHCONTENT_${package}_TARGETS_CACHE_FILE}\" "
@@ -99,7 +99,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
       set(additional_set_args "")
       get_property(var_type_in_cache CACHE ${cmake_variable} PROPERTY TYPE)
-      
+
       if(var_type_in_cache)
         set(additional_set_args "CACHE ${var_type_in_cache} \"\" FORCE")
       endif()
@@ -119,25 +119,25 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   foreach(consumed_content_name IN LISTS HERMETIC_FETCHCONTENT_ALIASED_CONTENTS)
     __HermeticFetchContent_GetAliasesForContentVariableName("${consumed_content_name}" consumed_content_aliases)
     foreach(alias_name IN LISTS ${consumed_content_aliases})
-      string(APPEND hfc_contents_forwarding_code "HermeticFetchContent_AddContentAliases(${consumed_content_name} \"${alias_name}\")\n")      
-    endforeach()        
+      string(APPEND hfc_contents_forwarding_code "HermeticFetchContent_AddContentAliases(${consumed_content_name} \"${alias_name}\")\n")
+    endforeach()
   endforeach()
 
   #
   set(destination_file_tmp "${FN_ARG_DESTINATION_TOOLCHAIN_PATH}.tmp")
 
   # generate the proxy toolchain (isolate ourselves from variable polution from parent scope)
-  block(SCOPE_FOR VARIABLES 
-    PROPAGATE 
+  block(SCOPE_FOR VARIABLES
+    PROPAGATE
       toolchain_path_abs
       content_name
       proxy_toolchain_forwarded_cmake_variables_content
       HERMETIC_FETCHCONTENT_ROOT_DIR
       HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES
       HERMETIC_FETCHCONTENT_goldilock_BIN
-      project_dependency_contents 
-      destination_file_tmp 
-      FN_ARG_PROJECT_TOOLCHAIN_EXTENSION 
+      project_dependency_contents
+      destination_file_tmp
+      FN_ARG_PROJECT_TOOLCHAIN_EXTENSION
       FN_ARG_HERMETIC_FIND_PACKAGES
       FN_ARG_PROJECT_SOURCE_DIR
       FN_ARG_PROJECT_SOURCE_SUBDIR
@@ -163,7 +163,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
     set(HFC_AVAILABLE_CONTENTS_CODE "${hfc_contents_forwarding_code}")
 
-    set(proxy_toolchain_template_path "${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/hfc_hermetic_proxy_toolchain.cmake.in") 
+    set(proxy_toolchain_template_path "${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/hfc_hermetic_proxy_toolchain.cmake.in")
     configure_file("${proxy_toolchain_template_path}" "${destination_file_tmp}" @ONLY)
   endblock()
 
