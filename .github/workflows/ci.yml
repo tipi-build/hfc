@@ -1,12 +1,11 @@
 name: build 
 
-# This workflow is triggered on pushes to the repository.
+# This workflow is triggered on PRs ony
 on:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
+  pull_request_target:
+
+permissions:
+  contents: read
 
 env:
   GHA_HFC_TOOLS_DIR_CACHE_KEY: 20241128
@@ -49,11 +48,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-hfc-project-cache-
 
-      - name: checkout
+      # Checkout the project to the correct location
+      # note: having two distinct paths here depending on wether or not we're looking at a PR or push to main
+      #
+      # This is necessary because we use the pull_request_target which requires a fully specified :ref: config
+      - name: checkout pull request
         uses: actions/checkout@v4
-        with:
-          # Relative path under $GITHUB_WORKSPACE to place the repository
+        with:          
           path: './hfc_project'
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: tipi builds project 
         run: |
