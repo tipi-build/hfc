@@ -146,6 +146,10 @@ You can run the HermeticFetchContent test suite this way:
   * `HFC_PROJECT_HFC_BASEDIR` to use a common "HFC base dir" (which will contain the dependency install trees)
   * `HERMETIC_FETCHCONTENT_TOOLS_DIR` if you have one, avoid rebuilding `goldilock` too frequently, by default a `${CMAKE_BINARY_DIR}/.hfc_tools/` directory will be created
 
+## Contributing
+
+Please refer to [Contributing](./CONTRIBUTING.md) for details.
+
 ## Authors
 
 Authored with love, blood and tears in Zürich, Switzerland by team **[tipi.build](https://tipi.build)**.
