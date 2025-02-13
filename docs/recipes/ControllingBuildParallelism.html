@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <title>HermeticFetchContent / Recipes / Controlling Build Parallelism &mdash; hermetic-fetchcontent  Documentation</title>
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/cmake.css" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    
+    <link rel="icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="How to define build Environments" href="HowToDefineBuildEnvironments.html" />
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within CMake Documentation of Latest Version"
+          href="../../latest-opensearch.xml"/>
+    <script type="text/javascript" src="../../version_switch.js"></script>
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="HowToDefineBuildEnvironments.html" title="How to define build Environments"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/tipi-logo.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://tipi.build/">tipi</a> &#187;
+  </li>
+  <li>
+    <span class="version_switch"></span>
+    <a href="../index.html">Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">HermeticFetchContent / Recipes / Controlling Build Parallelism</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="controlling-build-parallelism">
+<h1>Controlling Build Parallelism<a class="headerlink" href="#controlling-build-parallelism" title="Permalink to this heading">¶</a></h1>
+<p>Because of the complex nature of the build graph in Hermetic FetchContent you may want to adjust the build
+parallelity in some situations like CI or shared build nodes.</p>
+<p>Hermetic FetchContent does use a combination of the following parameters to set the build parallelism:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>the number of CPU cores available on your system</p></li>
+<li><p>the value of the environment variable <code class="docutils literal notranslate"><span class="pre">CMAKE_BUILD_PARALLEL_LEVEL</span></code></p></li>
+<li><p>the value supplied to <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span></code> via the <code class="docutils literal notranslate"><span class="pre">-j</span> <span class="pre">&lt;jobs&gt;</span></code> / <code class="docutils literal notranslate"><span class="pre">--parallel</span> <span class="pre">&lt;jobs&gt;</span></code> argument</p></li>
+</ul>
+</div></blockquote>
+<p>Generally note that dependencies that are made available at <strong>build time</strong> will have their own, separate
+allocation of CPU ressources as these dependent builds are generally unaware of the ressource allocations
+of peer and parent projects. This means that you may end up with sever over-loading of the system depending
+on the build graph of your project and available ressources.</p>
+<p>When no setting is provided, Hermetic FetchContent will defer to the invoked build system (<code class="docutils literal notranslate"><span class="pre">ninja</span></code> or <code class="docutils literal notranslate"><span class="pre">make</span></code>
+for example) to select the build parallelism (which typically fall back to the number of CPU cores).</p>
+<p>The value provided via <code class="docutils literal notranslate"><span class="pre">CMAKE_BUILD_PARALLEL_LEVEL</span></code> is taken into account by CMake throughout the build graph,
+meaning that the set value is used for each of the builds that make up the graph of your project.</p>
+<p>The value passed to CMake via the <code class="docutils literal notranslate"><span class="pre">-j</span> <span class="pre">&lt;jobs&gt;</span></code> / <code class="docutils literal notranslate"><span class="pre">--parallel</span> <span class="pre">&lt;jobs&gt;</span></code> argument are taken into account <strong>only
+for the top level build graph</strong>. This detail enables you to control the build parallelism for the project
+and the dependency builds independently:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># $PWD = project root</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">CMAKE_BUILD_PARALLEL_LEVEL</span><span class="o">=</span><span class="m">16</span>
+cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build/release/<span class="w"> </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release<span class="w"> </span>...
+<span class="nb">export</span><span class="w"> </span><span class="nv">CMAKE_BUILD_PARALLEL_LEVEL</span><span class="o">=</span><span class="m">2</span>
+cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>-j10
+</pre></div>
+</div>
+<p>The example above will have the following behavior</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>all dependencies <strong>made available at configure time</strong> will use 16 CPU cores (which is not an issue as they are run in sequence)</p></li>
+<li><p>during the build
+- dependencies <strong>made available at build time</strong> will use 2 CPU cores
+- the top level build graph (your project) will use 10 CPU cores</p></li>
+</ul>
+</div></blockquote>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="HowToDefineBuildEnvironments.html"
+                          title="previous chapter">How to define build Environments</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/recipes/ControllingBuildParallelism.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="HowToDefineBuildEnvironments.html" title="How to define build Environments"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/tipi-logo.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://tipi.build/">tipi</a> &#187;
+  </li>
+  <li>
+    <span class="version_switch"></span>
+    <a href="../index.html">Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">HermeticFetchContent / Recipes / Controlling Build Parallelism</a></li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright tipi technologies Ltd..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    </div>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-6042509-4");
+pageTracker._trackPageview();
+} catch(err) {}
+</script>
+  </body>
+</html>

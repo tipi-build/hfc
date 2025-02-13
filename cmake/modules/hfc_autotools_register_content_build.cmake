@@ -69,8 +69,7 @@ function(hfc_autotools_register_content_build content_name)
   endif()
   set (AUTOTOOLS_MAKE_PROGRAM "${MAKE_PROGRAM}")
 
-  ProcessorCount(NUM_JOBS)
-  set (build_command "${MAKE_PROGRAM} -j ${NUM_JOBS}")
+  set (build_command "${MAKE_PROGRAM} -j @NUM_JOB_PLACEHOLDER@") # the @@ placeholder will be replaced in the generated external project
 
   if (CMAKE_RE_ENABLE)
     # CMake RE manages the install tree by version
