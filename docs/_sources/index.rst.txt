@@ -28,6 +28,7 @@ Recipes
   
   /recipes/HowToAddALibrary
   /recipes/HowToDefineBuildEnvironments
+  /recipes/ControllingBuildParallelism
 
 
 Index and Search

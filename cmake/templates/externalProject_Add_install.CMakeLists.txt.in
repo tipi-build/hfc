@@ -31,10 +31,18 @@ if(NOT "${effective_source_dir}" STREQUAL "${input_BINARY_DIR}")
   goldilock_command_append_lockfile("${input_BINARY_DIR}")
 endif()
 
+# this is going to be interpreted by bash and will use our getcpujobcount.cmake script to
+# either "use the value of CMAKE_BUILD_PARALLEL_LEVEL or fall back to number of CPUs detected by cmake"
+#
+# note that ${variable} will be interpreted by cmake, however the surrounding $(...) (note the parentheses vs curly bracket!)
+# are bash syntax and will be executed at runtime by the bash that is to be found in the command_str below
+set(NUM_JOB_PLACEHOLDER "$(${CMAKE_COMMAND} -P ${HERMETIC_FETCHCONTENT_ROOT_DIR}/scripts/getcpujobcount.cmake)")
+string(CONFIGURE "@TEMPLATE_BUILD_CMD@" configure_command @ONLY)
+
 # build the command (with explanations)
 set(command_str "")
 string(APPEND command_str     "test -d ${effective_source_dir}")  # fail is the source dir is not here for some reason
-string(APPEND command_str " && ${goldilock_commands} -- /bin/bash -c \"@TEMPLATE_BUILD_CMD@ && @TEMPLATE_INSTALL_CMD@\"")     # acquire all locks
+string(APPEND command_str " && ${goldilock_commands} -- /bin/bash -c \"${configure_command} && @TEMPLATE_INSTALL_CMD@\"")     # acquire all locks
 
 ExternalProject_Add(@TEMPLATE_TARGET_NAME@
   SOURCE_DIR "@TEMPLATE_SOURCE_DIR@"

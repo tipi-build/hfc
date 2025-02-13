@@ -69,8 +69,7 @@ function(hfc_cmake_register_content_build content_name)
   # notes:
   # the project was already configured correctly in the calling function, in this spot we just need
   # to setup the external project to build & install (on demand or at configure time depending on preferences)
-  ProcessorCount(NUM_JOBS)
-  set(build_command "${CMAKE_COMMAND} --build . -j ${NUM_JOBS}")
+  set(build_command "${CMAKE_COMMAND} --build . -j @NUM_JOB_PLACEHOLDER@")
   set(install_commands_list "")
 
   # Ensure that before installing we have a clean install tree, not used by anyone
