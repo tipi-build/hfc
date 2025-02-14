@@ -221,7 +221,7 @@ function(hfc_ensure_goldilock_available)
   # Ok we have no luck, we need to build it for the current host
   if(NOT HERMETIC_FETCHCONTENT_goldilock_BIN OR NOT goldilock_has_correct_version_and_is_executable)
     hfc_log_debug(" - Building goldilock from source (${FN_ARG_GOLDILOCK_REVISION})")
-    set(HFC_GOLDILOCK_BUILD_ARGS "")
+    set(HFC_GOLDILOCK_BUILD_ARGS "-DBUILD_TESTING=OFF")
 
     include(ExternalProject)
     include(FetchContent)

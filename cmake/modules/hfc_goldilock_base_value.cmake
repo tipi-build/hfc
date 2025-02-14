@@ -1,6 +1,6 @@
 set(GOLDILOCK_MINIMUM_VERSION 1.2.0)
 hfc_ensure_goldilock_available(
-  GOLDILOCK_REVISION 5b34d2fed2d7da1280a2c5a8134f3d6fe10587df
+  GOLDILOCK_REVISION 228659330ba540a7a6cbf6eb8d7440cb6bd6582e
   GOLDILOCK_MINIMUM_VERSION ${GOLDILOCK_MINIMUM_VERSION}
 
   GOLDILOCK_URL_PREBUILT_Darwin_arm64 https://github.com/tipi-build/goldilock/releases/download/v${GOLDILOCK_MINIMUM_VERSION}/goldilock-macos.zip
