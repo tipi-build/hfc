@@ -14,7 +14,7 @@ function(create_target_aliases target_name OUT_aliases_name)
   
   block(PROPAGATE TARGET_NAME TARGET_ALIASES)
   # injected code
-  @TEMPLATE_CREATE_TARGET_ALIASES@
+  @CREATE_TARGET_ALIASES@
 
   endblock()
 
