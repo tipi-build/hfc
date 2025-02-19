@@ -196,10 +196,20 @@ function(hfc_make_available_single content_name build_at_configure_time)
         DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
       )
 
+      if(__PARAMS_FIND_PACKAGE_ARGS)
+        set(findpackage_args "${__PARAMS_FIND_PACKAGE_ARGS}")
+      else()
+        set(findpackage_args "REQUIRED")
+      endif()
+
+      if(NOT findpackage_args MATCHES "REQUIRED")
+        hfc_log(WARNING "The FIND_PACKAGE_ARGS provided in the content declaration of ${content_name} do not contain the REQUIRED flag. This might cause the resulting targets to be empty if the dependency cannot be resolve. (Valud of FIND_PACKAGE_ARGS='${__PARAMS_FIND_PACKAGE_ARGS}')")
+      endif()
+
       get_hermetic_target_cache_file_path(${content_name} target_cache_file)
       hfc_targets_cache_create_isolated(
         ${content_name}
-        LOAD_TARGETS_CMAKE "[==[find_package(${content_name} REQUIRED ${__PARAMS_FIND_PACKAGE_ARGS} ) \n]==]"
+        LOAD_TARGETS_CMAKE "[==[find_package(${content_name} ${findpackage_args}) \n]==]"
         CACHE_DESTINATION_FILE "${target_cache_file}"
         TEMP_DIR "${HERMETIC_FETCHCONTENT_INSTALL_DIR}/targets_dump_tmp"
         TOOLCHAIN_FILE ${proxy_toolchain_path}
