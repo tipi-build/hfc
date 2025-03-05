@@ -4,7 +4,7 @@ project(grpc_use_3rd_party_cmake_modules)
 include(FetchContent)
 
 set(hfc_REPOSITORY https://github.com/tipi-build/hfc)
-set(hfc_REVISION d96218a428652e4f7b45e07a42e8974c6b1a6927)
+set(hfc_REVISION main)
 
 include(HermeticFetchContent OPTIONAL RESULT_VARIABLE hfc_included) 
 if(NOT hfc_included)
