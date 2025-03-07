@@ -99,10 +99,12 @@ hfc_generate_sbom(
 )
 ```
 
-### How does it compare to CPM ?
-CMake FetchContent popularity is constantly growing with projects like CPM or cmake-init.
+### How does it extend the FetchContent ecosystem
+This project isn't yet-another-package-manager, it's an extension to CMake FetchContent.
 
-However plain FetchContent or CPM lacks serious features :
+CMake FetchContent popularity is growing with projects like CPM or cmake-init. HermeticFetchContent is not a replacement for CPM or FetchContent but an extension and improvement to those !
+
+However plain FetchContent or CPM (which is based on FetchContent) lack some features :
   - Only works with high quality CMake dependencies: OpenSSL, autotools build systems and real-life CMake projects with no consideration for FetchContent aren't supported
   - It needs to clone all sources on builds
     * `hfc` can fetch only the install tree of a dependency when `cmake-re` is enabled
@@ -127,7 +129,7 @@ If pointed to an HERMETIC_FETCHCONTENT_INSTALL_DIR, it can reuse install tree lo
     - `HermeticFetchContent_MakeAvailableAtConfigureTime()`
 
 #### SBOMs
-  - Run the hfc_generate_sbom and you will get you a full SBOM in SPDX format
+  - Run `cmake --build build/ --target hfc_generate_sbom` and you will get you a full SBOM in SPDX format
 
 ## Developer Guide
 
