@@ -45,7 +45,7 @@ namespace hfc::test {
   };
 
   BOOST_DATA_TEST_CASE(
-    check_hfc_recursive_cmake_dependency_aliases, 
+    check_hfc_recursive_initialization, 
     boost::unit_test::data::make(hfc::test::test_variants()) * boost::unit_test::data::make(TEST_DATA_cases),    
     tc_variant,
     tc_case
@@ -79,6 +79,33 @@ namespace hfc::test {
     run_command(build_command, test_project_path);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample"));
+  }
+
+
+  BOOST_DATA_TEST_CASE(
+    check_hfc_recursive_add_subdirectory_initialization_with_SBOM, 
+    boost::unit_test::data::make(hfc::test::test_variants()),
+    tc_variant
+  ) {
+    fs::path test_project_path = prepare_project_to_be_tested("hfc-recursive-add_subdirectory-initialization", tc_variant.is_cmake_re);
+    fs::path project_toolchain = get_project_toolchain_path(test_project_path);
+    
+    append_random_testdata_marker_as_toolchain_comment(project_toolchain, tc_variant);
+    write_simple_main(test_project_path, { "More_MathFunctions.h" });
+
+    auto configure_command = get_cmake_configure_command(test_project_path, tc_variant, "");
+    run_command(configure_command, test_project_path);    
+    
+    auto build_command = get_cmake_build_command(test_project_path, tc_variant);
+    run_command(build_command, test_project_path);
+
+    BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample"));
+
+    // generate the sbom and check that get to 2 mathlibs being processed
+    auto sbom_gen_output = run_command(build_command + " --target hfc_generate_sbom"s, test_project_path);
+
+    BOOST_REQUIRE(boost::contains(sbom_gen_output, "SPDXRef-toplevel-mathlib-0.cmake"));
+    BOOST_REQUIRE(boost::contains(sbom_gen_output, "SPDXRef-mathlib-1.cmake"));
   }
 
 }

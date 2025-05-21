@@ -73,6 +73,34 @@ function(hfc_generate_sbom)
         ${ARGN}
     )
 
+    set(custom_target_name "hfc_generate_sbom") 
+
+    # NOTE:
+    #
+    # handle recursive usage of hfc_sbom if this is used in a case of add_subdirectory(<the project that calls hfc_generate_sbom()>)
+    # note that the sbom will also contain all depencendies that were consumed up to here but not necessarily ALL project dependencies
+    # to the SBOM generated in the subdirectory will be both incomplete (vs full project) and polluted (vs only a build of the subdirectory)
+    #
+    # this is because HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS is a global that has not notion of the add_subdirectory() calls
+    # (because we want it so for other reasons [transitive deps, first recorded deps])
+    #
+    # For this reason we will add a subdirectory specific target for these (probably broken) partial SBOMs to leave the consumer
+    # the option to activate the SBOM generation at the top-level where they will get a good one while also leaving the door open
+    # to cases where there's not HFC at the top level so we want the SBOM anyway
+    #
+    if(NOT "${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+        file(RELATIVE_PATH rel_path "${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
+        string(REPLACE "/" "_" rel_path_safe "${rel_path}")
+        set(custom_target_name "hfc_generate_sbom_${rel_path_safe}")
+
+        message(WARNING "Detected nested usage of HFC SBOM generation - target name is: ${custom_target_name} for SBOM generated inside ${rel_path} - if active at top-level too, use target hfc_generate_sbom to generate complete project SBOM")
+    endif()
+
+    if(TARGET ${custom_target_name})
+        message(WARNING "There seem to be multiple calls to hfc_generate_sbom() in this cmake build directory - skipping redefition for the SBOM ${FN_ARG_OUTPUT} - please check carefully there might be unexpected or missing contents!")
+        return()
+    endif()
+
     hfc_log_debug("Generating SBOM (OUTPUT '${FN_ARG_OUTPUT}' LICENSE '${FN_ARG_LICENSE}' SUPPLIER '${FN_ARG_SUPPLIER}' SUPPLIER_URL '${FN_ARG_SUPPLIER_URL}')")
     sbom_generate(
         OUTPUT "${FN_ARG_OUTPUT}"
@@ -163,9 +191,7 @@ function(hfc_generate_sbom)
     #
     # DIY finalize so we control the runtime (no need to install()... )
     #
-    #hfc_log_debug("Finalizing SBOM")
-
-    set(output_destination_path "${CMAKE_BINARY_DIR}/${FN_ARG_OUTPUT}")
+    set(output_destination_path "${CMAKE_CURRENT_BINARY_DIR}/${FN_ARG_OUTPUT}")
     set(generate_sbom_script "${CMAKE_CURRENT_BINARY_DIR}/hfc_sbom/generate_sbom.cmake")
 
     file(
@@ -236,7 +262,7 @@ message(STATUS \"===SBOM===\")
 message(STATUS \"${output_destination_path}\")
 	")
 
-    add_custom_target(hfc_generate_sbom
+    add_custom_target(${custom_target_name}
       COMMENT "Generate the project's SBOM"
       COMMAND ${CMAKE_COMMAND} "-P ${generate_sbom_script}"
     )
