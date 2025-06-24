@@ -127,10 +127,10 @@ namespace hfc::test {
   
   }
 
-  inline std::string get_cmake_configure_command(fs::path test_project_path, test_variant data, std::string additional_cmake_variables = ""){
+  inline std::string get_cmake_configure_command(fs::path test_project_path, test_variant data, std::string additional_cmake_variables = "", std::string CMAKE_TOOLCHAIN_FILE = "toolchain/toolchain.cmake"){
     std::string verbose_cmake = "";
     if(data.is_cmake_re) { verbose_cmake = "-vv"; }
-    return (data.cmake_bin.generic_string() + " -GNinja " + additional_cmake_variables + " -DCMAKE_TOOLCHAIN_FILE=toolchain/toolchain.cmake -DCMAKE_BUILD_TYPE=Release " + data.enable_cmake_re + " " +verbose_cmake+" -S "+test_project_path.string()+" -B "+(test_project_path / "build").string());  
+    return (data.cmake_bin.generic_string() + " -GNinja " + additional_cmake_variables + " -DCMAKE_TOOLCHAIN_FILE="+ CMAKE_TOOLCHAIN_FILE +" -DCMAKE_BUILD_TYPE=Release " + data.enable_cmake_re + " " +verbose_cmake+" -S "+test_project_path.string()+" -B "+(test_project_path / "build").string());  
   }
 
   inline std::string get_cmake_build_command(fs::path test_project_path, test_variant data, std::string additional_flags_ninja = ""){
