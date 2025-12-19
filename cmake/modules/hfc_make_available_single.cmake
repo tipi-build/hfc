@@ -80,6 +80,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_FIND_PACKAGES
     BUILD_TARGETS
     CUSTOM_INSTALL_TARGETS
+    HERMETIC_CONFIG_EXTRA_ARGS
   )
 
   cmake_parse_arguments(
@@ -335,6 +336,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
       HFC_CONFIGURE_MARKER_FILE ${hfc_configure_marker_file}
       MAKE_EXECUTABLES_FINDABLE "${__PARAMS_MAKE_EXECUTABLES_FINDABLE}"
       HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
+      HERMETIC_CONFIG_EXTRA_ARGS ${__PARAMS_HERMETIC_CONFIG_EXTRA_ARGS}
       ORIGIN ${${content_name}_origin}
       REVISION ${${content_name}_revision}
     )
