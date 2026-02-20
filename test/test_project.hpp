@@ -175,12 +175,12 @@ namespace hfc::test {
 
     cmd << data.cmake_bin.generic_string();
 
+    cmd << SPACE << "--build";
+    cmd << SPACE << (test_project_path / "build").generic_string();
+
     if(data.command_line_arguments != "") {
       cmd << SPACE << data.command_line_arguments;
     }
-
-    cmd << SPACE << "--build";
-    cmd << SPACE << (test_project_path / "build").generic_string();
 
     if(data.build_time_command_line_arguments != "") { 
       cmd << SPACE << data.build_time_command_line_arguments;
