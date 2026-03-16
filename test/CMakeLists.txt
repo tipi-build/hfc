@@ -107,6 +107,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/check_delete_build_folder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_prepatch_resolver.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/fetchContentArgs_GIT_SHALLOW_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_toolchain_overridable_option.cpp"
 )
 
 foreach(test_file IN LISTS test_source_files)
