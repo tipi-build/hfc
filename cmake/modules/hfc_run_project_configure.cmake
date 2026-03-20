@@ -61,6 +61,12 @@ function(hfc_run_project_configure content_name)
 
   # make sure to avoid issues that could occur when reconfiguring an existing tree
   if(EXISTS "${FN_ARG_PROJECT_BINARY_DIR}")
+    if(IS_SYMLINK "${FN_ARG_PROJECT_BINARY_DIR}")
+      file(READ_SYMLINK "${FN_ARG_PROJECT_BINARY_DIR}" symlink_destination)
+      if(EXISTS "${symlink_destination}")
+        file(REMOVE_RECURSE "${symlink_destination}")
+      endif()
+    endif()
     file(REMOVE_RECURSE "${FN_ARG_PROJECT_BINARY_DIR}")
   endif()
 

@@ -257,6 +257,17 @@ function(hfc_autotools_restore_or_configure content_name)
       # If not restored, prepare the build tree (autotools sources need to be downloaded in the CMake project build tree, as the autotools sources can only build in-source-tree.
       # The CMake project sources are in the autotools_cmake_adapter_destination
       hfc_autootols_prepare_mirror_build_tree_to_host_configure(${content_name} ${autotools_cmake_adapter_destination} ${FN_ARG_PROJECT_INSTALL_PREFIX} ${FN_ARG_PROJECT_SOURCE_DIR} ${proxy_toolchain_path} "${FN_ARG_ORIGIN}")
+      if(IS_SYMLINK "${FN_ARG_PROJECT_INSTALL_PREFIX}")
+        file(READ_SYMLINK  "${FN_ARG_PROJECT_INSTALL_PREFIX}" symlink_destination)
+        get_filename_component(symlink_parent_dir "${symlink_destination}" DIRECTORY)
+        set(symlink_bin_dir "${symlink_parent_dir}/bin")
+        file(REMOVE_RECURSE "${FN_ARG_PROJECT_BINARY_DIR}")
+        file(CREATE_LINK
+          "${symlink_bin_dir}"
+          "${FN_ARG_PROJECT_BINARY_DIR}"
+          SYMBOLIC
+        )
+      endif()
 
       if (NOT EXISTS "${FN_ARG_PROJECT_SOURCE_DIR}")
         # If we are here once again, it's because abi-hash changed for example: then the build tree is empty.
