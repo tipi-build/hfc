@@ -13,11 +13,15 @@ set(CMAKE_MODULE_PATH
 
 include(HermeticFetchContent)
 
+add_compile_options(-Wextra)
+add_link_options(-lpthread)
+add_compile_definitions(
+  PARENT_SCOPE_DEF=1
+  PARENT_SCOPE_STRING
+)
 
 FetchContent_Declare(
   Iconv
-  #GIT_REPOSITORY https://github.com/tipi-build/unittest-autotools-sample.git
-  #GIT_TAG ad80b024eeda8f4c0a96eedf669dc453ed33a094
   URL https://github.com/tipi-build/unittest-autotools-sample/archive/refs/heads/master.zip
   URL_HASH SHA1=fc009356c4657d2aea3f609e0cbd7ac46dc9c1d1
 )
@@ -40,6 +44,9 @@ FetchContent_MakeHermetic(
         TIPI_TEAM_ZURICH
         # TIPI_TEAM_LOCATION=ZURICH
       )
+
+      add_compile_options(-O2)
+      add_link_options(-rdynamic)
     ]=]
 
   HERMETIC_BUILD_SYSTEM autotools

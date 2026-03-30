@@ -114,6 +114,26 @@ function(hunter_get_build_flags)
     #
     # C Compiler Flags (defines or include directories should not be needed here)
     set(cflags "${CMAKE_C_FLAGS_${config_type}} ${CMAKE_C_FLAGS}")
+
+    # Gather COMPILE_OPTIONS directory property (from add_compile_options)
+    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
+    get_directory_property(compile_options DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_OPTIONS)
+    foreach(opt ${compile_options})
+      # Handle SHELL: prefix - CMake uses this to indicate the string should be split by spaces
+      # Remove the prefix and pass the flag as-is to the shell
+      if(opt MATCHES "^SHELL:(.+)$")
+        set(opt "${CMAKE_MATCH_1}")
+      endif()
+      set(cflags "${cflags} ${opt}")
+    endforeach()
+
+    # Gather COMPILE_DEFINITIONS directory property (from add_compile_definitions)
+    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
+    get_directory_property(compile_definitions DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+    foreach(def ${compile_definitions})
+      set(cflags "${cflags} -D${def}")
+    endforeach()
+
     string(STRIP "${cflags}" cflags)
     hunter_status_debug("  CFLAGS=${cflags}")
     set(${PARAM_OUT_CFLAGS} ${cflags} PARENT_SCOPE)
@@ -126,6 +146,26 @@ function(hunter_get_build_flags)
     set(cxxflags
         "${CMAKE_CXX_FLAGS_${config_type}} ${CMAKE_CXX_FLAGS} ${PARAM_CXXFLAGS}"
     )
+
+    # Gather COMPILE_OPTIONS directory property (from add_compile_options)
+    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
+    get_directory_property(compile_options DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_OPTIONS)
+    foreach(opt ${compile_options})
+      # Handle SHELL: prefix - CMake uses this to indicate the string should be split by spaces
+      # Remove the prefix and pass the flag as-is to the shell
+      if(opt MATCHES "^SHELL:(.+)$")
+        set(opt "${CMAKE_MATCH_1}")
+      endif()
+      set(cxxflags "${cxxflags} ${opt}")
+    endforeach()
+
+    # Gather COMPILE_DEFINITIONS directory property (from add_compile_definitions)
+    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
+    get_directory_property(compile_definitions DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+    foreach(def ${compile_definitions})
+      set(cxxflags "${cxxflags} -D${def}")
+    endforeach()
+
     string(STRIP "${cxxflags}" cxxflags)
     hunter_status_debug("  CXXFLAGS=${cxxflags}")
     set(${PARAM_OUT_CXXFLAGS} ${cxxflags} PARENT_SCOPE)
@@ -139,6 +179,70 @@ function(hunter_get_build_flags)
     set(ldflags "${ldflags} ${CMAKE_EXE_LINKER_FLAGS_${config_type}}")
     string(STRIP "${ldflags}" ldflags)
     set(ldflags "${ldflags} ${CMAKE_EXE_LINKER_FLAGS}")
+    string(STRIP "${ldflags}" ldflags)
+
+    # Gather LINK_OPTIONS directory property (from add_link_options)
+    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
+    get_directory_property(link_options DIRECTORY ${CMAKE_SOURCE_DIR} LINK_OPTIONS)
+
+    # Set up linker wrapper variables with defaults for Unix-like systems
+    # Use CMAKE_C_LINKER_WRAPPER_FLAG and CMAKE_C_LINKER_WRAPPER_FLAG_SEP for portability
+    # While in theory there could be a difference between the C and CXX flags, we don't
+    # have any information about which language the code is compiled in and can't be precise.
+    # In practice, the same compiler will probably be used and the options will be identical
+    # for either language.
+    if(NOT DEFINED CMAKE_C_LINKER_WRAPPER_FLAG)
+      set(CMAKE_C_LINKER_WRAPPER_FLAG "-Wl,")
+      set(CMAKE_C_LINKER_WRAPPER_FLAG_SEP ",")
+    endif()
+
+    # Process CMAKE_C_LINKER_WRAPPER_FLAG according to CMake's convention:
+    # For Clang-style, it may be a list like ["-Xlinker", " "] where the trailing " " means
+    # arguments should be space-separated. For GCC-style, it's typically "-Wl," with separator ",".
+    set(linker_wrapper_flag ${CMAKE_C_LINKER_WRAPPER_FLAG})
+    set(linker_wrapper_space "")
+    if(linker_wrapper_flag)
+      list(GET linker_wrapper_flag -1 last_element)
+      if(last_element STREQUAL " ")
+        list(REMOVE_AT linker_wrapper_flag -1)
+        set(linker_wrapper_space " ")
+      endif()
+    endif()
+    list(JOIN linker_wrapper_flag " " linker_wrapper_prefix)
+
+    foreach(opt ${link_options})
+      # Handle LINKER: prefix - convert using CMake's linker wrapper variables
+      # CMake documentation: LINKER: is replaced by the wrapper flag, and commas separate arguments
+      # Example: "LINKER:-z,defs" becomes "-Wl,-z,defs" for GCC or "-Xlinker -z -Xlinker defs" for Clang
+      set(linker_args_list "")
+      if(opt MATCHES "^LINKER:SHELL:(.+)$")
+        # LINKER:SHELL: uses space-separated arguments
+        separate_arguments(linker_args_list UNIX_COMMAND "${CMAKE_MATCH_1}")
+      elseif(opt MATCHES "^LINKER:(.+)$")
+        # LINKER: uses comma-separated arguments
+        string(REPLACE "," ";" linker_args_list "${CMAKE_MATCH_1}")
+      endif()
+
+      if(linker_args_list)
+        # Convert list of arguments using the appropriate linker wrapper style
+        if(CMAKE_C_LINKER_WRAPPER_FLAG_SEP)
+          # GCC-style: single prefix with separator-joined arguments (-Wl,-z,relro)
+          list(JOIN linker_args_list "${CMAKE_C_LINKER_WRAPPER_FLAG_SEP}" joined_args)
+          set(opt "${linker_wrapper_prefix}${linker_wrapper_space}${joined_args}")
+        else()
+          # Clang-style: repeat prefix for each argument (-Xlinker -z -Xlinker relro)
+          set(opt "")
+          foreach(arg ${linker_args_list})
+            if(opt)
+              string(APPEND opt " ")
+            endif()
+            string(APPEND opt "${linker_wrapper_prefix}${linker_wrapper_space}${arg}")
+          endforeach()
+        endif()
+      endif()
+      set(ldflags "${ldflags} ${opt}")
+    endforeach()
+
     string(STRIP "${ldflags}" ldflags)
     string(COMPARE NOTEQUAL "${ANDROID}" "" is_android)
     if(is_android)

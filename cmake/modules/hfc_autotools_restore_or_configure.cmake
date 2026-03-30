@@ -8,7 +8,14 @@ include(hfc_targets_cache_common)
 include(hfc_required_args)
 include(hfc_populate_project)
 
-function(generate_autotools_cmake_adapter destination PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_INSTALL_PREFIX )
+function(generate_autotools_cmake_adapter destination PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_INSTALL_PREFIX)
+  set(options_params)
+  set(one_value_params)
+  set(multi_value_params HERMETIC_CONFIG_EXTRA_ARGS)
+  cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
+
+  # Convert list to space-separated string for proper shell command construction
+  list(JOIN FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS " " HERMETIC_CONFIG_EXTRA_ARGS)
 
   make_directory(${destination})
   configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/CMakeLists_to_configure_autotools.txt.in" "${destination}/CMakeLists.txt" @ONLY)
@@ -20,7 +27,14 @@ function(generate_autotools_cmake_adapter_get_install_target OUT_INSTALL_TARGET)
   return(PROPAGATE ${OUT_INSTALL_TARGET})
 endfunction()
 
-function(generate_openssl_cmake_adapter destination PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_INSTALL_PREFIX )
+function(generate_openssl_cmake_adapter destination PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_INSTALL_PREFIX)
+  set(options_params)
+  set(one_value_params)
+  set(multi_value_params HERMETIC_CONFIG_EXTRA_ARGS)
+  cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
+
+  # Convert list to space-separated string for proper shell command construction
+  list(JOIN FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS " " HERMETIC_CONFIG_EXTRA_ARGS)
 
   make_directory(${destination})
   configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/CMakeLists_to_configure_openssl.txt.in" "${destination}/CMakeLists.txt" @ONLY)
@@ -179,7 +193,9 @@ function(hfc_autotools_restore_or_configure content_name)
     ${oneValueArgs_required}
   )
 
-  set(multi_value_params )
+  set(multi_value_params
+    HERMETIC_CONFIG_EXTRA_ARGS
+  )
 
   cmake_parse_arguments(
     FN_ARG
@@ -206,7 +222,7 @@ function(hfc_autotools_restore_or_configure content_name)
   set(autotools_cmake_adapter_destination "${binary_dir_parent_path}/${content_name}-adapter")
 
   if (NOT EXISTS "${FN_ARG_HFC_CONFIGURE_MARKER_FILE}")
-    cmake_language(CALL ${FN_ARG_CMAKE_ADAPTER_GENERATOR_FN} ${configure_command} ${autotools_cmake_adapter_destination} ${content_name} ${FN_ARG_PROJECT_BINARY_DIR} ${FN_ARG_PROJECT_INSTALL_PREFIX} )
+    cmake_language(CALL ${FN_ARG_CMAKE_ADAPTER_GENERATOR_FN} ${autotools_cmake_adapter_destination} ${content_name} ${FN_ARG_PROJECT_BINARY_DIR} ${FN_ARG_PROJECT_INSTALL_PREFIX} HERMETIC_CONFIG_EXTRA_ARGS ${FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS})
   endif()
   cmake_language(CALL ${FN_ARG_CMAKE_ADAPTER_GENERATOR_FN}_get_install_target install_target_name)
 

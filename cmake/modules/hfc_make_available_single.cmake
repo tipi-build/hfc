@@ -80,6 +80,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_FIND_PACKAGES
     BUILD_TARGETS
     CUSTOM_INSTALL_TARGETS
+    HERMETIC_CONFIG_EXTRA_ARGS
   )
 
   cmake_parse_arguments(
@@ -237,6 +238,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     set(__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "# (not provided)")
   endif()
 
+
   hfc_log_debug(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
   set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.install.done)
 
@@ -335,6 +337,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
       HFC_CONFIGURE_MARKER_FILE ${hfc_configure_marker_file}
       MAKE_EXECUTABLES_FINDABLE "${__PARAMS_MAKE_EXECUTABLES_FINDABLE}"
       HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
+      HERMETIC_CONFIG_EXTRA_ARGS ${__PARAMS_HERMETIC_CONFIG_EXTRA_ARGS}
       ORIGIN ${${content_name}_origin}
       REVISION ${${content_name}_revision}
     )

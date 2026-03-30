@@ -29,6 +29,18 @@ namespace hfc::test {
 
     write_simple_main(test_project_path, {"MathFunctions.h", "MathFunctionscbrt.h"});
 
+    // Add compile options, definitions, and link options to the toolchain file
+    append_to_toolchain(project_toolchain, R"(
+# Toolchain-level flags that should be propagated
+add_compile_options(-Wno-deprecated)
+add_compile_options("SHELL:-ffunction-sections")
+add_compile_definitions(TOOLCHAIN_DEFINE=1 TOOLCHAIN_STRING_DEFINE)
+add_link_options(-Wl,--as-needed)
+add_link_options("LINKER:-z,defs")
+add_link_options("LINKER:SHELL:-z relro")
+add_link_options("LINKER:SHELL:--warn-common --fatal-warnings")
+)");
+
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
 
 
@@ -55,7 +67,83 @@ namespace hfc::test {
     }
     BOOST_REQUIRE(!boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "CMakeCache.txt").generic_string()), cmake_option_added_after_reconfigure));
 
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string()), "DEFINES = -DTIPI_TEAM=1 -DTIPI_TEAM_ZURICH=0"));
+    std::string build_ninja_content = pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string());
+
+    // Check that toolchain-level flags ARE forwarded
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-Wno-deprecated"),
+      "Toolchain compile option -Wno-deprecated not found in CMake build.ninja (but should be forwarded from toolchain)"
+    );
+
+    // Check SHELL: prefix is properly translated (should appear as -ffunction-sections, NOT as SHELL:)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-ffunction-sections"),
+      "Toolchain compile option -ffunction-sections (from SHELL: prefix) not found in CMake build.ninja (but should be forwarded from toolchain)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "SHELL:-ffunction-sections"),
+      "Toolchain compile option contains untranslated SHELL: prefix in CMake build.ninja (should be translated to -ffunction-sections)"
+    );
+
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTOOLCHAIN_DEFINE=1"),
+      "Toolchain compile definition TOOLCHAIN_DEFINE=1 not found in CMake build.ninja (but should be forwarded from toolchain)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTOOLCHAIN_STRING_DEFINE"),
+      "Toolchain compile definition TOOLCHAIN_STRING_DEFINE not found in CMake build.ninja (but should be forwarded from toolchain)"
+    );
+    // Note: Link options from add_link_options() don't appear in static library builds
+    // since static libraries are archived, not linked. However, we can still check they don't appear untranslated.
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "LINKER:-z,defs"),
+      "Toolchain link option contains untranslated LINKER: prefix in CMake build.ninja (should be translated to -Wl,-z,defs)"
+    );
+
+    // Check LINKER:SHELL: prefix is properly translated (multiple arguments should be comma-separated under single -Wl, prefix)
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "LINKER:SHELL:-z relro"),
+      "Toolchain link option contains untranslated LINKER:SHELL: prefix in CMake build.ninja (should be translated)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "LINKER:SHELL:--warn-common"),
+      "Toolchain link option contains untranslated LINKER:SHELL: prefix in CMake build.ninja (should be translated)"
+    );
+
+    // Check the parent build.ninja for executable link flags (link options only appear when linking executables, not static libraries)
+    std::string parent_build_ninja_content = pre::file::to_string((test_project_path / "build" / "build.ninja").generic_string());
+
+    // Check that LINKER:SHELL:-z relro becomes -Wl,-z,relro (comma-separated, single -Wl, prefix)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(parent_build_ninja_content, "-Wl,-z,relro"),
+      "Toolchain link option from 'LINKER:SHELL:-z relro' not properly translated in executable link command (should be -Wl,-z,relro with comma-separated arguments)"
+    );
+
+    // Check that LINKER:SHELL:--warn-common --fatal-warnings becomes -Wl,--warn-common,--fatal-warnings (comma-separated, single -Wl, prefix)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(parent_build_ninja_content, "-Wl,--warn-common,--fatal-warnings"),
+      "Toolchain link option from 'LINKER:SHELL:--warn-common --fatal-warnings' not properly translated in executable link command (should be -Wl,--warn-common,--fatal-warnings with comma-separated arguments)"
+    );
+
+    // Check for individual compile definitions from HERMETIC_TOOLCHAIN_EXTENSION (order may vary)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in CMake build.ninja"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM_ZURICH=0"),
+      "Compile definition TIPI_TEAM_ZURICH=0 not found in CMake build.ninja"
+    );
+
+    // Check that parent scope definitions are not forwarded
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 found in CMake build.ninja (but should not be forwarded)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING found in CMake build.ninja (but should not be forwarded)"
+    );
 
 
     std::string content = pre::file::to_string( (test_project_path / "CMakeLists.txt").generic_string());
@@ -72,7 +160,31 @@ namespace hfc::test {
     }
     BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "CMakeCache.txt").generic_string()), cmake_option_added_after_reconfigure));
 
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string()), "DEFINES = -DTIPI_TEAM=1 -DTIPI_TEAM_LOCATION=ZURICH -DTIPI_TEAM_ZURICH=0"));
+    build_ninja_content = pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string());
+
+    // Check for individual compile definitions after reconfigure (order may vary)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in CMake build.ninja after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM_LOCATION=ZURICH"),
+      "Compile definition TIPI_TEAM_LOCATION=ZURICH not found in CMake build.ninja after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM_ZURICH=0"),
+      "Compile definition TIPI_TEAM_ZURICH=0 not found in CMake build.ninja after reconfigure"
+    );
+
+    // Verify parent scope definitions are still absent after reconfigure
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 found in CMake build.ninja after reconfigure (but should not be forwarded)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(build_ninja_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING found in CMake build.ninja after reconfigure (but should not be forwarded)"
+    );
   }
 
 
@@ -82,6 +194,19 @@ namespace hfc::test {
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
     write_simple_main(test_project_path,{"lib.h"});
+
+    // Add compile options, definitions, and link options to the toolchain file
+    append_to_toolchain(project_toolchain, R"(
+# Toolchain-level flags that should be propagated
+add_compile_options(-Wno-unused-parameter)
+add_compile_options("SHELL:-fdata-sections")
+add_compile_definitions(TOOLCHAIN_AUTOTOOLS_DEF=1 TOOLCHAIN_AUTOTOOLS_STRING)
+add_link_options(-Wl,--no-undefined)
+add_link_options("LINKER:--as-needed")
+add_link_options("LINKER:SHELL:-z noexecstack")
+add_link_options("LINKER:SHELL:--no-as-needed --warn-unresolved-symbols")
+)");
+
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
 
     std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
@@ -93,8 +218,85 @@ namespace hfc::test {
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
 
 
-    std::string to_search_in_makefile = "-DTIPI_TEAM=1 -DTIPI_TEAM_ZURICH";
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), to_search_in_makefile));
+    std::string makefile_content = pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string());
+
+    // Check that toolchain-level flags ARE forwarded
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-Wno-unused-parameter"),
+      "Toolchain compile option -Wno-unused-parameter not found in autotools Makefile (but should be forwarded from toolchain)"
+    );
+
+    // Check SHELL: prefix is properly translated
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-fdata-sections"),
+      "Toolchain compile option -fdata-sections (from SHELL: prefix) not found in autotools Makefile (but should be forwarded from toolchain)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "SHELL:-fdata-sections"),
+      "Toolchain compile option contains untranslated SHELL: prefix in autotools Makefile (should be translated to -fdata-sections)"
+    );
+
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTOOLCHAIN_AUTOTOOLS_DEF=1"),
+      "Toolchain compile definition TOOLCHAIN_AUTOTOOLS_DEF=1 not found in autotools Makefile (but should be forwarded from toolchain)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTOOLCHAIN_AUTOTOOLS_STRING"),
+      "Toolchain compile definition TOOLCHAIN_AUTOTOOLS_STRING not found in autotools Makefile (but should be forwarded from toolchain)"
+    );
+
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-Wl,--no-undefined"),
+      "Toolchain link option -Wl,--no-undefined not found in autotools Makefile (but should be forwarded from toolchain)"
+    );
+
+    // Check LINKER: prefix is properly translated
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-Wl,--as-needed"),
+      "Toolchain link option -Wl,--as-needed (from LINKER: prefix) not found in autotools Makefile (but should be forwarded from toolchain)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "LINKER:--as-needed"),
+      "Toolchain link option contains untranslated LINKER: prefix in autotools Makefile (should be translated to -Wl,--as-needed)"
+    );
+
+    // Check LINKER:SHELL: prefix is properly translated (multiple arguments become comma-separated under single -Wl, prefix)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-Wl,-z,noexecstack"),
+      "Toolchain link option from 'LINKER:SHELL:-z noexecstack' not properly translated in autotools Makefile (should be -Wl,-z,noexecstack with comma-separated arguments)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "LINKER:SHELL:-z noexecstack"),
+      "Toolchain link option contains untranslated LINKER:SHELL: prefix in autotools Makefile (should be translated)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-Wl,--no-as-needed,--warn-unresolved-symbols"),
+      "Toolchain link option from 'LINKER:SHELL:--no-as-needed --warn-unresolved-symbols' not properly translated in autotools Makefile (should be -Wl,--no-as-needed,--warn-unresolved-symbols with comma-separated arguments)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "LINKER:SHELL:--no-as-needed"),
+      "Toolchain link option contains untranslated LINKER:SHELL: prefix in autotools Makefile (should be translated)"
+    );
+
+    // Check that HERMETIC_TOOLCHAIN_EXTENSION flags ARE forwarded
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in autotools Makefile"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM_ZURICH"),
+      "Compile definition TIPI_TEAM_ZURICH not found in autotools Makefile"
+    );
+
+    // Check that parent scope definitions are not forwarded
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 found in autotools Makefile (but should not be forwarded)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING found in autotools Makefile (but should not be forwarded)"
+    );
 
 
     std::string content = pre::file::to_string( (test_project_path / "CMakeLists.txt").generic_string());
@@ -106,14 +308,49 @@ namespace hfc::test {
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
 
 
-    to_search_in_makefile = "-DTIPI_TEAM=1 -DTIPI_TEAM_ZURICH -DTIPI_TEAM_LOCATION=ZURICH";
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), to_search_in_makefile));
+    makefile_content = pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string());
+
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in autotools Makefile after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM_ZURICH"),
+      "Compile definition TIPI_TEAM_ZURICH not found in autotools Makefile after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM_LOCATION=ZURICH"),
+      "Compile definition TIPI_TEAM_LOCATION=ZURICH not found in autotools Makefile after reconfigure"
+    );
+
+    // Verify parent scope definitions are still absent after reconfigure
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 found in autotools Makefile after reconfigure (but should not be forwarded)"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      !boost::contains(makefile_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING found in autotools Makefile after reconfigure (but should not be forwarded)"
+    );
 
 
     std::vector<boost::regex> expected_compile_flags{
       boost::regex{"CFLAGS = .* -fPIC"}, // Check for content of CMAKE_C_COMPILE_OPTIONS_PIC when CMAKE_POSITION_INDEPENDENT_CODE is ON.
-      boost::regex{"LDFLAGS = .* -ldl"}
+      boost::regex{"LDFLAGS = .* -ldl"},
+      boost::regex{"CFLAGS = .* -O2"},  // Check for add_compile_options from HERMETIC_TOOLCHAIN_EXTENSION
+      boost::regex{"LDFLAGS = .* -rdynamic"}  // Check for add_link_options from HERMETIC_TOOLCHAIN_EXTENSION
     };
+
+    // Verify parent scope flags are NOT forwarded
+    std::string makefile_for_flag_check = pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string());
+    BOOST_CHECK_MESSAGE(
+      !boost::contains(makefile_for_flag_check, "-Wextra"),
+      "Parent scope compile option -Wextra found in autotools Makefile (but should not be forwarded)"
+    );
+    BOOST_CHECK_MESSAGE(
+      !boost::contains(makefile_for_flag_check, "-lpthread"),
+      "Parent scope link option -lpthread found in autotools Makefile (but should not be forwarded)"
+    );
     for (auto expected_compile_flag : expected_compile_flags) {
       BOOST_REQUIRE(boost::regex_search( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), expected_compile_flag));
     }
