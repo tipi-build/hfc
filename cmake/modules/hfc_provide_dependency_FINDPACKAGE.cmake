@@ -115,6 +115,9 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
     cmake_policy(POP)
   endif()
 
+  # Set both exact-case and uppercase FOUND variables for compatibility.
+  # The uppercase variant is not CMake standard but a lot of users still refer to it that way.
+  set(${package_name}_FOUND ${package_found})
   set(${package_name_uppercase}_FOUND ${package_found})
 
 endmacro()
