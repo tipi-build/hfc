@@ -12,11 +12,13 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 #include <pre/file/hash.hpp>
 
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <optional>
 
@@ -64,14 +66,14 @@ namespace hfc::test {
     "-DHFCTEST_CONFIGURETIME_DEPENDENCY=ON",
   };
 
-  BOOST_DATA_TEST_CASE(
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, 
     targets_cache_from_cmake_install_package_config, 
     boost::unit_test::data::make(hfc::test::test_variants()) * boost::unit_test::data::make(TEST_DATA_hfc_makeAvailableAt_type) * boost::unit_test::data::make(TEST_DATA_template_expectations), 
     td_test_variant,
     td_makeAvailableAt_flag,
     td_targets_cache_test_data_set
   ){
-    fs::path project_path = prepare_project_to_be_tested(td_targets_cache_test_data_set.project_template, td_test_variant.is_cmake_re);
+    fs::path project_path = prepare_project_to_be_tested(td_targets_cache_test_data_set.project_template, td_test_variant.is_cmake_re, temp_dir);
     write_project_tipi_id(project_path);
 
     std::string TESTDATA_INJECTED_value = to_string(boost::uuids::random_generator()()); // gen it always even if we don't use it.
@@ -104,7 +106,7 @@ namespace hfc::test {
     std::string configure_output = "";
 
     try {
-      configure_output = run_command(cmake_configure_command, project_path);
+      configure_output = run_command(cmake_configure_command, project_path, test_env);
       configure_success = true;
     }
     catch(...) {
@@ -139,7 +141,7 @@ namespace hfc::test {
 
     bool build_success = false;
     try {
-      run_command(cmake_build_command, project_path);
+      run_command(cmake_build_command, project_path, test_env);
       build_success = true;
     }
     catch(...) {

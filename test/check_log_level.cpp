@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -18,10 +19,9 @@ namespace hfc::test {
   namespace bp = boost::process;
   using namespace std::string_literals;
 
-  BOOST_DATA_TEST_CASE(HERMETIC_FETCHCONTENT_LOG_DEBUG_undefined, boost::unit_test::data::make(hfc::test::test_variants()), data){
-    bp::environment test_env = boost::this_process::environment();
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, HERMETIC_FETCHCONTENT_LOG_DEBUG_undefined, boost::unit_test::data::make(hfc::test::test_variants()), data){
     test_env.erase("HERMETIC_FETCHCONTENT_LOG_DEBUG");
-    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re);
+    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re, temp_dir);
     write_simple_main(template_path,{"MathFunctions.h", "MathFunctionscbrt.h"});
     write_simple_main(template_path,{}, "simple_main.cpp");
 
@@ -38,10 +38,9 @@ namespace hfc::test {
     BOOST_REQUIRE(!boost::contains(output,"Using goldilock found at"));
   }
 
-  BOOST_DATA_TEST_CASE(HERMETIC_FETCHCONTENT_LOG_DEBUG_off, boost::unit_test::data::make(hfc::test::test_variants()), data){
-    bp::environment test_env = boost::this_process::environment();
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, HERMETIC_FETCHCONTENT_LOG_DEBUG_off, boost::unit_test::data::make(hfc::test::test_variants()), data){
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"]="Off";
-    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re);
+    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re, temp_dir);
     write_simple_main(template_path,{"MathFunctions.h", "MathFunctionscbrt.h"});
     write_simple_main(template_path,{}, "simple_main.cpp");
 
@@ -58,10 +57,9 @@ namespace hfc::test {
     BOOST_REQUIRE(!boost::contains(output,"Using goldilock found at"));
   }
 
-  BOOST_DATA_TEST_CASE(HERMETIC_FETCHCONTENT_LOG_DEBUG_on, boost::unit_test::data::make(hfc::test::test_variants()), data){
-    bp::environment test_env = boost::this_process::environment();
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, HERMETIC_FETCHCONTENT_LOG_DEBUG_on, boost::unit_test::data::make(hfc::test::test_variants()), data){
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"]="oN";
-    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re);
+    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re, temp_dir);
     write_simple_main(template_path,{"MathFunctions.h", "MathFunctionscbrt.h"});
     write_simple_main(template_path,{}, "simple_main.cpp");
 
@@ -78,10 +76,9 @@ namespace hfc::test {
     BOOST_REQUIRE(boost::contains(output,"Using goldilock found at"));
   }
 
-  BOOST_DATA_TEST_CASE(HERMETIC_FETCHCONTENT_LOG_DEBUG_cmake_cache, boost::unit_test::data::make(hfc::test::test_variants()), data){
-    bp::environment test_env = boost::this_process::environment();
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, HERMETIC_FETCHCONTENT_LOG_DEBUG_cmake_cache, boost::unit_test::data::make(hfc::test::test_variants()), data){
     test_env.erase("HERMETIC_FETCHCONTENT_LOG_DEBUG");
-    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re);
+    fs::path template_path = prepare_project_to_be_tested("check_without_install", data.is_cmake_re, temp_dir);
     write_simple_main(template_path,{"MathFunctions.h", "MathFunctionscbrt.h"});
     write_simple_main(template_path,{}, "simple_main.cpp");
 

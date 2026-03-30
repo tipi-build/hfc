@@ -73,42 +73,39 @@ function(add_test_with_HFC_TOOLS_DIR_ENV test_name source_files env_value)
 
 endfunction()
 
-# bootstrap goldilock
-add_test_with_HFC_TOOLS_DIR_ENV(ensure_goldilock "${CMAKE_CURRENT_LIST_DIR}/boostrap_goldilock_test.cpp" "${HFC_TEST_SHARED_TOOLS_DIR}")
-set_property(TEST ensure_goldilock PROPERTY RUN_SERIAL ON) # run first and not in parallel
-
 # forced goldilock bootstrapping
-#add_test_with_HFC_TOOLS_DIR_ENV(bootstrap_goldilock_forced "${CMAKE_CURRENT_LIST_DIR}/boostrap_goldilock_test.cpp" "")
+#add_test_with_HFC_TOOLS_DIR_ENV(bootstrap_goldilock_forced "${CMAKE_CURRENT_LIST_DIR}/bootstrap_goldilock_test.cpp" "")
 
 # all other tests
 # -> those all use the HFC_TEST_SHARED_TOOLS_DIR to avoid re-building goldilock a thousand times over
 set(test_source_files
-    "${CMAKE_CURRENT_LIST_DIR}/check_log_level.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_PATCH_COMMAND.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/bootstrap_goldilock_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_BUILD_TARGETS.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_change_FETCHCONTENT_BASE_DIR.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_compiler_forwarding.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_CUSTOM_INSTALL_TARGETS.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_delete_build_folder.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_find_package.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_hfc_recursive.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_install_tree_cacheability.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_install_without_configure.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_log_level.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_openssl_build_system.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_options_and_defines_forwarding.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_options_forwarding_openssl.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_subdir.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_install_tree_cacheability.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_subproject_targets_linking.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_without_install.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_openssl_build_system.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_install_without_configure.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_hfc_recursive.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/run_hfc_discover_targets_overridest_test.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_find_package.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/configure_stability_test.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/targets_cache_test.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/hermetic_dependency_make_executable_findable.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/goldilock_provisioning_test.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_source_build_hfc_prefix.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_BUILD_TARGETS.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_CUSTOM_INSTALL_TARGETS.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_change_FETCHCONTENT_BASE_DIR.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/check_delete_build_folder.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_PATCH_COMMAND.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_prepatch_resolver.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/fetchContentArgs_GIT_SHALLOW_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_source_build_hfc_prefix.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_subdir.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_subproject_targets_linking.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_version_update.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_without_install.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/configure_stability_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/fetchContentArgs_GIT_SHALLOW_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/goldilock_provisioning_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/hermetic_dependency_make_executable_findable.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/run_hfc_discover_targets_overridest_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/targets_cache_test.cpp"
 )
 
 foreach(test_file IN LISTS test_source_files)

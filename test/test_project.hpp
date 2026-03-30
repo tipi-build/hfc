@@ -53,9 +53,9 @@ namespace hfc::test {
     return source_tree / "test" / "test_project_templates" / "data";
   }
 
-  inline fs::path prepare_project_to_be_tested(std::string name_of_the_template, bool is_cmake_re){
-    fs::path source_tree = get_source_tree_dir();    
-    fs::path project_path = fs::temp_directory_path() / fs::unique_path() / name_of_the_template;
+  inline fs::path prepare_project_to_be_tested(std::string name_of_the_template, bool is_cmake_re, const fs::path& base_dir){
+    fs::path source_tree = get_source_tree_dir();
+    fs::path project_path = base_dir / name_of_the_template;
     fs::create_directories(project_path);    
 
     {
@@ -135,15 +135,16 @@ namespace hfc::test {
   }
 
   inline std::string get_cmake_configure_command(
-    const fs::path& test_project_path, 
-    const test_variant& data, 
-    const std::string& additional_cmake_variables = "", 
-    const std::optional<fs::path>& toolchain_file = std::nullopt, 
-    const std::optional<std::string>& cmake_build_type = std::nullopt) 
+    const fs::path& test_project_path,
+    const test_variant& data,
+    const std::string& additional_cmake_variables = "",
+    const std::optional<fs::path>& toolchain_file = std::nullopt,
+    const std::optional<std::string>& cmake_build_type = std::nullopt,
+    const std::optional<std::string>& uuid = std::nullopt)
   {
     std::stringstream cmd;
     const std::string SPACE = " ";
-    
+
     cmd << data.cmake_bin.generic_string();
     cmd << SPACE << "-GNinja";
 
@@ -160,8 +161,15 @@ namespace hfc::test {
       cmd << SPACE << data.command_line_arguments;
     }
 
-    if(data.configure_time_command_line_arguments != "") { 
+    if(data.configure_time_command_line_arguments != "") {
       cmd << SPACE << data.configure_time_command_line_arguments;
+    }
+
+    // Use provided UUID or generate a new one for cmake-re builds
+    // Tests should pass the same UUID across multiple configure calls to ensure stable worktree paths
+    if(data.is_cmake_re) {
+      std::string uuid_value = uuid.value_or(boost::uuids::to_string(boost::uuids::random_generator()()));
+      cmd << SPACE << "-DUUID=" << uuid_value;
     }
 
     cmd << SPACE << "-S " << test_project_path.generic_string();

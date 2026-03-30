@@ -57,9 +57,9 @@ namespace hfc::test {
     return get_project_toolchain_dir(project_folder) / "toolchain.cmake";
   }
 
-  inline fs::path prepare_project_to_be_tested(std::string name_of_the_template, bool is_cmake_re){
-    fs::path source_tree = get_source_tree_dir();    
-    fs::path project_path = fs::temp_directory_path() / fs::unique_path() / name_of_the_template;
+  inline fs::path prepare_project_to_be_tested(std::string name_of_the_template, bool is_cmake_re, const fs::path& base_dir){
+    fs::path source_tree = get_source_tree_dir();
+    fs::path project_path = base_dir / name_of_the_template;
     fs::create_directories(project_path);    
 
     {
