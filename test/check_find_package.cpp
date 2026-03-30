@@ -26,16 +26,19 @@ namespace hfc::test {
 
   // negative test case to the above
   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_find_package_neg, boost::unit_test::data::make(hfc::test::test_variants()), data){
+    // Enable debug logging to see find_package interception messages
+    test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
+
     fs::path test_project_path = prepare_project_to_be_tested("check_find_package", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
     write_simple_main(test_project_path, {"MathFunctions.h", "MathFunctionscbrt.h", "lib.h"});
 
-    auto result = run_cmd(bp::start_dir=(test_project_path), bp::shell, get_cmake_configure_command(test_project_path, data, "-DTEST_DATA_DISABLE_FIND_HfcDependencyProvidedLib=ON"));
+    auto result = run_cmd(test_env, bp::start_dir=(test_project_path), bp::shell, get_cmake_configure_command(test_project_path, data, "-DTEST_DATA_DISABLE_FIND_HfcDependencyProvidedLib=ON"));
     BOOST_REQUIRE_NE(result.return_code, 0); // no success please!
-    
-    // example output 
+
+    // example output
     // -- [HERMETIC_FETCHCONTENT 2024-11-27T21:06:30] Received find_package() request for package name HfcDependencyProvidedLib
     // -- [HERMETIC_FETCHCONTENT 2024-11-27T21:06:30]  - not in list of hermetic dependencies
     BOOST_REQUIRE(boost::regex_search(result.output, boost::regex{"-- \\[HERMETIC_FETCHCONTENT .+\\] Received find_package\\(\\) request for package name HfcDependencyProvidedLib"}));
@@ -43,6 +46,9 @@ namespace hfc::test {
   }
 
   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_find_package, boost::unit_test::data::make(hfc::test::test_variants()), data){
+    // Enable debug logging to see find_package interception messages
+    test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
+
     fs::path test_project_path = prepare_project_to_be_tested("check_find_package", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
