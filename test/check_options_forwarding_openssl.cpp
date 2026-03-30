@@ -57,12 +57,12 @@ namespace hfc::test {
     fs::path openssl_makefile = test_project_path / "build" / "_deps" / "OpenSSL-build" / "src" / "Makefile";
     if(fs::exists(openssl_makefile)) {
       std::string makefile_content = pre::file::to_string(openssl_makefile.generic_string());
-      
+
       BOOST_REQUIRE_MESSAGE(
         boost::contains(makefile_content, "-DTIPI_TEAM=1"),
         "add_compile_definitions 'TIPI_TEAM=1' not found in OpenSSL Makefile"
       );
-      
+
       BOOST_REQUIRE_MESSAGE(
         boost::contains(makefile_content, "-DTIPI_TEAM_ZURICH"),
         "add_compile_definitions 'TIPI_TEAM_ZURICH' not found in OpenSSL Makefile"

@@ -56,7 +56,27 @@ namespace hfc::test {
     }
     BOOST_REQUIRE(!boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "CMakeCache.txt").generic_string()), cmake_option_added_after_reconfigure));
 
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string()), "DEFINES = -DTIPI_TEAM=1 -DTIPI_TEAM_ZURICH=0"));
+    std::string build_ninja_content = pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string());
+
+    // Check for individual compile definitions (order may vary)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in CMake build.ninja"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM_ZURICH=0"),
+      "Compile definition TIPI_TEAM_ZURICH=0 not found in CMake build.ninja"
+    );
+
+    // Check that parent scope definitions are forwarded
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 not found in CMake build.ninja"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING not found in CMake build.ninja"
+    );
 
 
     std::string content = pre::file::to_string( (test_project_path / "CMakeLists.txt").generic_string());
@@ -73,7 +93,31 @@ namespace hfc::test {
     }
     BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "CMakeCache.txt").generic_string()), cmake_option_added_after_reconfigure));
 
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string()), "DEFINES = -DTIPI_TEAM=1 -DTIPI_TEAM_LOCATION=ZURICH -DTIPI_TEAM_ZURICH=0"));
+    build_ninja_content = pre::file::to_string((test_project_path / "build" / "_deps" / "project-cmake-simple-build" / "build.ninja").generic_string());
+
+    // Check for individual compile definitions after reconfigure (order may vary)
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in CMake build.ninja after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM_LOCATION=ZURICH"),
+      "Compile definition TIPI_TEAM_LOCATION=ZURICH not found in CMake build.ninja after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DTIPI_TEAM_ZURICH=0"),
+      "Compile definition TIPI_TEAM_ZURICH=0 not found in CMake build.ninja after reconfigure"
+    );
+
+    // Verify parent scope definitions are still present after reconfigure
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 not found in CMake build.ninja after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(build_ninja_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING not found in CMake build.ninja after reconfigure"
+    );
   }
 
 
@@ -94,8 +138,26 @@ namespace hfc::test {
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
 
 
-    std::string to_search_in_makefile = "-DTIPI_TEAM=1 -DTIPI_TEAM_ZURICH";
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), to_search_in_makefile));
+    std::string makefile_content = pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string());
+
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in autotools Makefile"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM_ZURICH"),
+      "Compile definition TIPI_TEAM_ZURICH not found in autotools Makefile"
+    );
+
+    // Check that parent scope definitions are forwarded
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 not found in autotools Makefile"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING not found in autotools Makefile"
+    );
 
 
     std::string content = pre::file::to_string( (test_project_path / "CMakeLists.txt").generic_string());
@@ -107,8 +169,30 @@ namespace hfc::test {
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
 
 
-    to_search_in_makefile = "-DTIPI_TEAM=1 -DTIPI_TEAM_ZURICH -DTIPI_TEAM_LOCATION=ZURICH";
-    BOOST_REQUIRE(boost::contains( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), to_search_in_makefile));
+    makefile_content = pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string());
+
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM=1"),
+      "Compile definition TIPI_TEAM=1 not found in autotools Makefile after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM_ZURICH"),
+      "Compile definition TIPI_TEAM_ZURICH not found in autotools Makefile after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DTIPI_TEAM_LOCATION=ZURICH"),
+      "Compile definition TIPI_TEAM_LOCATION=ZURICH not found in autotools Makefile after reconfigure"
+    );
+
+    // Verify parent scope definitions are still present after reconfigure
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DPARENT_SCOPE_DEF=1"),
+      "Parent scope compile definition PARENT_SCOPE_DEF=1 not found in autotools Makefile after reconfigure"
+    );
+    BOOST_REQUIRE_MESSAGE(
+      boost::contains(makefile_content, "-DPARENT_SCOPE_STRING"),
+      "Parent scope compile definition PARENT_SCOPE_STRING not found in autotools Makefile after reconfigure"
+    );
 
 
     std::vector<boost::regex> expected_compile_flags{

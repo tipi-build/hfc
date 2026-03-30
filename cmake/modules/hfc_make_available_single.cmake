@@ -239,11 +239,12 @@ function(hfc_make_available_single content_name build_at_configure_time)
     set(__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "# (not provided)")
   endif()
 
-  # Forward compile options and link options from the calling scope
-  # These are set by add_compile_options() and add_link_options() in the main project
+  # Forward compile options, link options, and compile definitions from the calling scope
+  # These are set by add_compile_options(), add_link_options(), and add_compile_definitions() in the main project
   # and need to be forwarded to autotools/openssl builds via the proxy toolchain
   hfc_get_property_from_directory_chain(parent_compile_options COMPILE_OPTIONS)
   hfc_get_property_from_directory_chain(parent_link_options LINK_OPTIONS)
+  hfc_get_property_from_directory_chain(parent_compile_definitions COMPILE_DEFINITIONS)
 
   if(parent_compile_options)
     string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "\n# Forwarded compile options from parent project\n")
@@ -256,6 +257,13 @@ function(hfc_make_available_single content_name build_at_configure_time)
     string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "\n# Forwarded link options from parent project\n")
     foreach(opt ${parent_link_options})
       string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "add_link_options(${opt})\n")
+    endforeach()
+  endif()
+
+  if(parent_compile_definitions)
+    string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "\n# Forwarded compile definitions from parent project\n")
+    foreach(def ${parent_compile_definitions})
+      string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "add_compile_definitions(${def})\n")
     endforeach()
   endif()
 

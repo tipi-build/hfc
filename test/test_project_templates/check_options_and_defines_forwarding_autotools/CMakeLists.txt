@@ -15,6 +15,10 @@ include(HermeticFetchContent)
 
 add_compile_options(-Wextra)
 add_link_options(-lpthread)
+add_compile_definitions(
+  PARENT_SCOPE_DEF=1
+  PARENT_SCOPE_STRING
+)
 
 FetchContent_Declare(
   Iconv
