@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -36,7 +37,7 @@ namespace bp = boost::process;
   }
 
 
-  BOOST_DATA_TEST_CASE(check_cmakelists_in_subfolder, 
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_cmakelists_in_subfolder, 
     boost::unit_test::data::make(test_variants()) * boost::unit_test::data::make(TEST_DATA_clone_shallow),
     td_test_variant,
     td_clone_shallow
@@ -50,7 +51,7 @@ namespace bp = boost::process;
     bool configure_success = false;
 
     try {
-      run_command(cmake_configure_command, project_path); // the clone will be done after the configure command, no need to build for this one
+      run_command(cmake_configure_command, project_path, test_env); // the clone will be done after the configure command, no need to build for this one
       configure_success = true;
     }
     catch(...) {
@@ -70,11 +71,11 @@ namespace bp = boost::process;
     auto git_bin = bp::search_path("git");
     std::string check_is_shallow_cmd = git_bin.generic_string() + " rev-parse --is-shallow-repository"s;
 
-    auto gitcmd_result = run_cmd(bp::start_dir=cloned_sources_path, bp::shell, check_is_shallow_cmd);
+    auto gitcmd_result = run_cmd(test_env, bp::start_dir=cloned_sources_path, bp::shell, check_is_shallow_cmd);
 
     // validate agains expected outcome
     bool is_shallow = (gitcmd_result.output == "true");
-    BOOST_TEST_MESSAGE(gitcmd_result.output);
+    BOOST_TEST_MESSAGE("Git shallow check output: '" << gitcmd_result.output << "'");
     BOOST_REQUIRE(is_shallow == td_clone_shallow.success_expected);
   }
 }

@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -18,8 +19,7 @@ namespace hfc::test {
 namespace fs = boost::filesystem;
 namespace bp = boost::process;
 
-  BOOST_DATA_TEST_CASE(check_cmakelists_in_subfolder, boost::unit_test::data::make(test_variants()), data) {
-
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_cmakelists_in_subfolder, boost::unit_test::data::make(test_variants()), data) {
     fs::path test_project_path = prepare_project_to_be_tested("check_subdir", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
@@ -29,16 +29,15 @@ namespace bp = boost::process;
       BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "project-cmake-simple-install" / "lib" / "libMathFunctionscbrt.a"));
     };
 
-    bp::environment test_environment = boost::this_process::environment();
-    test_environment["TIPI_DISABLE_SET_MTIME"] = "ON";
+    test_env["TIPI_DISABLE_SET_MTIME"] = "ON";
     auto cmake_run_configure = [&]() {
       std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
-      return run_command(cmake_configure_command, test_project_path, test_environment);
+      return run_command(cmake_configure_command, test_project_path, test_env);
     };
 
     auto cmake_run_build = [&]() {
       std::string cmake_build_command = get_cmake_build_command(test_project_path, data, "-d explain");
-      return run_command(cmake_build_command, test_project_path, test_environment);
+      return run_command(cmake_build_command, test_project_path, test_env);
     };
 
     write_simple_main(test_project_path,{}, "simple_main.cpp");

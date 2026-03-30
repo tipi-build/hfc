@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -56,7 +57,7 @@ namespace hfc::test {
   }
 
 
-  BOOST_DATA_TEST_CASE(test_post_build_removal_feature, 
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, test_post_build_removal_feature, 
     boost::unit_test::data::make(hfc::test::test_variants()) * boost::unit_test::data::make(TEST_DATA_hfc_delete_post_build) * boost::unit_test::data::make(TEST_DATA_make_mathlib_available_at),
     td_test_variant,
     td_test_case,
@@ -81,7 +82,7 @@ namespace hfc::test {
       bool first_configure_success = false;
 
       try {
-        run_command(first_configure_cmd, project_path); // the clone will be done after the configure command, no need to build for this one
+        run_command(first_configure_cmd, project_path, test_env); // the clone will be done after the configure command, no need to build for this one
         first_configure_success = true;
       }
       catch(...) {
@@ -89,7 +90,7 @@ namespace hfc::test {
       }
 
       BOOST_REQUIRE(first_configure_success);
-      run_command(cmake_build_command, project_path);
+      run_command(cmake_build_command, project_path, test_env);
     }
 
     fs::path expected_mathlib_binary_dir = project_path / "build" / "_deps" / "mathlib-build" / "CMakeCache.txt";
@@ -113,7 +114,7 @@ namespace hfc::test {
       bool second_configure_success = false;
 
       try {
-        run_command(second_configure_cmd, project_path); // the clone will be done after the configure command, no need to build for this one
+        run_command(second_configure_cmd, project_path, test_env); // the clone will be done after the configure command, no need to build for this one
         second_configure_success = true;
       }
       catch(...) {
@@ -121,7 +122,7 @@ namespace hfc::test {
       }
 
       BOOST_REQUIRE(second_configure_success);
-      run_command(cmake_build_command, project_path);
+      run_command(cmake_build_command, project_path, test_env);
     }
 
     BOOST_REQUIRE(fs::exists(expected_mathlib_source_dir) == td_test_case.expect_post_build_mathlib_SOURCE_DIR_exists);

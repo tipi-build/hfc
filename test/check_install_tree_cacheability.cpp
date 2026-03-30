@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -18,13 +19,14 @@ namespace hfc::test {
 namespace fs = boost::filesystem;
 namespace bp = boost::process;
 
-  BOOST_DATA_TEST_CASE(check_install_tree_cacheability, boost::unit_test::data::make(test_variants()), data) {
-
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_install_tree_cacheability, boost::unit_test::data::make(test_variants()), data) {
     fs::path test_project_path = prepare_project_to_be_tested("check_install-reuse", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
+    // Generate UUID once per test case for stable cmake-re worktree paths
+    std::string test_uuid = data.is_cmake_re ? boost::uuids::to_string(boost::uuids::random_generator()()) : "";
 
-    auto check_that_nothing_got_built_at_configure_time = [&]() { 
+    auto check_that_nothing_got_built_at_configure_time = [&]() {
       BOOST_REQUIRE(fs::exists(test_project_path / "build" / "CMakeCache.txt" ));
       BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "MyExample" ));
       BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "MySimpleMain" ));
@@ -51,19 +53,18 @@ namespace bp = boost::process;
       }
     };
 
-    bp::environment test_environment = boost::this_process::environment();
-    test_environment["TIPI_DISABLE_SET_MTIME"] = "ON";
+    test_env["TIPI_DISABLE_SET_MTIME"] = "ON";
     auto cmake_run_configure = [&](std::future<std::string>& out_configure) {
-      std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
+      std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data, "", std::nullopt, std::nullopt, test_uuid);
       std::cout << "Configure command: " << cmake_configure_command << std::endl;
-      int result_configure = bp::system(test_environment, bp::start_dir=(test_project_path), cmake_configure_command,  bp::std_out > out_configure, bp::std_err > stderr, bp::std_in < stdin);
+      int result_configure = bp::system(test_env, bp::start_dir=(test_project_path), cmake_configure_command,  bp::std_out > out_configure, bp::std_err > stderr, bp::std_in < stdin);
       return result_configure;
     };
 
     auto cmake_run_build = [&](std::future<std::string>& out_build)  {
       std::string cmake_build_command = get_cmake_build_command(test_project_path, data, "-d explain");
       std::cout << "Build command: " << cmake_build_command << std::endl;
-      int result = bp::system(test_environment, bp::start_dir=(test_project_path), cmake_build_command,  bp::std_out > out_build, bp::std_err > stderr, bp::std_in < stdin);
+      int result = bp::system(test_env, bp::start_dir=(test_project_path), cmake_build_command,  bp::std_out > out_build, bp::std_err > stderr, bp::std_in < stdin);
       return result;
     };
 
@@ -132,7 +133,7 @@ namespace bp = boost::process;
       pre::file::from_string((test_project_path / "simple_main.cpp").generic_string(), new_main);
 
       if(data.is_cmake_re) {
-        git_commit_change("first commit", test_project_path, test_environment);
+        git_commit_change("first commit", test_project_path, test_env);
       }
 
       std::future<std::string> out_build;

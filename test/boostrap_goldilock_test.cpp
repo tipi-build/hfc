@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
   fs::path test_project_path = prepare_project_to_be_tested("boostrap_goldilock", false);
   fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
-  std::string cmake_configure_command = "cmake -GNinja -DCMAKE_TOOLCHAIN_FILE="s + project_toolchain.generic_string() + " -S "s + (test_project_path.generic_string()) + " -B "s + ((test_project_path / "build").generic_string()); 
+  std::string cmake_configure_command = "cmake -GNinja -DCMAKE_TOOLCHAIN_FILE="s + project_toolchain.generic_string() + " -S "s + (test_project_path.generic_string()) + " -B "s + ((test_project_path / "build").generic_string());
   run_command(cmake_configure_command, test_project_path);
   return 0;
 }

@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -44,7 +45,7 @@ namespace hfc::test {
     test_data_set{ "hfc-recursive-cmake-dependecy-declaration-order", { "MathFunctions.h" }, "-DTEST_PARAMETER_RUN_NEGATIVE_CASE=OFF" }
   };
 
-  BOOST_DATA_TEST_CASE(
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, 
     check_hfc_recursive_cmake_dependency_aliases, 
     boost::unit_test::data::make(hfc::test::test_variants()) * boost::unit_test::data::make(TEST_DATA_cases),    
     tc_variant,
@@ -60,12 +61,12 @@ namespace hfc::test {
     auto configure_command = get_cmake_configure_command(test_project_path, tc_variant, tc_case.additional_cmake_flags);
 
     if(tc_case.expect_configure_success) {
-      run_command(configure_command, test_project_path);
+      run_command(configure_command, test_project_path, test_env);
     }
     else {
       bool configure_failed = false;
       try {
-        run_command(configure_command, test_project_path);
+        run_command(configure_command, test_project_path, test_env);
       }
       catch(...) {
         configure_failed = true;
@@ -76,7 +77,7 @@ namespace hfc::test {
     }
     
     auto build_command = get_cmake_build_command(test_project_path, tc_variant);
-    run_command(build_command, test_project_path);
+    run_command(build_command, test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample"));
   }

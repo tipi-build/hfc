@@ -10,6 +10,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -23,14 +24,14 @@ namespace hfc::test {
 
   using namespace std::literals;
 
-  BOOST_DATA_TEST_CASE(check_options_forwarding_openssl, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_options_forwarding_openssl, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_options_forwarding_openssl", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
 
     std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
-    run_command(cmake_configure_command, test_project_path);
+    run_command(cmake_configure_command, test_project_path, test_env);
 
     fs::path adapter_cmake_lists = test_project_path / "build" / "_deps" / "OpenSSL-adapter" / "CMakeLists.txt";
     BOOST_REQUIRE(fs::exists(adapter_cmake_lists));

@@ -10,6 +10,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -23,7 +24,7 @@ namespace hfc::test {
 
   using namespace std::literals;
 
-  BOOST_DATA_TEST_CASE(check_options_and_defines_forwarding_cmake, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_options_and_defines_forwarding_cmake, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_options_and_defines_forwarding", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
@@ -33,11 +34,11 @@ namespace hfc::test {
 
 
     std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
-    run_command(cmake_configure_command, test_project_path);
+    run_command(cmake_configure_command, test_project_path, test_env);
 
 
     std::string cmake_build_command = get_cmake_build_command(test_project_path, data);
-    run_command(cmake_build_command, test_project_path);
+    run_command(cmake_build_command, test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "project-cmake-simple-install" / "lib" / "libMathFunctions.a"));
@@ -61,7 +62,7 @@ namespace hfc::test {
     std::string content = pre::file::to_string( (test_project_path / "CMakeLists.txt").generic_string());
     boost::algorithm::replace_all(content,"#","");
     pre::file::from_string((test_project_path / "CMakeLists.txt").generic_string(), content);
-    run_command(cmake_build_command, test_project_path);
+    run_command(cmake_build_command, test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "project-cmake-simple-install" / "lib" / "libMathFunctions.a"));
@@ -77,7 +78,7 @@ namespace hfc::test {
 
 
 
-  BOOST_DATA_TEST_CASE(check_options_and_defines_forwarding_autotools, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_options_and_defines_forwarding_autotools, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_options_and_defines_forwarding_autotools", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
@@ -85,10 +86,10 @@ namespace hfc::test {
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
 
     std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
-    run_command(cmake_configure_command, test_project_path);
+    run_command(cmake_configure_command, test_project_path, test_env);
 
     std::string cmake_build_command = get_cmake_build_command(test_project_path, data);
-    run_command(cmake_build_command, test_project_path);
+    run_command(cmake_build_command, test_project_path, test_env);
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
 
@@ -101,7 +102,7 @@ namespace hfc::test {
     boost::algorithm::replace_all(content,"#","");
     pre::file::from_string((test_project_path / "CMakeLists.txt").generic_string(), content);
 
-    run_command(cmake_build_command, test_project_path);
+    run_command(cmake_build_command, test_project_path, test_env);
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
 
@@ -119,7 +120,8 @@ namespace hfc::test {
       boost::regex{"LDFLAGS = .* -rdynamic"}  // Check for add_link_options from HERMETIC_TOOLCHAIN_EXTENSION
     };
     for (auto expected_compile_flag : expected_compile_flags) {
-      BOOST_REQUIRE(boost::regex_search( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), expected_compile_flag));
+      BOOST_CHECK_MESSAGE(boost::regex_search( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), expected_compile_flag),
+      "Failed to match expected flag: " + expected_compile_flag.str());
     }
   }
 

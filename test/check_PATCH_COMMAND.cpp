@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -31,7 +32,7 @@ namespace hfc::test {
     fs::remove_all(template_path / "build");
   }
 
-   BOOST_DATA_TEST_CASE(check_PATCH_COMMAND_cmake, boost::unit_test::data::make(hfc::test::test_variants()), data){
+   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_PATCH_COMMAND_cmake, boost::unit_test::data::make(hfc::test::test_variants()), data){
 
     fs::path test_project_path = prepare_project_to_be_tested("check_PATCH_COMMAND", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
@@ -42,9 +43,9 @@ namespace hfc::test {
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "mathlib-install" / "include" / "MathFunctionscbrt-MOVED-BY-PATCH_COMMAND.h"));
 
-    run_command(get_cmake_configure_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_configure_command(test_project_path, data), test_project_path, test_env);
 
-    run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
 
     if ( !data.is_cmake_re ) {
       BOOST_REQUIRE(fs::exists(test_project_path / "thirdparty" / "cache" / "mathlib-ecc756a4-src" / "MathFunctionscbrt-MOVED-BY-PATCH_COMMAND.h" ));
@@ -55,14 +56,14 @@ namespace hfc::test {
     remove_build_folder(data.is_cmake_re, test_project_path, "mathlib");
 
 
-    run_command(get_cmake_configure_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_configure_command(test_project_path, data), test_project_path, test_env);
 
     // Check that it is still patched after reconfigure
     if ( !data.is_cmake_re ) { // in cmake-re it is in mirror
       BOOST_REQUIRE(fs::exists(test_project_path / "thirdparty" / "cache" / "mathlib-ecc756a4-src" / "MathFunctionscbrt-MOVED-BY-PATCH_COMMAND.h" ));
     }
 
-    run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "mathlib-install" / "include" / "MathFunctionscbrt-MOVED-BY-PATCH_COMMAND.h"));

@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -18,19 +19,21 @@ namespace hfc::test {
   namespace bp = boost::process;
   using namespace std::string_literals;
 
-  BOOST_DATA_TEST_CASE(check_version_update, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_version_update, boost::unit_test::data::make(hfc::test::test_variants()), data){
     std::string first_commit = "790f82e8a01b062b34133ef71dd94e9468717f37";
     std::string second_commit = "5cfd9d4e490d910acef72782e058739a83837305";
     fs::path test_project_path = prepare_project_to_be_tested("check_version_update", data.is_cmake_re);
     write_simple_main(test_project_path, {"version.hpp"});
     write_simple_main(test_project_path, {}, "simple_main.cpp" );
 
-    auto test_environment = boost::this_process::environment();
-    test_environment["TIPI_CACHE_FORCE_ENABLE"] = "OFF";
-    test_environment["TIPI_CACHE_CONSUME_ONLY"] = "ON";
+    test_env["TIPI_CACHE_FORCE_ENABLE"] = "OFF";
+    test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
 
     std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
-    auto result = run_cmd(test_environment, bp::start_dir=(test_project_path), bp::shell, cmake_configure_command);
+    auto result = run_cmd(test_env, bp::start_dir=(test_project_path), bp::shell, cmake_configure_command);
+    if (result.return_code != 0) {
+      BOOST_TEST_MESSAGE("Configure command failed with output:\n" << result.output);
+    }
     BOOST_REQUIRE(result.return_code == 0);
 
     auto cmake_cache_path = test_project_path / "build" / "_deps" / "version_update-build" / "CMakeCache.txt";
@@ -41,7 +44,7 @@ namespace hfc::test {
     boost::replace_all(content, first_commit, second_commit);
     pre::file::from_string((test_project_path/ "CMakeLists.txt").generic_string(), content);
 
-    result = run_cmd(test_environment, bp::start_dir=(test_project_path), bp::shell, cmake_configure_command);
+    result = run_cmd(test_env, bp::start_dir=(test_project_path), bp::shell, cmake_configure_command);
     BOOST_REQUIRE(result.return_code == 0);
     content_cmake_cache = pre::file::to_string(cmake_cache_path.generic_string());
     BOOST_REQUIRE(boost::contains(content_cmake_cache, "FAKECACHEDEP_MODE:STRING=v2"));

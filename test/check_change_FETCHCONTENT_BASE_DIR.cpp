@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -18,7 +19,7 @@ namespace hfc::test {
   namespace bp = boost::process;
   using namespace std::string_literals;
 
-  BOOST_DATA_TEST_CASE(FETCHCONTENT_BASE_DIR_works, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, FETCHCONTENT_BASE_DIR_works, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_change_base_dir", data.is_cmake_re);
     write_simple_main(test_project_path,{"MathFunctions.h", "MathFunctionscbrt.h","lib.h"});
 
@@ -27,7 +28,7 @@ namespace hfc::test {
 
     run_command(
       get_cmake_configure_command(test_project_path, data)
-      + " -DFETCHCONTENT_BASE_DIR="s + overridden_FETCHCONTENT_BASE_DIR.generic_string(), test_project_path);
+      + " -DFETCHCONTENT_BASE_DIR="s + overridden_FETCHCONTENT_BASE_DIR.generic_string(), test_project_path, test_env);
 
     if (!data.is_cmake_re) {
       BOOST_REQUIRE(fs::exists(test_project_path / "thirdparty" / "cache" / "mathlib-ecc756a4-src" / "CMakeLists.txt"));
@@ -35,12 +36,12 @@ namespace hfc::test {
     }
     BOOST_REQUIRE(fs::exists(overridden_FETCHCONTENT_BASE_DIR / "mathlib-build" / "CMakeCache.txt"));
     BOOST_REQUIRE(fs::exists(overridden_FETCHCONTENT_BASE_DIR / "Iconv-adapter" / "CMakeLists.txt"));
-    run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
     BOOST_REQUIRE(fs::exists(overridden_FETCHCONTENT_BASE_DIR / "mathlib-install" / "lib" / "libMathFunctions.a"));
     BOOST_REQUIRE(fs::exists(overridden_FETCHCONTENT_BASE_DIR / "Iconv-install" / "lib" / "libiconv.a"));
   }
 
-  BOOST_DATA_TEST_CASE(HERMETIC_FETCHCONTENT_INSTALL_DIR_works, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, HERMETIC_FETCHCONTENT_INSTALL_DIR_works, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_change_base_dir", data.is_cmake_re);
     write_simple_main(test_project_path,{"MathFunctions.h", "MathFunctionscbrt.h","lib.h"});
 
@@ -49,7 +50,7 @@ namespace hfc::test {
 
     run_command(
       get_cmake_configure_command(test_project_path, data)
-      + " -DHERMETIC_FETCHCONTENT_INSTALL_DIR="s + overriden_HERMETIC_FETCHCONTENT_INSTALL_DIR.generic_string(), test_project_path);
+      + " -DHERMETIC_FETCHCONTENT_INSTALL_DIR="s + overriden_HERMETIC_FETCHCONTENT_INSTALL_DIR.generic_string(), test_project_path, test_env);
 
     if (!data.is_cmake_re) {
       BOOST_REQUIRE(fs::exists(test_project_path / "thirdparty" / "cache" / "mathlib-ecc756a4-src" / "CMakeLists.txt"));
@@ -57,12 +58,12 @@ namespace hfc::test {
     }
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "mathlib-build" / "CMakeCache.txt"));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-adapter" / "CMakeLists.txt"));
-    run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
     BOOST_REQUIRE(fs::exists(overriden_HERMETIC_FETCHCONTENT_INSTALL_DIR / "mathlib-install" / "lib" / "libMathFunctions.a"));
     BOOST_REQUIRE(fs::exists(overriden_HERMETIC_FETCHCONTENT_INSTALL_DIR / "Iconv-install" / "lib" / "libiconv.a"));
   }
 
-  BOOST_DATA_TEST_CASE(FETCHCONTENT_BASE_DIR_and_HERMETIC_FETCHCONTENT_INSTALL_DIR_combined, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, FETCHCONTENT_BASE_DIR_and_HERMETIC_FETCHCONTENT_INSTALL_DIR_combined, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_change_base_dir", data.is_cmake_re);
     write_simple_main(test_project_path,{"MathFunctions.h", "MathFunctionscbrt.h","lib.h"});
 
@@ -75,7 +76,7 @@ namespace hfc::test {
     run_command(
       get_cmake_configure_command(test_project_path, data)
       + " -DHERMETIC_FETCHCONTENT_INSTALL_DIR="s + overriden_HERMETIC_FETCHCONTENT_INSTALL_DIR.generic_string()
-      + " -DFETCHCONTENT_BASE_DIR="s + overridden_FETCHCONTENT_BASE_DIR.generic_string(), test_project_path);
+      + " -DFETCHCONTENT_BASE_DIR="s + overridden_FETCHCONTENT_BASE_DIR.generic_string(), test_project_path, test_env);
 
     if (!data.is_cmake_re) {
       BOOST_REQUIRE(fs::exists(test_project_path / "thirdparty" / "cache" / "mathlib-ecc756a4-src" / "CMakeLists.txt"));
@@ -84,7 +85,7 @@ namespace hfc::test {
     BOOST_REQUIRE(fs::exists(overridden_FETCHCONTENT_BASE_DIR / "mathlib-build" / "CMakeCache.txt"));
     BOOST_REQUIRE(fs::exists(overridden_FETCHCONTENT_BASE_DIR / "Iconv-adapter" / "CMakeLists.txt"));
 
-    run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(overriden_HERMETIC_FETCHCONTENT_INSTALL_DIR / "mathlib-install" / "lib" / "libMathFunctions.a"));
     BOOST_REQUIRE(fs::exists(overriden_HERMETIC_FETCHCONTENT_INSTALL_DIR / "Iconv-install" / "lib" / "libiconv.a"));

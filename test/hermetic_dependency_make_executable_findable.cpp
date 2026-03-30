@@ -13,6 +13,7 @@
 #include <pre/file/hash.hpp>
 
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 namespace hfc::test { 
   namespace fs = boost::filesystem;
@@ -40,7 +41,7 @@ namespace hfc::test {
     ""  /* no flag on purpose to test for default behavior */
   };
 
-  BOOST_DATA_TEST_CASE(
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, 
     targets_cache_from_cmake_install_package_config, 
     boost::unit_test::data::make(hfc::test::test_variants()) * boost::unit_test::data::make(TEST_DATA_template_expectations) * boost::unit_test::data::make(TEST_DATA_hfc_TEST_INPUT_MAKE_EXECUTABLE_FINDABLE), 
     td_test_variant,
@@ -57,10 +58,10 @@ namespace hfc::test {
     BOOST_REQUIRE(is_empty_directory(project_path / "build"));
 
     std::cout << "⚗️ [Configure]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     std::cout << "⚗️ [Build]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
   }
 
 } 
