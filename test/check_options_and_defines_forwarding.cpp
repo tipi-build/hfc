@@ -112,7 +112,11 @@ namespace hfc::test {
 
     std::vector<boost::regex> expected_compile_flags{
       boost::regex{"CFLAGS = .* -fPIC"}, // Check for content of CMAKE_C_COMPILE_OPTIONS_PIC when CMAKE_POSITION_INDEPENDENT_CODE is ON.
-      boost::regex{"LDFLAGS = .* -ldl"}
+      boost::regex{"LDFLAGS = .* -ldl"},
+      boost::regex{"CFLAGS = .* -Wextra"},  // Check for add_compile_options from main CMakeLists.txt
+      boost::regex{"CFLAGS = .* -O2"},  // Check for add_compile_options from HERMETIC_TOOLCHAIN_EXTENSION
+      boost::regex{"LDFLAGS = .* -lpthread"},  // Check for add_link_options from main CMakeLists.txt
+      boost::regex{"LDFLAGS = .* -rdynamic"}  // Check for add_link_options from HERMETIC_TOOLCHAIN_EXTENSION
     };
     for (auto expected_compile_flag : expected_compile_flags) {
       BOOST_REQUIRE(boost::regex_search( pre::file::to_string((test_project_path / "build" / "_deps" / "iconv-build" / "src" / "Makefile").generic_string()), expected_compile_flag));
