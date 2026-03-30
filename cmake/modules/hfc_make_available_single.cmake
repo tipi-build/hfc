@@ -6,6 +6,7 @@ include(hfc_determine_cache_id)
 include(hfc_populate_project)
 include(hfc_generate_cmake_proxy_toolchain)
 include(hfc_targets_cache_create)
+include(hfc_get_property_from_directory_chain)
 
 # This creates prefixes where HermeticFetchContent will reuse buildLocation or installed location
 function(hfc_create_restore_prefixes content_name buildLocation installedLocation)
@@ -80,6 +81,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_FIND_PACKAGES
     BUILD_TARGETS
     CUSTOM_INSTALL_TARGETS
+    HERMETIC_CONFIG_EXTRA_ARGS
   )
 
   cmake_parse_arguments(
@@ -237,6 +239,26 @@ function(hfc_make_available_single content_name build_at_configure_time)
     set(__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "# (not provided)")
   endif()
 
+  # Forward compile options and link options from the calling scope
+  # These are set by add_compile_options() and add_link_options() in the main project
+  # and need to be forwarded to autotools/openssl builds via the proxy toolchain
+  hfc_get_property_from_directory_chain(parent_compile_options COMPILE_OPTIONS)
+  hfc_get_property_from_directory_chain(parent_link_options LINK_OPTIONS)
+
+  if(parent_compile_options)
+    string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "\n# Forwarded compile options from parent project\n")
+    foreach(opt ${parent_compile_options})
+      string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "add_compile_options(${opt})\n")
+    endforeach()
+  endif()
+
+  if(parent_link_options)
+    string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "\n# Forwarded link options from parent project\n")
+    foreach(opt ${parent_link_options})
+      string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "add_link_options(${opt})\n")
+    endforeach()
+  endif()
+
   hfc_log_debug(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
   set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.install.done)
 
@@ -335,6 +357,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
       HFC_CONFIGURE_MARKER_FILE ${hfc_configure_marker_file}
       MAKE_EXECUTABLES_FINDABLE "${__PARAMS_MAKE_EXECUTABLES_FINDABLE}"
       HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
+      HERMETIC_CONFIG_EXTRA_ARGS ${__PARAMS_HERMETIC_CONFIG_EXTRA_ARGS}
       ORIGIN ${${content_name}_origin}
       REVISION ${${content_name}_revision}
     )
