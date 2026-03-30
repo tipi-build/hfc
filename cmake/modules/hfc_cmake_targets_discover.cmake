@@ -307,7 +307,8 @@ if(${HERMETIC_FETCHCONTENT_RUN_INTERNAL_DISCOVER_TARGETS_TEST})
     unset(test_cache_program_args_3 CACHE)
     unset(test_cache_program_name_4 CACHE)
 
-    FILE(WRITE "/tmp/hermetic_fetchcontent_knowncommand.sh" "")
+    set(test_script_path "${CMAKE_BINARY_DIR}/hermetic_fetchcontent_knowncommand.sh")
+    FILE(WRITE "${test_script_path}" "")
 
     # General test of all component types given an absolute path.
     set(filename "/path/to/filename.ext.in")
@@ -389,12 +390,12 @@ if(${HERMETIC_FETCHCONTENT_RUN_INTERNAL_DISCOVER_TARGETS_TEST})
     get_filename_component(test_program_name " " PROGRAM)
     check("PROGRAM with just a space" "${test_program_name}" "")
 
-    get_filename_component(test_program_name "/tmp/hermetic_fetchcontent_knowncommand.sh" PROGRAM)
-    check("PROGRAM specified explicitly without quoting" "${test_program_name}" "/tmp/hermetic_fetchcontent_knowncommand.sh")
+    get_filename_component(test_program_name "${test_script_path}" PROGRAM)
+    check("PROGRAM specified explicitly without quoting" "${test_program_name}" "${test_script_path}")
 
-    get_filename_component(test_program_name "\"/tmp/hermetic_fetchcontent_knowncommand.sh\" arg1 arg2" PROGRAM
+    get_filename_component(test_program_name "\"${test_script_path}\" arg1 arg2" PROGRAM
       PROGRAM_ARGS test_program_args)
-    check("PROGRAM specified explicitly with arguments: name" "${test_program_name}" "/tmp/hermetic_fetchcontent_knowncommand.sh")
+    check("PROGRAM specified explicitly with arguments: name" "${test_program_name}" "${test_script_path}")
     check("PROGRAM specified explicitly with arguments: args" "${test_program_args}" " arg1 arg2")
 
     list(APPEND non_cache_vars test_program_name)
