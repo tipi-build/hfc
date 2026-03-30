@@ -87,6 +87,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/check_PATCH_COMMAND.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_compiler_forwarding.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_options_and_defines_forwarding.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_options_forwarding_openssl.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_subdir.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_install_tree_cacheability.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_subproject_targets_linking.cpp"
