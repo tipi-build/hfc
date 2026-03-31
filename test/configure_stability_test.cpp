@@ -13,6 +13,7 @@
 #include <pre/file/hash.hpp>
 
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 
 namespace hfc::test { 
@@ -49,7 +50,7 @@ namespace hfc::test {
   }
 
 
-  BOOST_DATA_TEST_CASE(configure_stability_autotools_dependency_AtConfigureTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, configure_stability_autotools_dependency_AtConfigureTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path project_path = prepare_project_to_be_tested("configure_stability_autotools_dependency_AtConfigureTime", data.is_cmake_re);
     write_project_tipi_id(project_path);
     write_simple_main(project_path, { "lib.h" } /* includes */, "simple_example.cpp" /* destination */);
@@ -67,7 +68,7 @@ namespace hfc::test {
 
     // configure twice
     std::cout << "⚗️ [Configure 1]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     /* checks */
     {
@@ -113,7 +114,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c1_installed_libiconv{path_iconv_installed_libiconv};
 
     std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -124,7 +125,7 @@ namespace hfc::test {
 
     // build
     std::cout << "⚗️ [Build 1]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -143,9 +144,9 @@ namespace hfc::test {
 
     file_fingerprint ffingerprint_b1_project_binary{path_project_binary};
     std::cout << "👷 [Configure 3 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 2]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -163,7 +164,7 @@ namespace hfc::test {
     write_simple_main(project_path, { "lib.h", "iostream" } /* includes */, "simple_example.cpp" /* destination */);
 
     std::cout << "👷 [Build 3]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -186,7 +187,7 @@ namespace hfc::test {
     BOOST_REQUIRE(toolchain_fingerprint.has_changed());
 
     std::cout << "👷 [Configure 4 / toolchain changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.has_changed());
     BOOST_REQUIRE(ffingerprint_c1_config_status.has_changed());
@@ -209,7 +210,7 @@ namespace hfc::test {
 
     // build
     std::cout << "👷 [Build 4 / toolchain changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
@@ -223,9 +224,9 @@ namespace hfc::test {
     file_fingerprint ffingerprint_b4_project_binary{path_project_binary};
 
     std::cout << "👷 [Configure 5 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 5]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c4_config_status.is_unchanged());
@@ -246,7 +247,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c5_cmakelists.content_hash != ffingerprint_c6_cmakelists.content_hash);  // explicitely check the contents differ!
 
     std::cout << "👷 [Configure 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.has_changed());
     BOOST_REQUIRE(ffingerprint_c4_config_status.has_changed());
@@ -262,7 +263,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c5_installed_libiconv{path_iconv_installed_libiconv};
 
     std::cout << "👷 [Build 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c5_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c5_config_status.is_unchanged());
@@ -274,7 +275,7 @@ namespace hfc::test {
     
   }
 
-  BOOST_DATA_TEST_CASE(configure_stability_autotools_dependency_AtBuildTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, configure_stability_autotools_dependency_AtBuildTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path project_path = prepare_project_to_be_tested("configure_stability_autotools_dependency_AtBuildTime", data.is_cmake_re);
     write_project_tipi_id(project_path);
     write_simple_main(project_path, { "lib.h" } /* includes */, "simple_example.cpp" /* destination */);
@@ -292,7 +293,7 @@ namespace hfc::test {
 
     // configure twice
     std::cout << "⚗️ [Configure 1]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     /* checks */
     {
@@ -334,7 +335,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c1_makefile{path_iconv_makefile};
 
     std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -344,7 +345,7 @@ namespace hfc::test {
 
     // build
     std::cout << "⚗️ [Build 1]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -364,9 +365,9 @@ namespace hfc::test {
 
     file_fingerprint ffingerprint_b1_project_binary{path_project_binary};
     std::cout << "👷 [Configure 3 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 2]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -383,7 +384,7 @@ namespace hfc::test {
     write_simple_main(project_path, { "lib.h", "iostream" } /* includes */, "simple_example.cpp" /* destination */);
 
     std::cout << "👷 [Build 3]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
@@ -405,7 +406,7 @@ namespace hfc::test {
     BOOST_REQUIRE(toolchain_fingerprint.has_changed());
 
     std::cout << "👷 [Configure 4 / toolchain changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_config_log.has_changed());
     BOOST_REQUIRE(ffingerprint_c1_config_status.has_changed());
@@ -426,7 +427,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c4_makefile{path_iconv_makefile};
     // build
     std::cout << "👷 [Build 4 / toolchain changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c4_config_status.is_unchanged());
@@ -438,9 +439,9 @@ namespace hfc::test {
     file_fingerprint ffingerprint_b4_project_binary{path_project_binary};
 
     std::cout << "👷 [Configure 5 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 5]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c4_config_status.is_unchanged());
@@ -460,7 +461,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c5_cmakelists.content_hash != ffingerprint_c6_cmakelists.content_hash);  // explicitely check the contents differ!
 
     std::cout << "👷 [Configure 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.has_changed());
     BOOST_REQUIRE(ffingerprint_c4_config_status.has_changed());
@@ -474,7 +475,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c5_makefile{path_iconv_makefile};
 
     std::cout << "👷 [Build 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c5_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c5_config_status.is_unchanged());
@@ -485,7 +486,7 @@ namespace hfc::test {
   }
 
 
-  BOOST_DATA_TEST_CASE(configure_stability_cmake_dependency_AtConfigureTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, configure_stability_cmake_dependency_AtConfigureTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path project_path = prepare_project_to_be_tested("configure_stability_cmake_dependency_AtConfigureTime", data.is_cmake_re);
     write_project_tipi_id(project_path);
     write_simple_main(project_path, { "MathFunctions.h" } /* includes */, "simple_example.cpp" /* destination */);
@@ -503,7 +504,7 @@ namespace hfc::test {
 
     // configure twice
     std::cout << "⚗️ [Configure 1]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     /* checks */
     {
@@ -546,7 +547,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c1_installed_libMathFunctionscbrt{path_mathlib_installed_libMathFunctionscbrt};
 
     std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -556,7 +557,7 @@ namespace hfc::test {
 
     // build
     std::cout << "⚗️ [Build 1]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -574,9 +575,9 @@ namespace hfc::test {
 
     file_fingerprint ffingerprint_b1_project_binary{path_project_binary};
     std::cout << "👷 [Configure 3 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 2]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -593,7 +594,7 @@ namespace hfc::test {
     write_simple_main(project_path, { "MathFunctions.h", "iostream" } /* includes */, "simple_example.cpp" /* destination */);
 
     std::cout << "👷 [Build 3]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -615,7 +616,7 @@ namespace hfc::test {
     BOOST_REQUIRE(toolchain_fingerprint.has_changed());
 
     std::cout << "👷 [Configure 4 / toolchain changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.has_changed());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.has_changed());
@@ -637,7 +638,7 @@ namespace hfc::test {
 
     // build
     std::cout << "👷 [Build 4 / toolchain changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
@@ -650,9 +651,9 @@ namespace hfc::test {
     file_fingerprint ffingerprint_b4_project_binary{path_project_binary};
 
     std::cout << "👷 [Configure 5 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 5]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c4_config_status.is_unchanged());
@@ -672,7 +673,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c5_cmakelists.content_hash != ffingerprint_c6_cmakelists.content_hash);  // explicitely check the contents differ!
 
     std::cout << "👷 [Configure 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.has_changed());
     BOOST_REQUIRE(ffingerprint_c4_config_status.has_changed());
@@ -687,7 +688,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c5_libMathFunctionscbrt{path_mathlib_installed_libMathFunctionscbrt};
 
     std::cout << "👷 [Build 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c5_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c5_config_status.is_unchanged());
@@ -697,7 +698,7 @@ namespace hfc::test {
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
   }
 
-   BOOST_DATA_TEST_CASE(configure_stability_cmake_dependency_AtBuildTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
+   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, configure_stability_cmake_dependency_AtBuildTime, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path project_path = prepare_project_to_be_tested("configure_stability_cmake_dependency_AtBuildTime", data.is_cmake_re);
     write_project_tipi_id(project_path);
     write_simple_main(project_path, { "MathFunctions.h" } /* includes */, "simple_example.cpp" /* destination */);
@@ -715,7 +716,7 @@ namespace hfc::test {
 
     // configure twice
     std::cout << "⚗️ [Configure 1]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     /* checks */
     {
@@ -754,7 +755,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c1_path_mathlib_ninjafile{path_mathlib_ninjafile};
 
     std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -764,7 +765,7 @@ namespace hfc::test {
 
     // build
     std::cout << "⚗️ [Build 1]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -785,9 +786,9 @@ namespace hfc::test {
 
     file_fingerprint ffingerprint_b1_project_binary{path_project_binary};
     std::cout << "👷 [Configure 3 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 2]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -804,7 +805,7 @@ namespace hfc::test {
     write_simple_main(project_path, { "MathFunctions.h", "iostream" } /* includes */, "simple_example.cpp" /* destination */);
 
     std::cout << "👷 [Build 3]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
@@ -825,7 +826,7 @@ namespace hfc::test {
     BOOST_REQUIRE(toolchain_fingerprint.has_changed());
 
     std::cout << "👷 [Configure 4 / toolchain changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.has_changed());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.has_changed());
@@ -845,7 +846,7 @@ namespace hfc::test {
     
     // build
     std::cout << "👷 [Build 4 / toolchain changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c4_ninjafile.is_unchanged());
@@ -857,9 +858,9 @@ namespace hfc::test {
     file_fingerprint ffingerprint_b4_project_binary{path_project_binary};
 
     std::cout << "👷 [Configure 5 / no changes]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
     std::cout << "👷 [Build 5]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c4_ninjafile.is_unchanged());
@@ -879,7 +880,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c5_cmakelists.content_hash != ffingerprint_c6_cmakelists.content_hash);  // explicitely check the contents differ!
 
     std::cout << "👷 [Configure 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_configure_command, project_path);
+    run_command(cmake_configure_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c4_config_log.has_changed());
     BOOST_REQUIRE(ffingerprint_c4_ninjafile.has_changed());
@@ -893,7 +894,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_c5_config_status{path_mathlib_ninjafile};
 
     std::cout << "👷 [Build 6 / project CmakeLists.txt changed]" << std::endl;
-    run_command(cmake_build_command, project_path);
+    run_command(cmake_build_command, project_path, test_env);
 
     BOOST_REQUIRE(ffingerprint_c5_config_log.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c5_config_status.is_unchanged());

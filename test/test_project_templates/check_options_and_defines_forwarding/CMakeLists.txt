@@ -12,6 +12,10 @@ set(CMAKE_MODULE_PATH
 )
 include(HermeticFetchContent)
 
+add_compile_definitions(
+  PARENT_SCOPE_DEF=1
+  PARENT_SCOPE_STRING
+)
 
 FetchContent_Declare(
   project-cmake-simple

@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -20,25 +21,25 @@ namespace hfc::test {
   using namespace std::literals;
   using namespace hfc::test;
 
-  BOOST_DATA_TEST_CASE(build_hermetic_openssl, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, build_hermetic_openssl, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path template_path = prepare_project_to_be_tested("check_openssl_build_system", data.is_cmake_re);
     write_simple_main(template_path,{"openssl/x509.h"});
 
     std::string cmake_configure_command = get_cmake_configure_command(template_path, data);
-    run_command(cmake_configure_command, template_path);
+    run_command(cmake_configure_command, template_path, test_env);
 
     std::string cmake_build_command = get_cmake_build_command(template_path, data);
-    run_command(cmake_build_command, template_path);
+    run_command(cmake_build_command, template_path, test_env);
 
     BOOST_REQUIRE(fs::exists(template_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(template_path / "build" / "_deps" / "OpenSSL-install" / "lib" / "libssl.a"  ));
     BOOST_REQUIRE(fs::exists(template_path / "build" / "_deps" / "OpenSSL-install" / "lib" / "libcrypto.a"  ));
 
-    std::string ninja_output = run_command(cmake_build_command, template_path);
+    std::string ninja_output = run_command(cmake_build_command, template_path, test_env);
     BOOST_REQUIRE(boost::contains(ninja_output, "ninja: no work to do"));
   }
 
-  BOOST_DATA_TEST_CASE(check_force_system_openssl, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_force_system_openssl, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_openssl_build_system",data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
@@ -46,10 +47,10 @@ namespace hfc::test {
     append_to_toolchain(project_toolchain, "set(FORCE_SYSTEM_OpenSSL ON CACHE BOOL \"\")");
 
     std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
-    run_command(cmake_configure_command, test_project_path);
+    run_command(cmake_configure_command, test_project_path, test_env);
 
     std::string cmake_build_command = get_cmake_build_command(test_project_path, data);
-    run_command(cmake_build_command, test_project_path);
+    run_command(cmake_build_command, test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(!fs::exists(test_project_path / "thirdparty" / "cache" / "openssl-src"));
@@ -57,7 +58,7 @@ namespace hfc::test {
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "OpenSSL-install" / "lib" / "libcrypto.a"  ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "hermetic_targetcaches" / "OpenSSL.cmake"));
 
-    std::string ninja_output = run_command(cmake_build_command, test_project_path);
+    std::string ninja_output = run_command(cmake_build_command, test_project_path, test_env);
     BOOST_REQUIRE(boost::contains(ninja_output, "ninja: no work to do"));
   }
 }

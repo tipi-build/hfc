@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -17,21 +18,20 @@ namespace hfc::test {
   namespace fs = boost::filesystem;
   namespace bp = boost::process;
 
-  BOOST_DATA_TEST_CASE(check_install_tree_cacheability_without_configure, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_install_tree_cacheability_without_configure, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path test_project_path = prepare_project_to_be_tested("check_install-reuse", data.is_cmake_re);
     fs::path project_toolchain = get_project_toolchain_path(test_project_path);
 
     write_simple_main(test_project_path,{"MathFunctions.h", "MathFunctionscbrt.h"});
     write_simple_main(test_project_path,{}, "simple_main.cpp");
-    bp::environment test_environment = boost::this_process::environment();
-    test_environment["TIPI_DISABLE_SET_MTIME"] = "ON";
+    test_env["TIPI_DISABLE_SET_MTIME"] = "ON";
     
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
 
     std::string cmake_configure_command = get_cmake_configure_command(test_project_path, data);
-    run_command(cmake_configure_command, test_project_path, test_environment);
+    run_command(cmake_configure_command, test_project_path, test_env);
 
-    int result_configure = bp::system(bp::start_dir=(test_project_path), test_environment, cmake_configure_command,  bp::std_out > stdout, bp::std_err > stderr, bp::std_in < stdin);
+    int result_configure = bp::system(bp::start_dir=(test_project_path), test_env, cmake_configure_command,  bp::std_out > stdout, bp::std_err > stderr, bp::std_in < stdin);
     BOOST_REQUIRE(result_configure == 0 );
 
     for (const auto& entry : fs::recursive_directory_iterator{test_project_path / "build"}){
@@ -44,7 +44,7 @@ namespace hfc::test {
     }
 
     std::string cmake_build_command = get_cmake_build_command(test_project_path, data);
-    run_command(cmake_build_command, test_project_path, test_environment);
+    run_command(cmake_build_command, test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MySimpleMain" ));
@@ -63,7 +63,7 @@ namespace hfc::test {
       BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "project-cmake-simple-subbuild"));
     }
 
-    std::string ninja_output = run_command(cmake_build_command, test_project_path, test_environment);
+    std::string ninja_output = run_command(cmake_build_command, test_project_path, test_env);
     BOOST_REQUIRE(boost::contains(ninja_output, "ninja: no work to do"));
       
     std::string content = pre::file::to_string( (test_project_path / "simple_example.cpp").generic_string());
@@ -71,10 +71,10 @@ namespace hfc::test {
     pre::file::from_string((test_project_path / "simple_example.cpp").generic_string(), content);
 
     if(data.is_cmake_re){
-      git_commit_change("first commit", test_project_path, test_environment);
+      git_commit_change("first commit", test_project_path, test_env);
     }
 
-    ninja_output = run_command(cmake_build_command, test_project_path, test_environment);
+    ninja_output = run_command(cmake_build_command, test_project_path, test_env);
     BOOST_REQUIRE(boost::contains(ninja_output, "Building CXX object CMakeFiles/MyExample.dir/simple_example.cpp.o"));
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "project-cmake-simple-build"));
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "project-cmake-simple-src"));
@@ -86,10 +86,10 @@ namespace hfc::test {
     pre::file::from_string((test_project_path / "simple_main.cpp").generic_string(), new_main);
 
     if(data.is_cmake_re){
-      git_commit_change("second commit", test_project_path, test_environment);
+      git_commit_change("second commit", test_project_path, test_env);
     }
 
-    ninja_output = run_command(cmake_build_command, test_project_path, test_environment);
+    ninja_output = run_command(cmake_build_command, test_project_path, test_env);
     BOOST_REQUIRE(boost::contains(ninja_output, "Building CXX object CMakeFiles/MySimpleMain.dir/simple_main.cpp.o"));
     BOOST_REQUIRE(!boost::contains(ninja_output, "Building CXX object CMakeFiles/MyExample.dir/simple_example.cpp.o"));
 

@@ -21,6 +21,7 @@
 # )
 include_guard()
 
+include(hfc_get_property_from_directory_chain)
 include(hunter_dump_cmake_flags)
 include(hunter_fatal_error)
 include(hunter_internal_error)
@@ -114,6 +115,19 @@ function(hunter_get_build_flags)
     #
     # C Compiler Flags (defines or include directories should not be needed here)
     set(cflags "${CMAKE_C_FLAGS_${config_type}} ${CMAKE_C_FLAGS}")
+
+    # Gather COMPILE_OPTIONS directory property (from add_compile_options)
+    hfc_get_property_from_directory_chain(compile_options COMPILE_OPTIONS)
+    foreach(opt ${compile_options})
+      set(cflags "${cflags} ${opt}")
+    endforeach()
+
+    # Gather COMPILE_DEFINITIONS directory property (from add_compile_definitions)
+    hfc_get_property_from_directory_chain(compile_definitions COMPILE_DEFINITIONS)
+    foreach(def ${compile_definitions})
+      set(cflags "${cflags} -D${def}")
+    endforeach()
+
     string(STRIP "${cflags}" cflags)
     hunter_status_debug("  CFLAGS=${cflags}")
     set(${PARAM_OUT_CFLAGS} ${cflags} PARENT_SCOPE)
@@ -126,6 +140,19 @@ function(hunter_get_build_flags)
     set(cxxflags
         "${CMAKE_CXX_FLAGS_${config_type}} ${CMAKE_CXX_FLAGS} ${PARAM_CXXFLAGS}"
     )
+
+    # Gather COMPILE_OPTIONS directory property (from add_compile_options)
+    hfc_get_property_from_directory_chain(compile_options COMPILE_OPTIONS)
+    foreach(opt ${compile_options})
+      set(cxxflags "${cxxflags} ${opt}")
+    endforeach()
+
+    # Gather COMPILE_DEFINITIONS directory property (from add_compile_definitions)
+    hfc_get_property_from_directory_chain(compile_definitions COMPILE_DEFINITIONS)
+    foreach(def ${compile_definitions})
+      set(cxxflags "${cxxflags} -D${def}")
+    endforeach()
+
     string(STRIP "${cxxflags}" cxxflags)
     hunter_status_debug("  CXXFLAGS=${cxxflags}")
     set(${PARAM_OUT_CXXFLAGS} ${cxxflags} PARENT_SCOPE)
@@ -139,6 +166,14 @@ function(hunter_get_build_flags)
     set(ldflags "${ldflags} ${CMAKE_EXE_LINKER_FLAGS_${config_type}}")
     string(STRIP "${ldflags}" ldflags)
     set(ldflags "${ldflags} ${CMAKE_EXE_LINKER_FLAGS}")
+    string(STRIP "${ldflags}" ldflags)
+
+    # Gather LINK_OPTIONS directory property (from add_link_options)
+    hfc_get_property_from_directory_chain(link_options LINK_OPTIONS)
+    foreach(opt ${link_options})
+      set(ldflags "${ldflags} ${opt}")
+    endforeach()
+
     string(STRIP "${ldflags}" ldflags)
     string(COMPARE NOTEQUAL "${ANDROID}" "" is_android)
     if(is_android)

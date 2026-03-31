@@ -29,7 +29,6 @@ namespace hfc::test {
 
       if(is_cmake_re){
         ss_configure_time_cli_args << " -DCMAKE_RE_ENABLE=ON";
-        ss_configure_time_cli_args << " -DUUID=" << to_string(boost::uuids::random_generator()());
       }
 
       configure_time_command_line_arguments = ss_configure_time_cli_args.str();

@@ -10,8 +10,8 @@
 #include <test_helpers.hpp>
 #include <pre/file/string.hpp>
 
- 
-namespace hfc::test { 
+
+namespace hfc::test {
 
   namespace fs = boost::filesystem;
   namespace bp = boost::process;

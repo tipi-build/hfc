@@ -9,6 +9,7 @@
 #include <test_project.hpp>
 #include <test_variant.hpp>
 #include <test_helpers.hpp>
+#include <test_isolation_fixture.hpp>
 
 #include <pre/file/string.hpp>
 
@@ -47,7 +48,7 @@ namespace hfc::test {
     return test_project_path;
   }
 
-   BOOST_DATA_TEST_CASE(check_compiler_forwarding_cmake, boost::unit_test::data::make(hfc::test::test_variants()), data){
+   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_compiler_forwarding_cmake, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path clang_path = bp::search_path("clang");
     BOOST_REQUIRE(clang_path.generic_string() != "");
 
@@ -58,7 +59,7 @@ namespace hfc::test {
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "mathlib-install" / "lib" / "libMathFunctions.a"));
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "mathlib-install" / "lib" / "libMathFunctionscbrt.a"));
 
-    run_command(get_cmake_configure_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_configure_command(test_project_path, data), test_project_path, test_env);
 
     // check that the CMakeCache files of the library AND the dependency contain the expected entry
     // NOTE: checking this after configure because HFC will delete the build tree after a successful install
@@ -66,7 +67,7 @@ namespace hfc::test {
     BOOST_REQUIRE(boost::contains(pre::file::to_string((test_project_path / "build" / "CMakeCache.txt").generic_string()), cmake_cache_clang_path_str));
     BOOST_REQUIRE(boost::contains(pre::file::to_string((test_project_path / "build" / "_deps" / "mathlib-build" / "CMakeCache.txt").generic_string()), cmake_cache_clang_path_str));
 
-    run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "mathlib-install" / "lib" / "libMathFunctions.a"));
@@ -75,7 +76,7 @@ namespace hfc::test {
     remove_build_folder(data.is_cmake_re, test_project_path, "mathlib");
   }
 
-  BOOST_DATA_TEST_CASE(check_compiler_forwarding_cmake_change_basedir, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_compiler_forwarding_cmake_change_basedir, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path clang_path = bp::search_path("clang");
     BOOST_REQUIRE(clang_path.generic_string() != "");
 
@@ -86,8 +87,8 @@ namespace hfc::test {
     BOOST_REQUIRE(!fs::exists(test_project_path / "my-deps-cache"  / "mathlib-install" / "lib" / "libMathFunctions.a"));
     BOOST_REQUIRE(!fs::exists(test_project_path / "my-deps-cache" / "mathlib-install" / "lib" / "libMathFunctionscbrt.a"));
 
-    auto HERMETIC_FETCHCONTENT_INSTALL_DIR= (test_project_path / "my-deps-cache"s).string(); 
-    run_command(get_cmake_configure_command(test_project_path, data) + " -DHERMETIC_FETCHCONTENT_INSTALL_DIR="s + HERMETIC_FETCHCONTENT_INSTALL_DIR, test_project_path);
+    auto HERMETIC_FETCHCONTENT_INSTALL_DIR= (test_project_path / "my-deps-cache"s).string();
+    run_command(get_cmake_configure_command(test_project_path, data) + " -DHERMETIC_FETCHCONTENT_INSTALL_DIR="s + HERMETIC_FETCHCONTENT_INSTALL_DIR, test_project_path, test_env);
 
     // check that the CMakeCache files of the library AND the dependency contain the expected entry
     // NOTE: checking this after configure because HFC will delete the build tree after a successful install
@@ -95,7 +96,7 @@ namespace hfc::test {
     BOOST_REQUIRE(boost::contains(pre::file::to_string((test_project_path / "build" / "CMakeCache.txt").generic_string()), cmake_cache_clang_path_str));
     BOOST_REQUIRE(boost::contains(pre::file::to_string((test_project_path / "build" / "_deps" / "mathlib-build" / "CMakeCache.txt").generic_string()), cmake_cache_clang_path_str));
 
-    run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "my-deps-cache" / "mathlib-install" / "lib" / "libMathFunctions.a"));
@@ -113,7 +114,7 @@ namespace hfc::test {
   }
 
 
-  BOOST_DATA_TEST_CASE(check_compiler_forwarding_autotools, boost::unit_test::data::make(hfc::test::test_variants()), data){
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, check_compiler_forwarding_autotools, boost::unit_test::data::make(hfc::test::test_variants()), data){
     fs::path clang_path = bp::search_path("clang");
     BOOST_REQUIRE(clang_path.generic_string() != "");
 
@@ -123,8 +124,8 @@ namespace hfc::test {
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(!fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
 
-    std::string config_output = run_command(get_cmake_configure_command(test_project_path, data), test_project_path);
-    std::string build_output = run_command(get_cmake_build_command(test_project_path, data), test_project_path);
+    std::string config_output = run_command(get_cmake_configure_command(test_project_path, data), test_project_path, test_env);
+    std::string build_output = run_command(get_cmake_build_command(test_project_path, data), test_project_path, test_env);
 
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "MyExample" ));
     BOOST_REQUIRE(fs::exists(test_project_path / "build" / "_deps" / "Iconv-install" / "lib" / "libiconv.a"  ));
