@@ -56,7 +56,13 @@ namespace hfc::test {
     targets_cache_test_data_set{ "hfc_targets_cache/autotools_export_declaration", "Iconv.cmake", true },
     targets_cache_test_data_set{ "hfc_targets_cache/cmake_no_install", "mathslib.cmake", false },
     targets_cache_test_data_set{ "hfc_targets_cache/alternate_exports_naming", "mathslib.cmake", true },
-    targets_cache_test_data_set{ "hfc_targets_cache/alternate_exports_naming", "mathslib.cmake", false, false /* expect configure failure */, false, "-DHFCTEST_NEGATIVE_CASE=ON" /* enable the negative test in the project */ }
+    targets_cache_test_data_set{ "hfc_targets_cache/alternate_exports_naming", "mathslib.cmake", false, false /* expect configure failure */, false, "-DHFCTEST_NEGATIVE_CASE=ON" /* enable the negative test in the project */ },
+
+    // aliasing tests
+    targets_cache_test_data_set{ "hfc_targets_cache/target_aliasing", "mathslib.cmake", true, true , true /* expect build and  configure success */, "-D=HFC_TEST_RENAMETARGET=OFF" }, 
+    targets_cache_test_data_set{ "hfc_targets_cache/target_aliasing", "mathslib.cmake", true, true , true /* expect build and  configure success */, "-D=HFC_TEST_RENAMETARGET=ON" }, // rename instead of just adding an alias
+    targets_cache_test_data_set{ "hfc_targets_cache/target_aliasing", "mathslib.cmake", true, true , true /* expect build and  configure success */, "-D=HFC_TEST_FORCE_SYSTEM_RENAME_TARGET=OFF" }, 
+    targets_cache_test_data_set{ "hfc_targets_cache/target_aliasing", "mathslib.cmake", true, true , true /* expect build and  configure success */, "-D=HFC_TEST_FORCE_SYSTEM_RENAME_TARGET=ON" }, // rename instead of just adding an alias
   };
 
   static auto TEST_DATA_hfc_makeAvailableAt_type = {
