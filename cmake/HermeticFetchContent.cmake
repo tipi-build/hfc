@@ -327,6 +327,36 @@ Commands
 
   Set the base directory for all the hermetic dependency build directory and related folders
 
+Fallback to system provided dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For use-cases in which you want to have the option to revert to a system provided library but still have the ability
+to build your own, you may set ``FORCE_SYSTEM_<content-name>`` to ``ON``. In this case Hermetic FetchContent will
+execute a CMake ``find_package(<content-name> REQUIRED)`` call during targets discovery. 
+
+If you need to specify arguments to ``find_package()`` you may add the ``FIND_PACKAGE_ARGS`` to the content declaration.
+
+  .. code-block:: cmake
+    set(FORCE_SYSTEM_boost ON) # <- take boost from the system, toggle this to OFF to have Boost built by your project
+    FetchContent_Declare(
+      boost
+      GIT_REPOSITORY https://github.com/boostorg/boost.git
+      GIT_TAG        ad09f667e61e18f5c31590941e748ac38e5a81bf   # that's v1.84
+    )
+
+    FetchContent_MakeHermetic(
+      boost
+      HERMETIC_BUILD_SYSTEM cmake
+      FIND_PACKAGE_ARGS "1.84 EXACT REQUIRED" # <- makes sure we take a 1.84 only from the system!
+    )
+
+    HermeticFetchContent_MakeAvailableAtBuildTime(boost)
+
+Note that in the special case of ``FORCE_SYSTEM_<content-name>=ON`` the context in which the find_package() will be
+run, will be slightly different from the normal context for hermetic builds. One major difference is that the Hermetic
+FetchContent will inject the project's ``CMAKE_MODULE_PATH`` into the toolchain extension in addition to forcing 
+``find_package()`` to search exclusively on the system through setting ``CMAKE_FIND_ROOT_PATH_MODE_*`` appropriately.
+
 Build introspection
 ^^^^^^^^^^^^^^^^^^^
 
