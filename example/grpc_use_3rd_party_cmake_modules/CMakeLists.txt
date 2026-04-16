@@ -9,6 +9,7 @@ add_library(grpc-stubs OBJECT "proto/greeter.proto")
 target_link_libraries(grpc-stubs PUBLIC ${GRPC_STUB_LIBRARIES})
 
 set(PROTO_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY "${PROTO_BINARY_DIR}")
 target_include_directories(grpc-stubs PUBLIC "$<BUILD_INTERFACE:${PROTO_BINARY_DIR}>")
 
 set(PROTO_IMPORT_DIRS "${CMAKE_CURRENT_LIST_DIR}/proto")

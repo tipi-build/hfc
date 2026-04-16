@@ -11,7 +11,7 @@ This shows how to setup a complex dependency tree as well as make 3rd party pack
 You will not need any additional dependencies aside from cmake itself as protoc and all the required libraries are added during the build. To build the project you can run:
 
 ```sh
-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../toolchain/toolchain.cmake
 cmake --build build
 ```
 
