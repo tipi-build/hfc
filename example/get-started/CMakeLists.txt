@@ -5,11 +5,16 @@ project(
   VERSION 1.0
   LANGUAGES CXX)
 
+set(hfc_REVISION main)
+if(DEFINED ENV{COMMIT_ID} AND NOT "$ENV{COMMIT_ID}" STREQUAL "")
+    set(hfc_REVISION "$ENV{COMMIT_ID}")
+endif()
 # Bootstrap hfc : Copy this after your project() call
+
 include(FetchContent)
 FetchContent_Populate(hfc
   GIT_REPOSITORY https://github.com/tipi-build/hfc.git
-  GIT_TAG main
+  GIT_TAG ${hfc_REVISION}
   SOURCE_DIR "${PROJECT_SOURCE_DIR}/thirdparty/cache/hfc/src"
   SUBBUILD_DIR "${PROJECT_SOURCE_DIR}/thirdparty/cache/hfc/subbuild"
   BINARY_DIR "${PROJECT_SOURCE_DIR}/thirdparty/cache/hfc/bin"

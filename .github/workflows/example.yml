@@ -1,0 +1,158 @@
+name: example build
+
+# This workflow is triggered on PRs ony
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  TIPI_ACCESS_TOKEN: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_ACCESS_TOKEN }}
+  TIPI_REFRESH_TOKEN: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_REFRESH_TOKEN }}
+  TIPI_VAULT_PASSPHRASE: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_VAULT_PASSPHRASE }}
+  TIPI_CACHE_CONSUME_ONLY: ON
+  COMMIT_ID: ${{ github.event.pull_request.head.sha }}
+
+
+jobs:
+  build-example-boost:
+    name: build example with boost
+    runs-on: ubuntu-latest-8-cores
+    container:
+      image: tipibuild/tipi-ubuntu:latest
+      options: --user root
+    steps:
+      - name: checkout pull request
+        uses: actions/checkout@v4
+        with:
+          path: './hfc_project'
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: prepare example runner
+        run: |
+          cd hfc_project/example/boost
+          git init
+          git config --global user.email "hello@tipi.build"
+          git config --global user.name "tipibuild"
+          tipi connect
+      - name: build with cmake-re
+        run: |
+          cd hfc_project/example/boost
+          cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
+          cmake-re --build ./build_re --host
+      - name: build with cmake
+        run: |
+          cd hfc_project/example/boost
+          tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
+          tipi run cmake --build ./build
+
+  build-example-get-started:
+    name: build example get-started
+    runs-on: ubuntu-latest-8-cores
+    container:
+      image: tipibuild/tipi-ubuntu:latest
+      options: --user root
+    steps:
+      - name: checkout pull request
+        uses: actions/checkout@v4
+        with:
+          path: './hfc_project'
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: prepare example runner
+        run: |
+          cd hfc_project/example/get-started
+          git init
+          git config --global user.email "hello@tipi.build"
+          git config --global user.name "tipibuild"
+          tipi connect
+      - name: build with cmake-re
+        run: |
+          cd hfc_project/example/get-started
+          cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
+          cmake-re --build ./build_re --host
+      - name: build with cmake
+        run: |
+          cd hfc_project/example/get-started
+          tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
+          tipi run cmake --build ./build
+
+# This example is split into separate cmake-re and cmake jobs because it is significantly slower than others (gRPC dependency tree). Splitting improves CI parallelism and reduces overall execution time.
+#  build-example-with-grpc-cmake-re:
+#    name: build example grpc_use_3rd_party_cmake_modules with cmake-re
+#    runs-on: ubuntu-latest-8-cores
+#    container:
+#      image: tipibuild/tipi-ubuntu:latest
+#      options: --user root
+#    steps:
+#      - name: checkout pull request
+#        uses: actions/checkout@v4
+#        with:
+#          path: './hfc_project'
+#          ref: ${{ github.event.pull_request.head.sha }}
+#      - name: prepare example runner
+#        run: |
+#          cd hfc_project/example/grpc_use_3rd_party_cmake_modules
+#          git init
+#          git config --global user.email "hello@tipi.build"
+#          git config --global user.name "tipibuild"
+#          tipi connect
+#      - name: build with cmake-re
+#        run: |
+#          cd hfc_project/example/grpc_use_3rd_party_cmake_modules
+#          cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
+#          cmake-re --build ./build_re --host
+
+  build-example-with-grpc-cmake:
+    name: build example grpc_use_3rd_party_cmake_modules with cmake
+    runs-on: ubuntu-latest-8-cores
+    container:
+      image: tipibuild/tipi-ubuntu:latest
+      options: --user root
+    steps:
+      - name: checkout pull request
+        uses: actions/checkout@v4
+        with:
+          path: './hfc_project'
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: prepare example runner
+        run: |
+          cd hfc_project/example/grpc_use_3rd_party_cmake_modules
+          git init
+          git config --global user.email "hello@tipi.build"
+          git config --global user.name "tipibuild"
+          tipi connect
+      - name: build with cmake
+        run: |
+          cd hfc_project/example/grpc_use_3rd_party_cmake_modules
+          tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
+          tipi run cmake --build ./build
+
+  build-example-with-openssl:
+    name: build example openssl
+    runs-on: ubuntu-latest-8-cores
+    container:
+      image: tipibuild/tipi-ubuntu:latest
+      options: --user root
+    steps:
+      - name: checkout pull request
+        uses: actions/checkout@v4
+        with:
+          path: './hfc_project'
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: prepare example runner
+        run: |
+          cd hfc_project/example/openssl
+          git init
+          git config --global user.email "hello@tipi.build"
+          git config --global user.name "tipibuild"
+          tipi connect
+      - name: build with cmake-re
+        run: |
+          cd hfc_project/example/openssl
+          cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
+          cmake-re --build ./build_re --host
+      - name: build with cmake
+        run: |
+          cd hfc_project/example/openssl
+          tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
+          tipi run cmake --build ./build
