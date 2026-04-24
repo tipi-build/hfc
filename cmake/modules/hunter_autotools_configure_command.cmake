@@ -47,6 +47,12 @@ function(hunter_autotools_configure_command out_command_line)
   set(multi_value_params
       PACKAGE_CONFIGURATION_TYPES
       EXTRA_FLAGS
+      RESOLVED_COMPILE_DEFINITIONS
+      RESOLVED_COMPILE_OPTIONS_C
+      RESOLVED_COMPILE_OPTIONS_CXX
+      RESOLVED_INCLUDE_DIRECTORIES
+      RESOLVED_LINK_OPTIONS
+      RESOLVED_LINK_DIRECTORIES
   )
   cmake_parse_arguments(
       PARAM
@@ -165,6 +171,26 @@ function(hunter_autotools_configure_command out_command_line)
   endif()
   string(TOUPPER ${PARAM_PACKAGE_CONFIGURATION_TYPES} config_type)
 
+  set(_forward_resolved_flags)
+  if(DEFINED PARAM_RESOLVED_COMPILE_DEFINITIONS)
+    list(APPEND _forward_resolved_flags RESOLVED_COMPILE_DEFINITIONS ${PARAM_RESOLVED_COMPILE_DEFINITIONS})
+  endif()
+  if(DEFINED PARAM_RESOLVED_COMPILE_OPTIONS_C)
+    list(APPEND _forward_resolved_flags RESOLVED_COMPILE_OPTIONS_C ${PARAM_RESOLVED_COMPILE_OPTIONS_C})
+  endif()
+  if(DEFINED PARAM_RESOLVED_COMPILE_OPTIONS_CXX)
+    list(APPEND _forward_resolved_flags RESOLVED_COMPILE_OPTIONS_CXX ${PARAM_RESOLVED_COMPILE_OPTIONS_CXX})
+  endif()
+  if(DEFINED PARAM_RESOLVED_INCLUDE_DIRECTORIES)
+    list(APPEND _forward_resolved_flags RESOLVED_INCLUDE_DIRECTORIES ${PARAM_RESOLVED_INCLUDE_DIRECTORIES})
+  endif()
+  if(DEFINED PARAM_RESOLVED_LINK_OPTIONS)
+    list(APPEND _forward_resolved_flags RESOLVED_LINK_OPTIONS ${PARAM_RESOLVED_LINK_OPTIONS})
+  endif()
+  if(DEFINED PARAM_RESOLVED_LINK_DIRECTORIES)
+    list(APPEND _forward_resolved_flags RESOLVED_LINK_DIRECTORIES ${PARAM_RESOLVED_LINK_DIRECTORIES})
+  endif()
+
   hunter_get_build_flags(
       INSTALL_DIR
         ${PARAM_PACKAGE_INSTALL_DIR}
@@ -178,6 +204,7 @@ function(hunter_autotools_configure_command out_command_line)
         cxxflags
       OUT_LDFLAGS
         ldflags
+      ${_forward_resolved_flags}
   )
   # -> CMAKE_C_FLAGS
   # -> CMAKE_CXX_FLAGS

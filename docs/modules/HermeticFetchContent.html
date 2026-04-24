@@ -116,6 +116,7 @@ but enables additional configuration through the <span class="target" id="index-
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="nb">autotools</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="nb">openssl</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_TOOLCHAIN_EXTENSION</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CONFIG_EXTRA_ARGS</span><span class="w"> </span><span class="nv">&lt;configure flags&gt;...</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CONFIG_LANGUAGE</span><span class="w"> </span><span class="no">C</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">CXX</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_FIND_PACKAGES</span><span class="w"> </span><span class="nv">&lt;list of hermetic content names&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CREATE_TARGET_ALIASES</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_PREPATCHED_RESOLVER</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
@@ -191,6 +192,27 @@ For CMake-based dependencies, use <code class="docutils literal notranslate"><sp
 <span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">autotools</span>
 <span class="w">  </span><span class="no">HERMETIC_CONFIG_EXTRA_ARGS</span>
 <span class="w">    </span><span class="p">--</span><span class="nb">enable-maintainer-mode</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_CONFIG_LANGUAGE</span></code> option selects which language's resolved view of the
+toolchain flags is forwarded to the <code class="docutils literal notranslate"><span class="pre">configure</span></code> script for dependencies using the
+<code class="docutils literal notranslate"><span class="pre">autotools</span></code> build system. Valid values are <code class="docutils literal notranslate"><span class="pre">C</span></code> (the default) and <code class="docutils literal notranslate"><span class="pre">CXX</span></code>.</p>
+<p>Toolchain directives such as <code class="docutils literal notranslate"><span class="pre">add_compile_options</span></code>, <code class="docutils literal notranslate"><span class="pre">add_compile_definitions</span></code>,
+<code class="docutils literal notranslate"><span class="pre">add_link_options</span></code>, <code class="docutils literal notranslate"><span class="pre">include_directories</span></code> and <code class="docutils literal notranslate"><span class="pre">link_directories</span></code> may contain
+generator expressions like <code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_LANGUAGE:C&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE:CXX&gt;</span></code>.
+Hermetic FetchContent resolves those expressions separately for each language, then
+uses <code class="docutils literal notranslate"><span class="pre">HERMETIC_CONFIG_LANGUAGE</span></code> to decide which resolved view feeds <code class="docutils literal notranslate"><span class="pre">CPPFLAGS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CFLAGS</span></code> / <code class="docutils literal notranslate"><span class="pre">CXXFLAGS</span></code> and <code class="docutils literal notranslate"><span class="pre">LDFLAGS</span></code> on the <code class="docutils literal notranslate"><span class="pre">configure</span></code> command line. Use <code class="docutils literal notranslate"><span class="pre">CXX</span></code>
+when the imported target is primarily consumed from C++ code and you want the CXX
+branches of your language-conditional toolchain flags to apply.</p>
+<p>This option only applies to <code class="docutils literal notranslate"><span class="pre">HERMETIC_BUILD_SYSTEM</span> <span class="pre">autotools</span></code>. OpenSSL is a pure C
+project and always uses the C-language resolved view. For CMake-based dependencies,
+per-language flags are already handled natively by CMake and no selection is needed.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">Iconv</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">autotools</span>
+<span class="w">  </span><span class="no">HERMETIC_CONFIG_LANGUAGE</span><span class="w"> </span><span class="no">CXX</span>
 <span class="nf">)</span>
 </pre></div>
 </div>

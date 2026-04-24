@@ -43,9 +43,16 @@ namespace hfc::test {
   inline fs::path get_project_toolchain_dir(const fs::path& project_folder) {
     return project_folder / "toolchain";
   }
-  
+
   inline fs::path get_project_toolchain_path(const fs::path& project_folder) {
     return get_project_toolchain_dir(project_folder) / "linux-toolchain.cmake";
+  }
+
+  inline fs::path get_project_toolchain_path(const fs::path& project_folder, const std::string& toolchain_name) {
+    if (toolchain_name.empty()) {
+      return get_project_toolchain_path(project_folder);
+    }
+    return get_project_toolchain_dir(project_folder) / toolchain_name;
   }
 
   inline fs::path get_data_dir(){
@@ -152,7 +159,7 @@ namespace hfc::test {
       cmd << SPACE << additional_cmake_variables;
     }
 
-    fs::path default_project_toolchain_path = get_project_toolchain_path(test_project_path);
+    fs::path default_project_toolchain_path = get_project_toolchain_path(test_project_path, data.toolchain_name);
 
     cmd << SPACE << "-DCMAKE_TOOLCHAIN_FILE=" << toolchain_file.value_or(default_project_toolchain_path).generic_string();
     cmd << SPACE << "-DCMAKE_BUILD_TYPE=" << cmake_build_type.value_or("Release");

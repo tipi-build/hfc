@@ -61,6 +61,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_CREATE_TARGET_ALIASES
     HERMETIC_TOOLCHAIN_EXTENSION
     HERMETIC_BUILD_SYSTEM
+    HERMETIC_CONFIG_LANGUAGE
     MAKE_EXECUTABLES_FINDABLE
 
     HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
@@ -226,6 +227,15 @@ function(hfc_make_available_single content_name build_at_configure_time)
     set (__PARAMS_HERMETIC_BUILD_SYSTEM "cmake")
   endif()
 
+  if(NOT DEFINED __PARAMS_HERMETIC_CONFIG_LANGUAGE)
+    set(__PARAMS_HERMETIC_CONFIG_LANGUAGE "C")
+  endif()
+  if(NOT __PARAMS_HERMETIC_CONFIG_LANGUAGE STREQUAL "C" AND NOT __PARAMS_HERMETIC_CONFIG_LANGUAGE STREQUAL "CXX")
+    hfc_log(FATAL_ERROR
+      "HERMETIC_CONFIG_LANGUAGE for content '${content_name}' must be 'C' or 'CXX' (got '${__PARAMS_HERMETIC_CONFIG_LANGUAGE}')"
+    )
+  endif()
+
   if (NOT DEFINED __PARAMS_HERMETIC_BUILD_AT_CONFIGURE_TIME)
     set(__PARAMS_HERMETIC_BUILD_AT_CONFIGURE_TIME ${build_at_configure_time})
   else()
@@ -338,6 +348,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
       MAKE_EXECUTABLES_FINDABLE "${__PARAMS_MAKE_EXECUTABLES_FINDABLE}"
       HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
       HERMETIC_CONFIG_EXTRA_ARGS ${__PARAMS_HERMETIC_CONFIG_EXTRA_ARGS}
+      HERMETIC_CONFIG_LANGUAGE ${__PARAMS_HERMETIC_CONFIG_LANGUAGE}
       ORIGIN ${${content_name}_origin}
       REVISION ${${content_name}_revision}
     )

@@ -1,7 +1,7 @@
 # Copyright (c) 2017 Ruslan Baratov, Alexandre Pretyman
 # All rights reserved.
 #
-# This function generates a ./configure command line for autotools
+# This function generates a ./Configure command line for OpenSSL.
 #
 # Usage example:
 # hunter_openssl_configure_command(out_command_line # saves the result in this var
@@ -15,8 +15,6 @@
 #     "-DEXTRA_CPP_FLAGS"                   # extra preprocessor flags
 #   CFLAGS
 #     "-O2"                                 # extra c compilation flags
-#   CXXFLAGS
-#     "-Wall"                               # extra c++ compilation flags
 #   LDFLAGS
 #     "-lmycrazylib"                        # extra linking flags
 #   EXTRA_FLAGS
@@ -41,12 +39,16 @@ function(hunter_openssl_configure_command out_command_line)
       PACKAGE_INSTALL_DIR
       CPPFLAGS
       CFLAGS
-      CXXFLAGS
       LDFLAGS
   )
   set(multi_value_params
       PACKAGE_CONFIGURATION_TYPES
       EXTRA_FLAGS
+      RESOLVED_COMPILE_DEFINITIONS
+      RESOLVED_COMPILE_OPTIONS
+      RESOLVED_INCLUDE_DIRECTORIES
+      RESOLVED_LINK_OPTIONS
+      RESOLVED_LINK_DIRECTORIES
   )
   cmake_parse_arguments(
       PARAM
@@ -147,8 +149,6 @@ function(hunter_openssl_configure_command out_command_line)
         cpp
       OUT_CC
         cc
-      OUT_CXX
-        cxx
   )
 
   set(toolchain_binaries)
@@ -186,9 +186,6 @@ function(hunter_openssl_configure_command out_command_line)
   if(cc)
     list(APPEND toolchain_binaries "CC=${cc}")
   endif()
-  if(cxx)
-    list(APPEND toolchain_binaries "CXX=${cxx}")
-  endif()
 
   if(toolchain_binaries)
     list(APPEND configure_command ${toolchain_binaries})
@@ -203,6 +200,23 @@ function(hunter_openssl_configure_command out_command_line)
   endif()
   string(TOUPPER ${PARAM_PACKAGE_CONFIGURATION_TYPES} config_type)
 
+  set(_forward_resolved_flags)
+  if(DEFINED PARAM_RESOLVED_COMPILE_DEFINITIONS)
+    list(APPEND _forward_resolved_flags RESOLVED_COMPILE_DEFINITIONS ${PARAM_RESOLVED_COMPILE_DEFINITIONS})
+  endif()
+  if(DEFINED PARAM_RESOLVED_COMPILE_OPTIONS)
+    list(APPEND _forward_resolved_flags RESOLVED_COMPILE_OPTIONS_C ${PARAM_RESOLVED_COMPILE_OPTIONS})
+  endif()
+  if(DEFINED PARAM_RESOLVED_INCLUDE_DIRECTORIES)
+    list(APPEND _forward_resolved_flags RESOLVED_INCLUDE_DIRECTORIES ${PARAM_RESOLVED_INCLUDE_DIRECTORIES})
+  endif()
+  if(DEFINED PARAM_RESOLVED_LINK_OPTIONS)
+    list(APPEND _forward_resolved_flags RESOLVED_LINK_OPTIONS ${PARAM_RESOLVED_LINK_OPTIONS})
+  endif()
+  if(DEFINED PARAM_RESOLVED_LINK_DIRECTORIES)
+    list(APPEND _forward_resolved_flags RESOLVED_LINK_DIRECTORIES ${PARAM_RESOLVED_LINK_DIRECTORIES})
+  endif()
+
   hunter_get_build_flags(
       INSTALL_DIR
         ${PARAM_PACKAGE_INSTALL_DIR}
@@ -212,14 +226,12 @@ function(hunter_openssl_configure_command out_command_line)
         cppflags
       OUT_CFLAGS
         cflags
-      OUT_CXXFLAGS
-        cxxflags
       OUT_LDFLAGS
         ldflags
+      ${_forward_resolved_flags}
   )
   # -> CMAKE_C_FLAGS
-  # -> CMAKE_CXX_FLAGS
-  hunter_status_debug("Autotools complation/linking flags:")
+  hunter_status_debug("OpenSSL compilation/linking flags:")
   set(cppflags "${cppflags} ${PARAM_CPPFLAGS}")
   string(STRIP "${cppflags}" cppflags)
   hunter_status_debug("  CPPFLAGS=${cppflags}")
@@ -229,11 +241,6 @@ function(hunter_openssl_configure_command out_command_line)
   string(STRIP "${cflags}" cflags)
   hunter_status_debug("  CFLAGS=${cflags}")
   list(APPEND configure_command CFLAGS=${cflags})
-
-  set(cxxflags "${cxxflags} ${PARAM_CXXFLAGS}")
-  string(STRIP "${cxxflags}" cxxflags)
-  hunter_status_debug("  CXXFLAGS=${cxxflags}")
-  list(APPEND configure_command CXXFLAGS=${cxxflags})
 
   hunter_status_debug("  PARAM_LDFLAGS=${PARAM_LDFLAGS}")
   set(ldflags "${ldflags} ${PARAM_LDFLAGS}")

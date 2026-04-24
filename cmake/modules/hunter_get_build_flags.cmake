@@ -37,6 +37,13 @@ function(hunter_get_build_flags)
   )
   set(multi_value_params
       PACKAGE_CONFIGURATION_TYPES
+      # Already-resolved (post-genex) options.
+      RESOLVED_COMPILE_DEFINITIONS
+      RESOLVED_COMPILE_OPTIONS_C
+      RESOLVED_COMPILE_OPTIONS_CXX
+      RESOLVED_INCLUDE_DIRECTORIES
+      RESOLVED_LINK_OPTIONS
+      RESOLVED_LINK_DIRECTORIES
   )
   cmake_parse_arguments(
       PARAM
@@ -71,6 +78,16 @@ function(hunter_get_build_flags)
   hunter_status_debug(
       "Build flags config ${config_type} on dir ${PARAM_GLOBAL_INSTALLDIR}"
   )
+
+  set(has_resolved_inputs FALSE)
+  if(DEFINED PARAM_RESOLVED_COMPILE_DEFINITIONS
+      OR DEFINED PARAM_RESOLVED_COMPILE_OPTIONS_C
+      OR DEFINED PARAM_RESOLVED_COMPILE_OPTIONS_CXX
+      OR DEFINED PARAM_RESOLVED_INCLUDE_DIRECTORIES
+      OR DEFINED PARAM_RESOLVED_LINK_OPTIONS
+      OR DEFINED PARAM_RESOLVED_LINK_DIRECTORIES)
+    set(has_resolved_inputs TRUE)
+  endif()
   string(COMPARE NOTEQUAL "${PARAM_OUT_CPPFLAGS}" "" has_out_cppflags)
   string(COMPARE NOTEQUAL "${PARAM_OUT_CFLAGS}"   "" has_out_cflags)
   string(COMPARE NOTEQUAL "${PARAM_OUT_CXXFLAGS}" "" has_out_cxxflags)
@@ -85,20 +102,30 @@ function(hunter_get_build_flags)
     hunter_dump_cmake_flags(CPPFLAGS cppflags)
     set(cppflags "${cppflags} -I${PARAM_INSTALL_DIR}/include")
     string(STRIP "${cppflags}" cppflags)
-    # build config type definitions
-    get_directory_property(defs
-        COMPILE_DEFINITIONS_${config_type}
-    )
-    foreach(def ${defs})
-      set(cppflags "${cppflags} -D${def}")
-    endforeach()
-    # non-build config specific definitions
-    get_directory_property(defs COMPILE_DEFINITIONS)
-    foreach(def ${defs})
-      set(cppflags "${cppflags} -D${def}")
-    endforeach()
+    if(has_resolved_inputs)
+      foreach(def ${PARAM_RESOLVED_COMPILE_DEFINITIONS})
+        set(cppflags "${cppflags} -D${def}")
+      endforeach()
+    else()
+      # build config type definitions
+      get_directory_property(defs
+          COMPILE_DEFINITIONS_${config_type}
+      )
+      foreach(def ${defs})
+        set(cppflags "${cppflags} -D${def}")
+      endforeach()
+      # non-build config specific definitions
+      get_directory_property(defs COMPILE_DEFINITIONS)
+      foreach(def ${defs})
+        set(cppflags "${cppflags} -D${def}")
+      endforeach()
+    endif()
 
-    get_directory_property(include_dirs INCLUDE_DIRECTORIES)
+    if(has_resolved_inputs)
+      set(include_dirs "${PARAM_RESOLVED_INCLUDE_DIRECTORIES}")
+    else()
+      get_directory_property(include_dirs INCLUDE_DIRECTORIES)
+    endif()
     foreach(include_dir ${include_dirs})
       set(cppflags
           "${cppflags} ${CMAKE_INCLUDE_SYSTEM_FLAG_CXX} ${include_dir}"
@@ -115,9 +142,13 @@ function(hunter_get_build_flags)
     # C Compiler Flags (defines or include directories should not be needed here)
     set(cflags "${CMAKE_C_FLAGS_${config_type}} ${CMAKE_C_FLAGS}")
 
-    # Gather COMPILE_OPTIONS directory property (from add_compile_options)
-    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
-    get_directory_property(compile_options DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_OPTIONS)
+    if(has_resolved_inputs)
+      set(compile_definitions "${PARAM_RESOLVED_COMPILE_DEFINITIONS}")
+      set(compile_options "${PARAM_RESOLVED_COMPILE_OPTIONS_C}")
+    else()
+      get_directory_property(compile_definitions DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+      get_directory_property(compile_options DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_OPTIONS)
+    endif()
     foreach(opt ${compile_options})
       # Handle SHELL: prefix - CMake uses this to indicate the string should be split by spaces
       # Remove the prefix and pass the flag as-is to the shell
@@ -127,9 +158,6 @@ function(hunter_get_build_flags)
       set(cflags "${cflags} ${opt}")
     endforeach()
 
-    # Gather COMPILE_DEFINITIONS directory property (from add_compile_definitions)
-    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
-    get_directory_property(compile_definitions DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
     foreach(def ${compile_definitions})
       set(cflags "${cflags} -D${def}")
     endforeach()
@@ -147,9 +175,13 @@ function(hunter_get_build_flags)
         "${CMAKE_CXX_FLAGS_${config_type}} ${CMAKE_CXX_FLAGS} ${PARAM_CXXFLAGS}"
     )
 
-    # Gather COMPILE_OPTIONS directory property (from add_compile_options)
-    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
-    get_directory_property(compile_options DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_OPTIONS)
+    if(has_resolved_inputs)
+      set(compile_definitions "${PARAM_RESOLVED_COMPILE_DEFINITIONS}")
+      set(compile_options "${PARAM_RESOLVED_COMPILE_OPTIONS_CXX}")
+    else()
+      get_directory_property(compile_definitions DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+      get_directory_property(compile_options DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_OPTIONS)
+    endif()
     foreach(opt ${compile_options})
       # Handle SHELL: prefix - CMake uses this to indicate the string should be split by spaces
       # Remove the prefix and pass the flag as-is to the shell
@@ -159,9 +191,6 @@ function(hunter_get_build_flags)
       set(cxxflags "${cxxflags} ${opt}")
     endforeach()
 
-    # Gather COMPILE_DEFINITIONS directory property (from add_compile_definitions)
-    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
-    get_directory_property(compile_definitions DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
     foreach(def ${compile_definitions})
       set(cxxflags "${cxxflags} -D${def}")
     endforeach()
@@ -181,9 +210,17 @@ function(hunter_get_build_flags)
     set(ldflags "${ldflags} ${CMAKE_EXE_LINKER_FLAGS}")
     string(STRIP "${ldflags}" ldflags)
 
-    # Gather LINK_OPTIONS directory property (from add_link_options)
-    # Get from root directory to include toolchain and HERMETIC_TOOLCHAIN_EXTENSION flags
-    get_directory_property(link_options DIRECTORY ${CMAKE_SOURCE_DIR} LINK_OPTIONS)
+    if(has_resolved_inputs)
+      set(link_options "${PARAM_RESOLVED_LINK_OPTIONS}")
+      set(link_dirs    "${PARAM_RESOLVED_LINK_DIRECTORIES}")
+    else()
+      get_directory_property(link_options DIRECTORY ${CMAKE_SOURCE_DIR} LINK_OPTIONS)
+      get_directory_property(link_dirs    DIRECTORY ${CMAKE_SOURCE_DIR} LINK_DIRECTORIES)
+    endif()
+
+    foreach(link_dir ${link_dirs})
+      set(ldflags "${ldflags} -L${link_dir}")
+    endforeach()
 
     # Set up linker wrapper variables with defaults for Unix-like systems
     # Use CMAKE_C_LINKER_WRAPPER_FLAG and CMAKE_C_LINKER_WRAPPER_FLAG_SEP for portability

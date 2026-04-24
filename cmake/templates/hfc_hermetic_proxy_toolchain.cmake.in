@@ -9,7 +9,8 @@
 # - HERMETIC_FETCHCONTENT_FIND_PACKAGES                           :: list of Hermetic FetchContent packages this project depends upon 
 # - HERMETIC_FETCHCONTENT_PROJECT_DEPENDENCIES_CONTENTS           :: CMake variable declarations for dependency properties show beneath
 # - HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES            :: List of packages for which the find_package() requests can be forwarded to the native implementation
-# - HERMETIC_FETCHCONTENT_GOLDILOCKS_INSTALL_DIR                
+# - HERMETIC_FETCHCONTENT_GOLDILOCKS_INSTALL_DIR
+# - HERMETIC_CONFIG_LANGUAGE                                     :: language view (C or CXX) of the toolchain flags forwarded to ./configure
 #
 
 # Hermetic_FetchContent modules
@@ -81,6 +82,11 @@ set(HFC_SUMMARY_FILE_contentName "@HFC_SUMMARY_CONTENT_NAME@" CACHE INTERNAL "Co
 ## > just a comment with the contents of HERMETIC_CONFIG_EXTRA_ARGS for this dependency
 ## > affects ABI hash change detection for cmake-re
 # @HERMETIC_CONFIG_EXTRA_ARGS@
+##
+
+## > just a comment with the contents of HERMETIC_CONFIG_LANGUAGE for this dependency
+## > affects ABI hash change detection for cmake-re
+# @HERMETIC_CONFIG_LANGUAGE@
 ##
 
 # end of file

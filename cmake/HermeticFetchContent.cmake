@@ -61,6 +61,7 @@ Commands
       [HERMETIC_BUILD_SYSTEM cmake | autotools | openssl]
       [HERMETIC_TOOLCHAIN_EXTENSION <cmake code>]
       [HERMETIC_CONFIG_EXTRA_ARGS <configure flags>...]
+      [HERMETIC_CONFIG_LANGUAGE C | CXX]
       [HERMETIC_FIND_PACKAGES <list of hermetic content names>]
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
@@ -148,6 +149,32 @@ Commands
       HERMETIC_BUILD_SYSTEM autotools
       HERMETIC_CONFIG_EXTRA_ARGS
         --enable-maintainer-mode
+    )
+
+
+  The ``HERMETIC_CONFIG_LANGUAGE`` option selects which language's resolved view of the
+  toolchain flags is forwarded to the ``configure`` script for dependencies using the
+  ``autotools`` build system. Valid values are ``C`` (the default) and ``CXX``.
+
+  Toolchain directives such as ``add_compile_options``, ``add_compile_definitions``,
+  ``add_link_options``, ``include_directories`` and ``link_directories`` may contain
+  generator expressions like ``$<COMPILE_LANGUAGE:C>`` or ``$<LINK_LANGUAGE:CXX>``.
+  Hermetic FetchContent resolves those expressions separately for each language, then
+  uses ``HERMETIC_CONFIG_LANGUAGE`` to decide which resolved view feeds ``CPPFLAGS``,
+  ``CFLAGS`` / ``CXXFLAGS`` and ``LDFLAGS`` on the ``configure`` command line. Use ``CXX``
+  when the imported target is primarily consumed from C++ code and you want the CXX
+  branches of your language-conditional toolchain flags to apply.
+
+  This option only applies to ``HERMETIC_BUILD_SYSTEM autotools``. OpenSSL is a pure C
+  project and always uses the C-language resolved view. For CMake-based dependencies,
+  per-language flags are already handled natively by CMake and no selection is needed.
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      Iconv
+      HERMETIC_BUILD_SYSTEM autotools
+      HERMETIC_CONFIG_LANGUAGE CXX
     )
 
 

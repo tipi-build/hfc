@@ -26,6 +26,7 @@ as passed by HERMETIC_TOOLCHAIN_EXTENSION or when non-hermetic all dumped variab
   ``PROJECT_SOURCE_DIR``
   ``PROJECT_TOOLCHAIN_EXTENSION``
   ``DESTINATION_TOOLCHAIN_PATH``
+  ``HERMETIC_CONFIG_LANGUAGE``
 `
 #]=======================================================================]
 function(hfc_generate_cmake_proxy_toolchain content_name)
@@ -36,6 +37,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     PROJECT_SOURCE_DIR
     PROJECT_SOURCE_SUBDIR
     DESTINATION_TOOLCHAIN_PATH
+    HERMETIC_CONFIG_LANGUAGE
   )
 
   set(multi_value_params
@@ -141,6 +143,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       FN_ARG_PROJECT_TOOLCHAIN_EXTENSION
       FN_ARG_HERMETIC_FIND_PACKAGES
       FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS
+      FN_ARG_HERMETIC_CONFIG_LANGUAGE
       FN_ARG_PROJECT_SOURCE_DIR
       FN_ARG_PROJECT_SOURCE_SUBDIR
       HERMETIC_FETCHCONTENT_CACHED_GOLDILOCK_VERSION
@@ -163,6 +166,8 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     else()
       set(HERMETIC_CONFIG_EXTRA_ARGS "")
     endif()
+
+    set(HERMETIC_CONFIG_LANGUAGE "${FN_ARG_HERMETIC_CONFIG_LANGUAGE}")
 
     cmake_path(GET HERMETIC_FETCHCONTENT_goldilock_BIN PARENT_PATH goldilock_BIN_dir)
     set(HERMETIC_FETCHCONTENT_GOLDILOCKS_INSTALL_DIR "${goldilock_BIN_dir}")
