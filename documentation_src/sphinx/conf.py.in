@@ -23,6 +23,8 @@ highlight_language = 'none'
 
 exclude_patterns = [
     'dev', # ignore developer-only documentation
+    '.venv',
+    'sphinx_env'
     ]
 
 extensions = ['cmake']

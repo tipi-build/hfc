@@ -78,4 +78,9 @@ endif()
 set(HFC_SUMMARY_FILE_destination "@HFC_SUMMARY_FILE@" CACHE INTERNAL "Write summary file to")
 set(HFC_SUMMARY_FILE_contentName "@HFC_SUMMARY_CONTENT_NAME@" CACHE INTERNAL "Content name of this dependency in the summary file")
 
+## > just a comment with the contents of HERMETIC_CONFIG_EXTRA_ARGS for this dependency
+## > affects ABI hash change detection for cmake-re
+# @HERMETIC_CONFIG_EXTRA_ARGS@
+##
+
 # end of file

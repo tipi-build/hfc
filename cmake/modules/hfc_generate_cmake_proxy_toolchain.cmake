@@ -40,6 +40,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
   set(multi_value_params
     HERMETIC_FIND_PACKAGES
+    HERMETIC_CONFIG_EXTRA_ARGS
   )
 
   cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
@@ -139,6 +140,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       destination_file_tmp
       FN_ARG_PROJECT_TOOLCHAIN_EXTENSION
       FN_ARG_HERMETIC_FIND_PACKAGES
+      FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS
       FN_ARG_PROJECT_SOURCE_DIR
       FN_ARG_PROJECT_SOURCE_SUBDIR
       HERMETIC_FETCHCONTENT_CACHED_GOLDILOCK_VERSION
@@ -154,6 +156,13 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
     set(HERMETIC_FETCHCONTENT_FIND_PACKAGES "${FN_ARG_HERMETIC_FIND_PACKAGES}")
     set(HERMETIC_FETCHCONTENT_PROJECT_DEPENDENCIES_CONTENTS "${project_dependency_contents}")
+
+    # Convert list to string for template substitution (optional parameter)
+    if(FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS)
+      list(JOIN FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS " " HERMETIC_CONFIG_EXTRA_ARGS)
+    else()
+      set(HERMETIC_CONFIG_EXTRA_ARGS "")
+    endif()
 
     cmake_path(GET HERMETIC_FETCHCONTENT_goldilock_BIN PARENT_PATH goldilock_BIN_dir)
     set(HERMETIC_FETCHCONTENT_GOLDILOCKS_INSTALL_DIR "${goldilock_BIN_dir}")

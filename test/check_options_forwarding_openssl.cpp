@@ -66,6 +66,15 @@ add_link_options("LINKER:SHELL:--no-allow-shlib-undefined --no-undefined")
       boost::regex{"LDFLAGS = .* -ldl"}
     };
 
+    // make sure that the HERMETIC_CONFIG_EXTRA_ARGS are being forwarded to the proxy toolchain
+    {
+      fs::path openssl_proxy_toolchain = test_project_path / "build" / "_deps" / "OpenSSL-toolchain" / "hfc_hermetic_proxy_toolchain.cmake";
+      BOOST_REQUIRE(fs::exists(openssl_proxy_toolchain));
+      std::string proxy_toolchain_content = pre::file::to_string(openssl_proxy_toolchain.generic_string());
+      BOOST_TEST_INFO("Proxy toolchain contents:\n" << proxy_toolchain_content);
+      BOOST_REQUIRE(boost::contains(proxy_toolchain_content, "\n# no-asm no-shared"));
+    }
+
     fs::path openssl_makefile = test_project_path / "build" / "_deps" / "OpenSSL-build" / "src" / "Makefile";
     if(fs::exists(openssl_makefile)) {
       std::string makefile_content = pre::file::to_string(openssl_makefile.generic_string());

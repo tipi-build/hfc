@@ -90,7 +90,8 @@ FetchContent_MakeHermetic(
         INTERFACE_LINK_LIBRARIES OpenSSL::Crypto)
     _OpenSSL_target_add_dependencies(OpenSSL::SSL)
   ]=]
-
+  HERMETIC_CONFIG_EXTRA_ARGS
+    no-asm
   HERMETIC_BUILD_SYSTEM openssl
   SBOM_LICENSE "Apache License 2.0"
   SBOM_SUPPLIER "The OpenSSL Project Authors"

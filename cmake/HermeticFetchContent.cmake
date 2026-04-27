@@ -60,6 +60,7 @@ Commands
       <name>
       [HERMETIC_BUILD_SYSTEM cmake | autotools | openssl]
       [HERMETIC_TOOLCHAIN_EXTENSION <cmake code>]
+      [HERMETIC_CONFIG_EXTRA_ARGS <configure flags>...]
       [HERMETIC_FIND_PACKAGES <list of hermetic content names>]
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
@@ -117,6 +118,36 @@ Commands
       "CMAKE_EXE_LINKER_FLAGS"
       "CMAKE_CXX_FLAGS"
       "CMAKE_C_FLAGS"
+    )
+
+
+  The ``HERMETIC_CONFIG_EXTRA_ARGS`` option allows passing additional flags to the ``configure``
+  script for dependencies using ``autotools`` or ``openssl`` build systems. These flags are
+  appended to the configure command after all standard flags (CFLAGS, CXXFLAGS, LDFLAGS, etc.).
+
+  This option only applies to ``HERMETIC_BUILD_SYSTEM autotools`` and ``HERMETIC_BUILD_SYSTEM openssl``.
+  For CMake-based dependencies, use ``HERMETIC_TOOLCHAIN_EXTENSION`` instead to control build configuration.
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      OpenSSL
+      HERMETIC_BUILD_SYSTEM openssl
+      HERMETIC_CONFIG_EXTRA_ARGS
+        no-asm        # Disable assembly optimization
+        no-shared     # Build only static libraries
+    )
+
+  For Autotools projects, you can pass parameters to the standard configure script using 
+  `HERMETIC_CONFIG_EXTRA_ARGS` :
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      libev
+      HERMETIC_BUILD_SYSTEM autotools
+      HERMETIC_CONFIG_EXTRA_ARGS
+        --enable-maintainer-mode
     )
 
 
