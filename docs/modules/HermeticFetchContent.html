@@ -69,8 +69,9 @@
 <ul>
 <li><p><a class="reference internal" href="#overview" id="id2">Overview</a></p></li>
 <li><p><a class="reference internal" href="#commands" id="id3">Commands</a></p></li>
-<li><p><a class="reference internal" href="#build-introspection" id="id4">Build introspection</a></p></li>
-<li><p><a class="reference internal" href="#rationale" id="id5">Rationale</a></p></li>
+<li><p><a class="reference internal" href="#fallback-to-system-provided-dependencies" id="id4">Fallback to system provided dependencies</a></p></li>
+<li><p><a class="reference internal" href="#build-introspection" id="id5">Build introspection</a></p></li>
+<li><p><a class="reference internal" href="#rationale" id="id6">Rationale</a></p></li>
 </ul>
 </li>
 </ul>
@@ -118,13 +119,13 @@ but enables additional configuration through the <span class="target" id="index-
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_TOOLCHAIN_EXTENSION</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_FIND_PACKAGES</span><span class="w"> </span><span class="nv">&lt;list of hermetic content names&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CREATE_TARGET_ALIASES</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
-<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_PREPATCHED_RESOLVER</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span><span class="w">      </span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_PREPATCHED_RESOLVER</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_DISCOVER_TARGETS_FILE_PATTERN</span><span class="w"> </span><span class="nv">&lt;regex pattern&gt;</span><span class="p">]</span>
 <span class="nf">)</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">FetchContent_MakeHermetic()</span></code> function records options that describe the additional 
+<p>The <code class="docutils literal notranslate"><span class="pre">FetchContent_MakeHermetic()</span></code> function records options that describe the additional
 parameters required to populate and consume the specified content in a hermetic way.</p>
 <p>The content <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> can be any string without spaces, but good practice
 would be to use only letters, numbers and underscores.</p>
@@ -162,7 +163,7 @@ without interfering with the build configuration of other parts of your project.
 to forward a defined set of CMake variables to the sub-builds by injecting values of the variables
 specified in the global <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES</span></code> into the
 generated proxy toolchain files:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES</span><span class="w"> </span>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES</span>
 <span class="w">  </span><span class="s">&quot;CMAKE_BUILD_TYPE&quot;</span>
 <span class="w">  </span><span class="s">&quot;CMAKE_EXE_LINKER_FLAGS&quot;</span>
 <span class="w">  </span><span class="s">&quot;CMAKE_CXX_FLAGS&quot;</span>
@@ -170,13 +171,13 @@ generated proxy toolchain files:</p>
 <span class="nf">)</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_FIND_PACKAGES</span></code> option enables specifying which packages that are provided 
-by other Hermetic FetchContent declarations will be able to be <code class="docutils literal notranslate"><span class="pre">find_package</span></code>-ed by the 
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_FIND_PACKAGES</span></code> option enables specifying which packages that are provided
+by other Hermetic FetchContent declarations will be able to be <code class="docutils literal notranslate"><span class="pre">find_package</span></code>-ed by the
 content being specified. This enables controlling the packages available in the individual
 builds by other means than by just order of declaration.</p>
 <p>In this example, the library <code class="docutils literal notranslate"><span class="pre">libxml2</span></code> gets to <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> <code class="docutils literal notranslate"><span class="pre">Ìconv</span></code> and <code class="docutils literal notranslate"><span class="pre">ZLIB</span></code>.
 These libraries have to be made available using Hermetic FetchContent in the same build.
-Such a call to <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> will fail for other packages that are not explicitely 
+Such a call to <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> will fail for other packages that are not explicitely
 whitelisted, either using the <code class="docutils literal notranslate"><span class="pre">HERMETIC_FIND_PACKAGES</span></code> option OR by adding said library
 to the global <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES</span></code> setting which allows
 <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> to fall-back to CMake's native implementation if it cannot resolve the
@@ -194,18 +195,18 @@ package among the whitelisted Hermetic FetchContent builds.</p>
 <span class="nf">)</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_CREATE_TARGET_ALIASES</span></code> options allows defining aliases for target during 
-the configure phase. The CMake code provided will be invoked for every CMake target library 
-that is exported by the content. The scope in which this code will be run contains the 
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_CREATE_TARGET_ALIASES</span></code> options allows defining aliases for target during
+the configure phase. The CMake code provided will be invoked for every CMake target library
+that is exported by the content. The scope in which this code will be run contains the
 variable <code class="docutils literal notranslate"><span class="pre">TARGET_NAME</span></code> which will be set to the exported target name. The provided code
-fragment <strong>must</strong> set the <code class="docutils literal notranslate"><span class="pre">list</span></code> <code class="docutils literal notranslate"><span class="pre">TARGET_ALIASES</span></code> to contain <strong>all</strong> the names under 
+fragment <strong>must</strong> set the <code class="docutils literal notranslate"><span class="pre">list</span></code> <code class="docutils literal notranslate"><span class="pre">TARGET_ALIASES</span></code> to contain <strong>all</strong> the names under
 which the exported target will be imported when it is consumed.</p>
 <p>It is recommended to test for specific values of <code class="docutils literal notranslate"><span class="pre">TARGET_NAME</span></code> instead of doing blanket
 declarations of aliases &quot;no matter the input&quot; to avoid issues in cases where a library might
 start to provide multiple exported libraries depending on the build configuration or just over
 time.</p>
 <p>In the example below, we will be renaming the target <code class="docutils literal notranslate"><span class="pre">ZLIB::zlib</span></code> that is exported by the
-project to <code class="docutils literal notranslate"><span class="pre">ZLIB::ZLIB</span></code> (notice the difference in casing). This can be required if for 
+project to <code class="docutils literal notranslate"><span class="pre">ZLIB::ZLIB</span></code> (notice the difference in casing). This can be required if for
 example another project is unable to find the library in it's original casing.</p>
 <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_Declare(</span>
 <span class="w">  </span><span class="no">ZLIB</span>
@@ -242,7 +243,7 @@ the values defined in <code class="docutils literal notranslate"><span class="pr
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">URL</span></code></dt><dd><p>List of paths and/or URL(s) of the external project's source.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">URL_HASH</span></code></dt><dd><p>Hash of the archive file to be downloaded. Should be of the form &lt;algo&gt;=&lt;hashValue&gt; where algo can be any of 
+<dt><code class="docutils literal notranslate"><span class="pre">URL_HASH</span></code></dt><dd><p>Hash of the archive file to be downloaded. Should be of the form &lt;algo&gt;=&lt;hashValue&gt; where algo can be any of
 the hashing algorithms supported by the file() command.</p>
 </dd>
 </dl>
@@ -250,7 +251,7 @@ the hashing algorithms supported by the file() command.</p>
 <p>The CMake code can redefine any of these variables to change the source of the content.
 The CMake code must set <code class="docutils literal notranslate"><span class="pre">RESOLVED_PATCH</span></code> to a truthy value if it is able to set an alternate source for the content.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">RESOLVED_PATCH</span></code> is set to a truthy value the source populate operation will rely on the new information
-provided an skip the execution of the <code class="docutils literal notranslate"><span class="pre">PATCH_COMMAND</span></code>. Otherwise the normal expected behavior is executed (e.g. 
+provided an skip the execution of the <code class="docutils literal notranslate"><span class="pre">PATCH_COMMAND</span></code>. Otherwise the normal expected behavior is executed (e.g.
 downloading from the original source and running any specified <code class="docutils literal notranslate"><span class="pre">PATCH_COMMAND</span></code>)</p>
 <p>In the following example we will assume that the project is storing a patched copy of the specified repository
 and revision of the original sources in it own github organization under a given commit ID:</p>
@@ -258,7 +259,7 @@ and revision of the original sources in it own github organization under a given
 <span class="w">  </span><span class="nb">boost</span>
 <span class="w">  </span><span class="no">GIT_REPOSITORY</span><span class="w"> </span><span class="na">https://github.com/boostorg/boost.git</span>
 <span class="w">  </span><span class="c"># that&#39;s v1.84</span>
-<span class="w">  </span><span class="no">GIT_TAG</span><span class="w">        </span><span class="nb">ad09f667e61e18f5c31590941e748ac38e5a81bf</span><span class="w">   </span>
+<span class="w">  </span><span class="no">GIT_TAG</span><span class="w">        </span><span class="nb">ad09f667e61e18f5c31590941e748ac38e5a81bf</span>
 <span class="w">  </span><span class="c"># apply the patch &quot;some.patch&quot;</span>
 <span class="w">  </span><span class="no">PATCH_COMMAND</span><span class="w"> </span><span class="nb">cmake</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">patch</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="na">/patchtest/some.patch</span>
 <span class="nf">)</span>
@@ -279,10 +280,10 @@ and revision of the original sources in it own github organization under a given
 <span class="nf">HermeticFetchContent_MakeAvailableAtBuildTime(</span><span class="nb">boost</span><span class="nf">)</span>
 </pre></div>
 </div>
-<p>The developer can use the options <code class="docutils literal notranslate"><span class="pre">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span></code>  to provide a 
+<p>The developer can use the options <code class="docutils literal notranslate"><span class="pre">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span></code>  to provide a
 a library export declaration that will enable Hermetic FetchContent to consume the targets
 as-if the project had provided a proper package configuration. This is useful in cases in which
-no such information is available (for example in the case of <cite>HERMETIC_BUILD_SYSTEM == autotools</cite> 
+no such information is available (for example in the case of <cite>HERMETIC_BUILD_SYSTEM == autotools</cite>
 or <cite>HERMETIC_BUILD_SYSTEM == openssl</cite> or if the project's CMake buildsystem does not install and
 export targets)</p>
 <p>The following example shows how to define the <code class="docutils literal notranslate"><span class="pre">Pcap::Pcap</span></code> target properties required
@@ -290,17 +291,17 @@ for Hermetic FetchContent to be able to construct a so-called &quot;targets cach
 <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
 <span class="w">  </span><span class="nb">Pcap</span>
 <span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">autotools</span>
-<span class="w">  </span><span class="no">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span><span class="w"> </span>
+<span class="w">  </span><span class="no">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span>
 <span class="w">    </span><span class="p">[=[</span>
 <span class="w">      </span><span class="nf">add_library(</span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="no">IMPORTED</span><span class="nf">)</span>
 <span class="w">      </span><span class="nf">set_property(</span>
-<span class="w">        </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span><span class="w"> </span>
-<span class="w">        </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">IMPORTED_LOCATION</span><span class="w"> </span>
+<span class="w">        </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span>
+<span class="w">        </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">IMPORTED_LOCATION</span>
 <span class="w">        </span><span class="s">&quot;@HFC_PREFIX_PLACEHOLDER@/lib/libpcap.a&quot;</span>
-<span class="w">      </span><span class="nf">)</span><span class="w">    </span>
+<span class="w">      </span><span class="nf">)</span>
 <span class="w">      </span><span class="nf">set_property(</span>
-<span class="w">        </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span><span class="w"> </span>
-<span class="w">        </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_INCLUDE_DIRECTORIES</span><span class="w"> </span>
+<span class="w">        </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Pcap</span><span class="o">::</span><span class="nb">Pcap</span>
+<span class="w">        </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_INCLUDE_DIRECTORIES</span>
 <span class="w">        </span><span class="s">&quot;@HFC_PREFIX_PLACEHOLDER@/include&quot;</span>
 <span class="w">      </span><span class="nf">)</span>
 <span class="w">    </span><span class="p">]=]</span>
@@ -315,7 +316,7 @@ for Hermetic FetchContent to be able to construct a so-called &quot;targets cach
 </ul>
 <p>In cases in which the dependencie's CMake build system does provide target exports files
 but is not complying to the common file nameming scheme for those exports (hermetic fetchContent
-uses the following by default <code class="docutils literal notranslate"><span class="pre">([Tt]argets|[Ee]xport(s?))\.cmake</span></code>), another pattern can be 
+uses the following by default <code class="docutils literal notranslate"><span class="pre">([Tt]argets|[Ee]xport(s?))\.cmake</span></code>), another pattern can be
 supplied using the <code class="docutils literal notranslate"><span class="pre">HERMETIC_DISCOVER_TARGETS_FILE_PATTERN</span></code> option.</p>
 </dd></dl>
 
@@ -361,8 +362,21 @@ installed location during <em>their</em> configure step.</p>
 </dd></dl>
 
 </section>
+<section id="fallback-to-system-provided-dependencies">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Fallback to system provided dependencies</a><a class="headerlink" href="#fallback-to-system-provided-dependencies" title="Permalink to this heading">¶</a></h2>
+<p>For use-cases in which you want to have the option to revert to a system provided library but still have the ability
+to build your own, you may set <code class="docutils literal notranslate"><span class="pre">FORCE_SYSTEM_&lt;content-name&gt;</span></code> to <code class="docutils literal notranslate"><span class="pre">ON</span></code>. In this case Hermetic FetchContent will
+execute a CMake <code class="docutils literal notranslate"><span class="pre">find_package(&lt;content-name&gt;</span> <span class="pre">REQUIRED)</span></code> call during targets discovery.</p>
+<p>If you need to specify arguments to <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> you may add the <code class="docutils literal notranslate"><span class="pre">FIND_PACKAGE_ARGS</span></code> to the content declaration.</p>
+<blockquote>
+<div></div></blockquote>
+<p>Note that in the special case of <code class="docutils literal notranslate"><span class="pre">FORCE_SYSTEM_&lt;content-name&gt;=ON</span></code> the context in which the find_package() will be
+run, will be slightly different from the normal context for hermetic builds. One major difference is that the Hermetic
+FetchContent will inject the project's <code class="docutils literal notranslate"><span class="pre">CMAKE_MODULE_PATH</span></code> into the toolchain extension in addition to forcing 
+<code class="docutils literal notranslate"><span class="pre">find_package()</span></code> to search exclusively on the system through setting <code class="docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH_MODE_*</span></code> appropriately.</p>
+</section>
 <section id="build-introspection">
-<h2><a class="toc-backref" href="#id4" role="doc-backlink">Build introspection</a><a class="headerlink" href="#build-introspection" title="Permalink to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Build introspection</a><a class="headerlink" href="#build-introspection" title="Permalink to this heading">¶</a></h2>
 <p>HermeticFetchContent adds a number of cmake build targets to the build system that can be executed after the project configuration to enable
 some build introspection:</p>
 <dl class="cmake command">
@@ -370,7 +384,7 @@ some build introspection:</p>
 <span class="sig-name descname"><span class="pre">build</span> <span class="pre">target</span> <span class="pre">&quot;hfc_list_dependencies_build_dirs&quot;</span></span><a class="headerlink" href="#command:build target "hfc_list_dependencies_build_dirs"" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<p>Prints all project's dependencies build directories to the console. Warning! This list might be incomplete if the project build at hand 
+<p>Prints all project's dependencies build directories to the console. Warning! This list might be incomplete if the project build at hand
 did not actually build the whole list of dependencies</p>
 <dl class="cmake command">
 <dt class="sig sig-object cmake" id="command:build target &quot;hfc_list_dependencies_install_dirs&quot;">
@@ -417,7 +431,7 @@ might not be populated (yet).</p>
 <p>Prints the list of executables of <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console.</p>
 </section>
 <section id="rationale">
-<h2><a class="toc-backref" href="#id5" role="doc-backlink">Rationale</a><a class="headerlink" href="#rationale" title="Permalink to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Rationale</a><a class="headerlink" href="#rationale" title="Permalink to this heading">¶</a></h2>
 <dl class="simple">
 <dt>Ressembling add_subdirectory through external cmake execution is key to providing reusable install trees :</dt><dd><ul class="simple">
 <li><p>One project depending on a library can reuse the library built by another project</p></li>
@@ -429,7 +443,7 @@ might not be populated (yet).</p>
 libraries found via <cite>find_package</cite> allows reusing the same libraries across project, but requires building them in advance
 before the configure of the dependent project might even be started. However not all target depend directly of the said dependencies.</p>
 <p>With this techniques it can integrate the clean build of the dependencies in the graph, effectively building at the finest granularity
-of dependencies everything  that isn't dependent of the dependencies.  Possibly allowing building earlier parts of the project that do 
+of dependencies everything  that isn't dependent of the dependencies.  Possibly allowing building earlier parts of the project that do
 not depend on the dependency itself.</p>
 <p>Plain add_subdirectory allows this but lacks the isolation from the parent CMake project, hindering the reuse of the dependent
 library install tree without the presence of the sources, which is a big speedup in CI workflows, and new developer computer setup,
@@ -450,6 +464,7 @@ optimizing avoid the need of cloning the actual dependencies source files with a
 <li><a class="reference internal" href="#">FetchContent_MakeHermetic</a><ul>
 <li><a class="reference internal" href="#overview">Overview</a></li>
 <li><a class="reference internal" href="#commands">Commands</a></li>
+<li><a class="reference internal" href="#fallback-to-system-provided-dependencies">Fallback to system provided dependencies</a></li>
 <li><a class="reference internal" href="#build-introspection">Build introspection</a></li>
 <li><a class="reference internal" href="#rationale">Rationale</a></li>
 </ul>
