@@ -5,8 +5,10 @@ set(FETCHCONTENT_QUIET OFF)
 include(FetchContent)
 
 
-set(hfc_REPOSITORY https://github.com/tipi-build/hfc)
 set(hfc_REVISION main)
+if(DEFINED ENV{COMMIT_ID} AND NOT "$ENV{COMMIT_ID}" STREQUAL "")
+    set(hfc_REVISION "$ENV{COMMIT_ID}")
+endif()
 
 include(HermeticFetchContent OPTIONAL RESULT_VARIABLE hfc_included) 
 if(NOT hfc_included)
