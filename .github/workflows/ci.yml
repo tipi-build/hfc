@@ -20,11 +20,15 @@ jobs:
     container: 
       image: tipibuild/tipi-ubuntu:latest
       options: --user root
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
     steps:
       - name: Compute environment
         run: |
           echo "TESTS_CACHED_HFC_TOOLS_DIR=$GITHUB_WORKSPACE/shared_hfc_tools_dir" >> $GITHUB_ENV
           echo "TESTS_CACHED_HFC_BASEDIR=$GITHUB_WORKSPACE/hfc_project_basedir" >> $GITHUB_ENV
+          echo "HFC_TEST_DATA_DIR=$GITHUB_WORKSPACE/hfc_project/test/test_data" >> $GITHUB_ENV
+
 
       - name: prepare runner
         run: |
@@ -61,6 +65,9 @@ jobs:
       - name: tipi builds project 
         run: |
           cd hfc_project/
+          cd test/
+          unzip offline_goldilock_and_cmake_sbom_copy.zip
+          cd ../
           mkdir build/
           cd build/
           # note: separating HFC_TEST_SHARED_TOOLS_DIR and HFC_PROJECT_HFC_BASEDIR to enable 
@@ -74,4 +81,40 @@ jobs:
           git config --global user.name "tipibuild"
           tipi run cmake -DCMAKE_TOOLCHAIN_FILE=toolchain/toolchain.cmake -GNinja -DHERMETIC_FETCHCONTENT_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_TEST_SHARED_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_PROJECT_HFC_BASEDIR=$TESTS_CACHED_HFC_BASEDIR ..
           tipi run cmake --build .
-          tipi run ctest --verbose -j
+          tipi run ctest --verbose -j -E offline_source_override_test
+
+      - name: Run offline_source_override_test (network-isolated container)
+        run: |
+          # This test validates that HFC can work fully offline by overriding
+          # source URLs (goldilock, cmake-sbom, dependencies) with local file:// paths.
+          # We run it inside a Docker container with --network=none to guarantee
+          # no network access is possible, proving the offline overrides work correctly.
+
+          apt update -y
+          apt install -y ca-certificates curl
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          chmod a+r /etc/apt/keyrings/docker.asc
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+            tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt update -y
+          apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          # Mount workspace at /__w/<repo>/<repo> to match the absolute paths CMake baked
+          # during the build inside the job container (where GITHUB_WORKSPACE=/__w/<repo>/<repo>).
+          docker run --rm --name test-container-without-network \
+            --volume /var/run/docker.sock:/var/run/docker.sock \
+            --volume ${{ github.workspace }}:/__w/${{ github.event.repository.name }}/${{ github.event.repository.name }} \
+            --env TESTS_CACHED_HFC_TOOLS_DIR \
+            --env TESTS_CACHED_HFC_BASEDIR \
+            --env HFC_TEST_DATA_DIR \
+            --env BOOST_TEST_LOG_LEVEL \
+            --user root \
+            --detach \
+            --network=none \
+            --workdir /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}/hfc_project/build \
+            tipibuild/tipi-ubuntu:latest \
+            sleep infinity
+          docker exec --user root test-container-without-network tipi run ctest --verbose -j -R offline_source_override_test
