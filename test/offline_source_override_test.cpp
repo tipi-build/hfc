@@ -66,7 +66,7 @@ namespace hfc::test {
     test_env["TIPI_CACHE_FORCE_ENABLE"] = "ON";
     test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
 
-    // Download the real prebuilt locally, then point the env var at the local file:// URI
+    // Download the real prebuilt locally, then point the CMake variable at the local file:// URI
     fs::path local_mirror = temp_dir / "mirror";
     fs::create_directories(local_mirror);
     fs::path local_zip = download_file_locally(local_mirror,
@@ -74,14 +74,14 @@ namespace hfc::test {
       "goldilock-local.zip");
 
     std::string custom_url = "file://" + local_zip.string();
-    test_env["HFC_GOLDILOCK_URL_PREBUILT"] = custom_url;
-    test_env["HFC_GOLDILOCK_SHA_PREBUILT"] = "80729092c01a32a1f987438b2c026e993e0b81d8";
+    std::string custom_sha = "80729092c01a32a1f987438b2c026e993e0b81d8";
 
     fs::path template_path = prepare_project_to_be_tested("bootstrap_goldilock", data.is_cmake_re, temp_dir);
     write_simple_main(template_path, {}, "simple_example.cpp");
 
+    std::string additional_vars = "-DHFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64=\"" + custom_url + "\" -DHFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64=" + custom_sha;
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
-    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
+    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, additional_vars, toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Downloading prebuilt goldilock from " + custom_url),
@@ -104,14 +104,14 @@ namespace hfc::test {
       "goldilock-local.zip");
 
     std::string custom_url = "file://" + local_zip.string();
-    test_env["HFC_GOLDILOCK_URL_PREBUILT"] = custom_url;
-    test_env["HFC_GOLDILOCK_SHA_PREBUILT"] = "0000000000000000000000000000000000000000";
+    std::string bad_sha = "0000000000000000000000000000000000000000";
 
     fs::path template_path = prepare_project_to_be_tested("bootstrap_goldilock", data.is_cmake_re, temp_dir);
     write_simple_main(template_path, {}, "simple_example.cpp");
 
+    std::string additional_vars = "-DHFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64=\"" + custom_url + "\" -DHFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64=" + bad_sha;
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
-    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
+    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, additional_vars, toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Downloading prebuilt goldilock from " + custom_url),
@@ -134,14 +134,14 @@ namespace hfc::test {
       "goldilock-local.zip");
 
     std::string custom_url = "file://" + local_zip.string();
-    test_env["HFC_GOLDILOCK_URL_PREBUILT"] = custom_url;
     // Deliberately NOT setting HFC_GOLDILOCK_SHA_PREBUILT
 
     fs::path template_path = prepare_project_to_be_tested("bootstrap_goldilock", data.is_cmake_re, temp_dir);
     write_simple_main(template_path, {}, "simple_example.cpp");
 
+    std::string additional_vars = "-DHFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64=\"" + custom_url + "\"";
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
-    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
+    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, additional_vars, toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Downloading prebuilt goldilock from " + custom_url),
@@ -166,8 +166,6 @@ namespace hfc::test {
 
     std::string custom_repo = "file://" + bare_repo.string();
     std::string custom_tag = "5f8b9de72c10a6216c89a8807db8d420cff05512";
-    test_env["HFC_GOLDILOCK_GIT_REPOSITORY"] = custom_repo;
-    test_env["HFC_GOLDILOCK_GIT_TAG"] = custom_tag;
 
     // Use the broken prebuilt data file to force source build path
     fs::path template_path = prepare_project_to_be_tested("bootstrap_goldilock", data.is_cmake_re, temp_dir);
@@ -177,8 +175,9 @@ namespace hfc::test {
     fs::path hfc_goldilock_base_value_from_test = get_data_dir() / "hfc_goldilock_base_value.cmake";
     fs::copy(hfc_goldilock_base_value_from_test, (template_path / "cmake" / "modules" / "hfc_goldilock_base_value.cmake"));
 
+    std::string additional_vars = "-DHFC_GOLDILOCK_GIT_REPOSITORY=\"" + custom_repo + "\" -DHFC_GOLDILOCK_GIT_TAG=" + custom_tag;
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
-    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
+    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, additional_vars, toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Building goldilock from source"),
@@ -203,14 +202,13 @@ namespace hfc::test {
 
     std::string custom_repo = "file://" + bare_repo.string();
     std::string custom_tag = "97b1a0715af7726cae93d96d322c48584945f96b";
-    test_env["HFC_CMAKE_SBOM_GIT_REPOSITORY"] = custom_repo;
-    test_env["HFC_CMAKE_SBOM_GIT_TAG"] = custom_tag;
 
     fs::path template_path = prepare_project_to_be_tested("check_sbom_bootstrap", data.is_cmake_re, temp_dir);
     write_simple_main(template_path, {"MathFunctions.h", "MathFunctionscbrt.h"}, "simple_example.cpp");
 
+    std::string additional_vars = "-DHFC_CMAKE_SBOM_GIT_REPOSITORY=\"" + custom_repo + "\" -DHFC_CMAKE_SBOM_GIT_TAG=" + custom_tag;
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
-    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
+    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, additional_vars, toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Enabling HFC cmake-sbom support (" + custom_repo),
@@ -232,14 +230,13 @@ namespace hfc::test {
     // Use a different valid tag — source dir name should reflect it
     std::string custom_repo = "file://" + bare_repo.string();
     std::string custom_tag = "3add8b81fc1bc23dfbddf0f7b0bfdca2efc1135c";
-    test_env["HFC_CMAKE_SBOM_GIT_REPOSITORY"] = custom_repo;
-    test_env["HFC_CMAKE_SBOM_GIT_TAG"] = custom_tag;
 
     fs::path template_path = prepare_project_to_be_tested("check_sbom_bootstrap", data.is_cmake_re, temp_dir);
     write_simple_main(template_path, {"MathFunctions.h", "MathFunctionscbrt.h"}, "simple_example.cpp");
 
+    std::string additional_vars = "-DHFC_CMAKE_SBOM_GIT_REPOSITORY=\"" + custom_repo + "\" -DHFC_CMAKE_SBOM_GIT_TAG=" + custom_tag;
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
-    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
+    std::string cmake_configure_command = get_cmake_configure_command(template_path, data, additional_vars, toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
 
     // The source dir should contain the first 8 chars of the custom tag

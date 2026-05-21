@@ -6,7 +6,19 @@ Configuring Offline or Custom Sources
 Hermetic FetchContent fetches several internal tools and modules from GitHub by default.
 In environments where access to public repositories is restricted (e.g. air-gapped networks,
 corporate proxies, or CI environments without internet access), you can override those sources
-using environment variables.
+using CMake variables.
+
+These variables should be set **before** including HermeticFetchContent — typically in your
+project's toolchain file or in a ``build_thirdparty.cmake`` included early in your build:
+
+.. code-block:: cmake
+
+  # In your toolchain file or build_thirdparty.cmake
+  set(HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64 "https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip")
+  set(HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64 "80729092c01a32a1f987438b2c026e993e0b81d8")
+
+  # ... then include HFC
+  include(HermeticFetchContent)
 
 
 Goldilock
@@ -23,21 +35,26 @@ Overriding the Prebuilt Download URL
 =====================================
 
 By default, the prebuilt binary is downloaded from a platform-specific GitHub release URL.
-Setting ``HFC_GOLDILOCK_URL_PREBUILT`` replaces that URL regardless of the host platform:
+The override variables include the platform suffix ``_${CMAKE_HOST_SYSTEM_NAME}_${CMAKE_HOST_SYSTEM_PROCESSOR}``
+so that each target host can point to its own archive:
 
-``HFC_GOLDILOCK_URL_PREBUILT``
+``HFC_GOLDILOCK_URL_PREBUILT_<system>_<processor>``
   URL to the goldilock prebuilt archive (zip) to use instead of the default platform-specific URL.
 
-``HFC_GOLDILOCK_SHA_PREBUILT``
+``HFC_GOLDILOCK_SHA_PREBUILT_<system>_<processor>``
   Expected SHA1 hash of the archive. If not set, hash verification is skipped.
 
-Example — serving the prebuilt binary from an internal HTTP mirror:
+Where ``<system>`` is ``CMAKE_HOST_SYSTEM_NAME`` (e.g. ``Linux``, ``Darwin``) and ``<processor>``
+is ``CMAKE_HOST_SYSTEM_PROCESSOR`` (e.g. ``x86_64``, ``arm64``).
 
-.. code-block:: bash
+Example — serving the prebuilt binary from an internal HTTP mirror for Linux x86_64:
 
-  export HFC_GOLDILOCK_URL_PREBUILT="https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip"
-  export HFC_GOLDILOCK_SHA_PREBUILT="80729092c01a32a1f987438b2c026e993e0b81d8"
-  cmake -S . -B build/
+.. code-block:: cmake
+
+  set(HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64 "https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip")
+  set(HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64 "80729092c01a32a1f987438b2c026e993e0b81d8")
+  set(HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64 "https://artifacts.internal/goldilock/v1.2.1/goldilock-darwin-arm64.zip")
+  set(HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64 "a1b2c3d4e5f6...")
 
 
 Overriding the Source Repository
@@ -58,11 +75,10 @@ built from source. The source repository can be overridden with:
 
 Example — using a local bare clone:
 
-.. code-block:: bash
+.. code-block:: cmake
 
-  export HFC_GOLDILOCK_GIT_REPOSITORY="file:///opt/git-mirrors/goldilock.git"
-  export HFC_GOLDILOCK_GIT_TAG="5f8b9de72c10a6216c89a8807db8d420cff05512"
-  cmake -S . -B build/
+  set(HFC_GOLDILOCK_GIT_REPOSITORY "file:///opt/git-mirrors/goldilock.git")
+  set(HFC_GOLDILOCK_GIT_TAG "5f8b9de72c10a6216c89a8807db8d420cff05512")
 
 
 cmake-sbom
@@ -75,7 +91,7 @@ When enabled (``HFC_ENABLE_CMAKE_SBOM=ON``, which is the default), Hermetic Fetc
 automatically fetch and bootstrap the ``cmake-sbom`` module if it is not already available on the
 ``CMAKE_MODULE_PATH``.
 
-The following environment variables override the source:
+The following CMake variables override the source:
 
 ``HFC_CMAKE_SBOM_GIT_REPOSITORY``
   Git repository URL used to fetch ``cmake-sbom``.
@@ -89,14 +105,14 @@ The following environment variables override the source:
 
 Example — pointing to an internal mirror:
 
-.. code-block:: bash
+.. code-block:: cmake
 
-  export HFC_CMAKE_SBOM_GIT_REPOSITORY="https://git.internal.example.com/mirrors/cmake-sbom.git"
-  export HFC_CMAKE_SBOM_GIT_TAG="v1.1.2"
-  cmake -S . -B build/
+  set(HFC_CMAKE_SBOM_GIT_REPOSITORY "https://git.internal.example.com/mirrors/cmake-sbom.git")
+  set(HFC_CMAKE_SBOM_GIT_TAG "v1.1.2")
 
 To disable SBOM generation entirely:
 
-.. code-block:: bash
+.. code-block:: cmake
 
-  cmake -S . -B build/ -DHFC_ENABLE_CMAKE_SBOM=OFF
+  # Pass on the command line or set in your CMakeLists.txt
+  set(HFC_ENABLE_CMAKE_SBOM OFF)

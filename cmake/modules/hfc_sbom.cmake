@@ -8,14 +8,14 @@ include(sbom OPTIONAL RESULT_VARIABLE sbom_found)
 
 if(sbom_found STREQUAL "NOTFOUND")
 
-    if(DEFINED ENV{HFC_CMAKE_SBOM_GIT_REPOSITORY})
-        set(cmake_sbom_GIT_REPOSITORY "$ENV{HFC_CMAKE_SBOM_GIT_REPOSITORY}")
+    if(DEFINED HFC_CMAKE_SBOM_GIT_REPOSITORY)
+        set(cmake_sbom_GIT_REPOSITORY "${HFC_CMAKE_SBOM_GIT_REPOSITORY}")
     else()
         set(cmake_sbom_GIT_REPOSITORY "https://github.com/DEMCON/cmake-sbom.git")
     endif()
 
-    if(DEFINED ENV{HFC_CMAKE_SBOM_GIT_TAG})
-        set(cmake_sbom_GIT_TAG "$ENV{HFC_CMAKE_SBOM_GIT_TAG}")
+    if(DEFINED HFC_CMAKE_SBOM_GIT_TAG)
+        set(cmake_sbom_GIT_TAG "${HFC_CMAKE_SBOM_GIT_TAG}")
     else()
         set(cmake_sbom_GIT_TAG "97b1a0715af7726cae93d96d322c48584945f96b") # v1.1.2
     endif()
