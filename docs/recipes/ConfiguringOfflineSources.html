@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>HermeticFetchContent / Recipes / Configuring Offline or Custom Sources &mdash; hermetic-fetchcontent  Documentation</title>
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a3862c66" />
+    <link rel="stylesheet" type="text/css" href="../_static/cmake.css?v=3e562cf9" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Controlling Build Parallelism" href="ControllingBuildParallelism.html" />
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within CMake Documentation of Latest Version"
+          href="../../latest-opensearch.xml"/>
+    <script type="text/javascript" src="../../version_switch.js"></script>
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ControllingBuildParallelism.html" title="Controlling Build Parallelism"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/tipi-logo.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://tipi.build/">tipi</a> &#187;
+  </li>
+  <li>
+    <span class="version_switch"></span>
+    <a href="../index.html">Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">HermeticFetchContent / Recipes / Configuring Offline or Custom Sources</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="configuring-offline-or-custom-sources">
+<h1>Configuring Offline or Custom Sources<a class="headerlink" href="#configuring-offline-or-custom-sources" title="Link to this heading">¶</a></h1>
+<p>Hermetic FetchContent fetches several internal tools and modules from GitHub by default.
+In environments where access to public repositories is restricted (e.g. air-gapped networks,
+corporate proxies, or CI environments without internet access), you can override those sources
+using CMake variables.</p>
+<p>These variables should be set <strong>before</strong> including HermeticFetchContent — typically in your
+project's toolchain file or in a <code class="docutils literal notranslate"><span class="pre">build_thirdparty.cmake</span></code> included early in your build:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># In your toolchain file or build_thirdparty.cmake</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;80729092c01a32a1f987438b2c026e993e0b81d8&quot;</span><span class="nf">)</span>
+
+<span class="c"># ... then include HFC</span>
+<span class="nf">include(</span><span class="nb">HermeticFetchContent</span><span class="nf">)</span>
+</pre></div>
+</div>
+<section id="goldilock">
+<h2>Goldilock<a class="headerlink" href="#goldilock" title="Link to this heading">¶</a></h2>
+<p>Goldilock is the directory-locking tool used internally by Hermetic FetchContent.
+It is provisioned automatically through the following strategy:</p>
+<ol class="arabic simple">
+<li><p>Check if a compatible <code class="docutils literal notranslate"><span class="pre">goldilock</span></code> is already on <code class="docutils literal notranslate"><span class="pre">PATH</span></code></p></li>
+<li><p>Download a prebuilt binary for the current platform</p></li>
+<li><p>Build from source as a last resort</p></li>
+</ol>
+<section id="overriding-the-prebuilt-download-url">
+<h3>Overriding the Prebuilt Download URL<a class="headerlink" href="#overriding-the-prebuilt-download-url" title="Link to this heading">¶</a></h3>
+<p>By default, the prebuilt binary is downloaded from a platform-specific GitHub release URL.
+The override variables include the platform suffix <code class="docutils literal notranslate"><span class="pre">_${CMAKE_HOST_SYSTEM_NAME}_${CMAKE_HOST_SYSTEM_PROCESSOR}</span></code>
+so that each target host can point to its own archive:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">HFC_GOLDILOCK_URL_PREBUILT_&lt;system&gt;_&lt;processor&gt;</span></code></dt><dd><p>URL to the goldilock prebuilt archive (zip) to use instead of the default platform-specific URL.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HFC_GOLDILOCK_SHA_PREBUILT_&lt;system&gt;_&lt;processor&gt;</span></code></dt><dd><p>Expected SHA1 hash of the archive. <strong>Required</strong> — the prebuilt download is only accepted
+if the SHA is non-empty and matches. If not set, the built-in default SHA is used.
+If the SHA does not match (or is empty), the prebuilt is rejected and HFC falls through
+to building from source.</p>
+</dd>
+</dl>
+<p>Where <code class="docutils literal notranslate"><span class="pre">&lt;system&gt;</span></code> is <code class="docutils literal notranslate"><span class="pre">CMAKE_HOST_SYSTEM_NAME</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">Linux</span></code>, <code class="docutils literal notranslate"><span class="pre">Darwin</span></code>) and <code class="docutils literal notranslate"><span class="pre">&lt;processor&gt;</span></code>
+is <code class="docutils literal notranslate"><span class="pre">CMAKE_HOST_SYSTEM_PROCESSOR</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">x86_64</span></code>, <code class="docutils literal notranslate"><span class="pre">arm64</span></code>).</p>
+<p>Example — serving the prebuilt binary from an internal HTTP mirror for Linux x86_64:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;80729092c01a32a1f987438b2c026e993e0b81d8&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;https://artifacts.internal/goldilock/v1.2.1/goldilock-darwin-arm64.zip&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;a1b2c3d4e5f6...&quot;</span><span class="nf">)</span>
+</pre></div>
+</div>
+</section>
+<section id="overriding-the-source-repository">
+<h3>Overriding the Source Repository<a class="headerlink" href="#overriding-the-source-repository" title="Link to this heading">¶</a></h3>
+<p>If the prebuilt binary download fails or is unavailable for the host platform, goldilock is
+built from source. The source repository can be overridden with:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">HFC_GOLDILOCK_GIT_REPOSITORY</span></code></dt><dd><p>Git repository URL for goldilock sources.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">https://github.com/tipi-build/goldilock.git</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HFC_GOLDILOCK_GIT_TAG</span></code></dt><dd><p>Git tag or commit hash to checkout.</p>
+<p>Default: the pinned revision matching the current HFC release.</p>
+</dd>
+</dl>
+<p>Example — using a local bare clone:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;file:///opt/git-mirrors/goldilock.git&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_TAG</span><span class="w"> </span><span class="s">&quot;5f8b9de72c10a6216c89a8807db8d420cff05512&quot;</span><span class="nf">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cmake-sbom">
+<h2>cmake-sbom<a class="headerlink" href="#cmake-sbom" title="Link to this heading">¶</a></h2>
+<p>Hermetic FetchContent includes built-in support for generating SPDX Software Bill of Materials
+(SBOM) documents via the <a class="reference external" href="https://github.com/DEMCON/cmake-sbom">cmake-sbom</a> project.</p>
+<p>When enabled (<code class="docutils literal notranslate"><span class="pre">HFC_ENABLE_CMAKE_SBOM=ON</span></code>, which is the default), Hermetic FetchContent will
+automatically fetch and bootstrap the <code class="docutils literal notranslate"><span class="pre">cmake-sbom</span></code> module if it is not already available on the
+<code class="docutils literal notranslate"><span class="pre">CMAKE_MODULE_PATH</span></code>.</p>
+<p>The following CMake variables override the source:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">HFC_CMAKE_SBOM_GIT_REPOSITORY</span></code></dt><dd><p>Git repository URL used to fetch <code class="docutils literal notranslate"><span class="pre">cmake-sbom</span></code>.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">https://github.com/DEMCON/cmake-sbom.git</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HFC_CMAKE_SBOM_GIT_TAG</span></code></dt><dd><p>Git tag or commit hash to checkout.</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">97b1a0715af7726cae93d96d322c48584945f96b</span></code> (v1.1.2)</p>
+</dd>
+</dl>
+<p>Example — pointing to an internal mirror:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;https://git.internal.example.com/mirrors/cmake-sbom.git&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_TAG</span><span class="w"> </span><span class="s">&quot;v1.1.2&quot;</span><span class="nf">)</span>
+</pre></div>
+</div>
+<p>To disable SBOM generation entirely:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Pass on the command line or set in your CMakeLists.txt</span>
+<span class="nf">set(</span><span class="no">HFC_ENABLE_CMAKE_SBOM</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Configuring Offline or Custom Sources</a><ul>
+<li><a class="reference internal" href="#goldilock">Goldilock</a><ul>
+<li><a class="reference internal" href="#overriding-the-prebuilt-download-url">Overriding the Prebuilt Download URL</a></li>
+<li><a class="reference internal" href="#overriding-the-source-repository">Overriding the Source Repository</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cmake-sbom">cmake-sbom</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="ControllingBuildParallelism.html"
+                          title="previous chapter">Controlling Build Parallelism</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/recipes/ConfiguringOfflineSources.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ControllingBuildParallelism.html" title="Controlling Build Parallelism"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/tipi-logo.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://tipi.build/">tipi</a> &#187;
+  </li>
+  <li>
+    <span class="version_switch"></span>
+    <a href="../index.html">Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">HermeticFetchContent / Recipes / Configuring Offline or Custom Sources</a></li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright tipi technologies Ltd..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>
