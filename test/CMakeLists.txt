@@ -103,6 +103,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/configure_stability_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/fetchContentArgs_GIT_SHALLOW_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/goldilock_provisioning_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/offline_source_override_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/hermetic_dependency_make_executable_findable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/run_hfc_discover_targets_overridest_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/targets_cache_test.cpp"

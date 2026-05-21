@@ -164,8 +164,13 @@ function(hfc_ensure_goldilock_available)
   # The goldilock in the project is incompatible, the one on PATH as well or doesn't exists
   # Download prebuilt goldilock
   if(NOT HERMETIC_FETCHCONTENT_goldilock_BIN OR NOT goldilock_has_correct_version_and_is_executable)
-    set(goldilock_url ${FN_ARG_GOLDILOCK_URL_PREBUILT_${CMAKE_HOST_SYSTEM_NAME}_${CMAKE_HOST_SYSTEM_PROCESSOR}})
-    set(goldilock_sha ${FN_ARG_GOLDILOCK_SHA_PREBUILT_${CMAKE_HOST_SYSTEM_NAME}_${CMAKE_HOST_SYSTEM_PROCESSOR}})
+    if(DEFINED ENV{HFC_GOLDILOCK_URL_PREBUILT})
+      set(goldilock_url "$ENV{HFC_GOLDILOCK_URL_PREBUILT}")
+      set(goldilock_sha "$ENV{HFC_GOLDILOCK_SHA_PREBUILT}")
+    else()
+      set(goldilock_url ${FN_ARG_GOLDILOCK_URL_PREBUILT_${CMAKE_HOST_SYSTEM_NAME}_${CMAKE_HOST_SYSTEM_PROCESSOR}})
+      set(goldilock_sha ${FN_ARG_GOLDILOCK_SHA_PREBUILT_${CMAKE_HOST_SYSTEM_NAME}_${CMAKE_HOST_SYSTEM_PROCESSOR}})
+    endif()
     # There is a prebuilt version
     if(NOT goldilock_url STREQUAL "")
 
@@ -189,7 +194,7 @@ function(hfc_ensure_goldilock_available)
       list(GET download_status 0 download_godilock_status)
       if(download_godilock_status EQUAL 0)
         file(SHA1 "${download_test}" computed_sha1)
-        if(computed_sha1 STREQUAL goldilock_sha)
+        if("${goldilock_sha}" STREQUAL "" OR computed_sha1 STREQUAL "${goldilock_sha}")
           file(ARCHIVE_EXTRACT
             INPUT "${download_test}"
             DESTINATION "${HFC_GOLDILOCK_INSTALL_DIR}"
@@ -228,10 +233,22 @@ function(hfc_ensure_goldilock_available)
 
     hfc_log_debug(" - Fetching goldilock")
 
+    if(DEFINED ENV{HFC_GOLDILOCK_GIT_REPOSITORY})
+      set(_goldilock_git_repository "$ENV{HFC_GOLDILOCK_GIT_REPOSITORY}")
+    else()
+      set(_goldilock_git_repository "https://github.com/tipi-build/goldilock.git")
+    endif()
+
+    if(DEFINED ENV{HFC_GOLDILOCK_GIT_TAG})
+      set(_goldilock_git_tag "$ENV{HFC_GOLDILOCK_GIT_TAG}")
+    else()
+      set(_goldilock_git_tag "${FN_ARG_GOLDILOCK_REVISION}")
+    endif()
+
     FetchContent_Populate(
       hfc_goldilock
-      GIT_REPOSITORY https://github.com/tipi-build/goldilock.git
-      GIT_TAG        "${FN_ARG_GOLDILOCK_REVISION}"
+      GIT_REPOSITORY "${_goldilock_git_repository}"
+      GIT_TAG        "${_goldilock_git_tag}"
       SUBBUILD_DIR  "${CMAKE_CURRENT_BINARY_DIR}/.hfc_tools/hfc_goldilock-subbuild"
       SOURCE_DIR    "${CMAKE_CURRENT_BINARY_DIR}/.hfc_tools/hfc_goldilock-src"
       BINARY_DIR    "${CMAKE_CURRENT_BINARY_DIR}/.hfc_tools/hfc_goldilock-build"

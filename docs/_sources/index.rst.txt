@@ -29,6 +29,7 @@ Recipes
   /recipes/HowToAddALibrary
   /recipes/HowToDefineBuildEnvironments
   /recipes/ControllingBuildParallelism
+  /recipes/ConfiguringOfflineSources
 
 
 Index and Search
