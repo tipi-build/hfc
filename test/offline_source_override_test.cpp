@@ -57,6 +57,7 @@ namespace hfc::test {
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
     test_env["TIPI_CACHE_FORCE_ENABLE"] = "ON";
     test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
+    test_env["VERBOSE"] = "1";
 
     fs::path test_data_dir = get_test_data_dir();
     fs::path local_zip = test_data_dir / "goldilock-linux.zip";
@@ -89,6 +90,7 @@ namespace hfc::test {
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
     test_env["TIPI_CACHE_FORCE_ENABLE"] = "ON";
     test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
+    test_env["VERBOSE"] = "1";
 
     fs::path test_data_dir = get_test_data_dir();
     fs::path local_zip = test_data_dir / "goldilock-linux.zip";
@@ -131,6 +133,7 @@ namespace hfc::test {
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
     test_env["TIPI_CACHE_FORCE_ENABLE"] = "ON";
     test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
+    test_env["VERBOSE"] = "1";
 
     fs::path test_data_dir = get_test_data_dir();
     fs::path local_zip = test_data_dir / "goldilock-linux.zip";
@@ -173,6 +176,7 @@ namespace hfc::test {
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
     test_env["TIPI_CACHE_FORCE_ENABLE"] = "ON";
     test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
+    test_env["VERBOSE"] = "1";
 
     fs::path test_data_dir = get_test_data_dir();
     fs::path goldilock_repo = test_data_dir / "goldilock";
@@ -210,6 +214,7 @@ namespace hfc::test {
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
     test_env["TIPI_CACHE_FORCE_ENABLE"] = "ON";
     test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
+    test_env["VERBOSE"] = "1";
 
     fs::path test_data_dir = get_test_data_dir();
     fs::path cmake_sbom_repo = test_data_dir / "cmake-sbom";
@@ -252,6 +257,7 @@ namespace hfc::test {
     test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON";
     test_env["TIPI_CACHE_FORCE_ENABLE"] = "ON";
     test_env["TIPI_CACHE_CONSUME_ONLY"] = "ON";
+    test_env["VERBOSE"] = "1";
 
     fs::path test_data_dir = get_test_data_dir();
     fs::path cmake_sbom_repo = test_data_dir / "cmake-sbom";

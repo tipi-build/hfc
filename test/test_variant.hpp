@@ -73,10 +73,10 @@ namespace hfc::test {
       std::cout << error.what() << std::endl;
       throw error;
     }
-    tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host"} );  // host build
+    tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vvv --host"} );  // host build
 
     if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
-      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv"} );       // /!\ no --host
+      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vvv"} );       // /!\ no --host
     }
 
 
@@ -124,10 +124,10 @@ namespace hfc::test {
         continue;
       }
 
-      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host", "", "", toolchain} );  // host build
+      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vvv --host", "", "", toolchain} );  // host build
 
       if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
-        tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv", "", "", toolchain} );       // /!\ no --host
+        tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vvv", "", "", toolchain} );       // /!\ no --host
       }
     }
 

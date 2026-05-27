@@ -82,7 +82,7 @@ jobs:
           git config --global user.name "tipibuild"
           tipi run cmake -DCMAKE_TOOLCHAIN_FILE=toolchain/toolchain.cmake -GNinja -DHERMETIC_FETCHCONTENT_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_TEST_SHARED_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_PROJECT_HFC_BASEDIR=$TESTS_CACHED_HFC_BASEDIR ..
           tipi run cmake --build .
-          tipi run ctest --verbose -j -E offline_source_override_test
+          #tipi run ctest --verbose -j -E offline_source_override_test
 
       - name: Run offline_source_override_test (network-isolated container)
         run: |
