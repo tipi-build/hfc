@@ -32,7 +32,9 @@ namespace hfc::test {
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
     write_simple_main(test_project_path, {"MathFunctions.h", "MathFunctionscbrt.h", "lib.h"});
 
-    auto result = run_cmd(bp::start_dir=(test_project_path), bp::shell, get_cmake_configure_command(test_project_path, data, "-DTEST_DATA_DISABLE_FIND_HfcDependencyProvidedLib=ON"));
+    test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON"; // we need this for the HFC assertions
+
+    auto result = run_cmd(bp::start_dir=(test_project_path), test_env, bp::shell, get_cmake_configure_command(test_project_path, data, "-DTEST_DATA_DISABLE_FIND_HfcDependencyProvidedLib=ON"));
     BOOST_REQUIRE_NE(result.return_code, 0); // no success please!
     
     // example output 
@@ -48,6 +50,8 @@ namespace hfc::test {
 
     append_random_testdata_marker_as_toolchain_comment(project_toolchain, data);
     write_simple_main(test_project_path, { "MathFunctions.h", "MathFunctionscbrt.h", "lib.h" });
+
+    test_env["HERMETIC_FETCHCONTENT_LOG_DEBUG"] = "ON"; // we need this for the HFC assertions
 
     std::string configure_output = run_command(get_cmake_configure_command(test_project_path, data), test_project_path, test_env);
     BOOST_REQUIRE(boost::contains(configure_output , "Received find_package() request for package name HfcDependencyProvidedLib"));

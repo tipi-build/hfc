@@ -69,7 +69,8 @@
 <li><p><a class="reference internal" href="#overview" id="id2">Overview</a></p></li>
 <li><p><a class="reference internal" href="#commands" id="id3">Commands</a></p></li>
 <li><p><a class="reference internal" href="#build-introspection" id="id4">Build introspection</a></p></li>
-<li><p><a class="reference internal" href="#rationale" id="id5">Rationale</a></p></li>
+<li><p><a class="reference internal" href="#toolchain-fingerprinting" id="id5">Toolchain fingerprinting</a></p></li>
+<li><p><a class="reference internal" href="#rationale" id="id6">Rationale</a></p></li>
 </ul>
 </li>
 </ul>
@@ -118,6 +119,7 @@ but enables additional configuration through the <span class="target" id="index-
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CONFIG_EXTRA_ARGS</span><span class="w"> </span><span class="nv">&lt;configure flags&gt;...</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CONFIG_LANGUAGE</span><span class="w"> </span><span class="no">C</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">CXX</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_FIND_PACKAGES</span><span class="w"> </span><span class="nv">&lt;list of hermetic content names&gt;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span><span class="w"> </span><span class="nv">&lt;list of variable names&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CREATE_TARGET_ALIASES</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_PREPATCHED_RESOLVER</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
@@ -240,6 +242,25 @@ package among the whitelisted Hermetic FetchContent builds.</p>
 <span class="nf">)</span>
 </pre></div>
 </div>
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span></code> option extends the toolchain
+fingerprint computed for this specific dependency with additional cmake variables or
+environment variables beyond those captured by default.  This is useful when a dependency's
+rebuild should be triggered by a project-specific variable that is not tracked by HFC by 
+default (as are standard toolchain relevant things like compiler or linker flags), 
+or by an environment variable (note: as for environment variable captures that CMake project
+usually do, those are captured at configure time).</p>
+<p>Environment variables are specified with the <code class="docutils literal notranslate"><span class="pre">ENV{VAR_NAME}</span></code> syntax:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">MyLib</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span>
+<span class="w">  </span><span class="no">HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span>
+<span class="w">    </span><span class="no">MY_CUSTOM_FLAG</span><span class="w">           </span><span class="c"># cmake variable</span>
+<span class="w">    </span><span class="o">ENV{</span><span class="nt">CI_BUILD_NUMBER</span><span class="o">}</span><span class="w">     </span><span class="c"># environment variable</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>See also the global <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span></code> variable which applies
+the same extension to all dependencies in the build.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_CREATE_TARGET_ALIASES</span></code> options allows defining aliases for target during
 the configure phase. The CMake code provided will be invoked for every CMake target library
 that is exported by the content. The scope in which this code will be run contains the
@@ -462,8 +483,54 @@ might not be populated (yet).</p>
 
 <p>Prints the list of executables of <code class="docutils literal notranslate"><span class="pre">${content_name}</span></code> on the console.</p>
 </section>
+<section id="toolchain-fingerprinting">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Toolchain fingerprinting</a><a class="headerlink" href="#toolchain-fingerprinting" title="Link to this heading">¶</a></h2>
+<p>HermeticFetchContent computes a fingerprint of the active toolchain for each
+dependency.  The fingerprint is embedded in the proxy toolchain file that governs the
+dependency's isolated build; if the fingerprint changes the proxy toolchain hash changes,
+which causes HFC to invalidate the dependency and re-configure / re-build it.</p>
+<p><strong>What is captured</strong></p>
+<p>The fingerprint is assembled from:</p>
+<ul class="simple">
+<li><p>All <code class="docutils literal notranslate"><span class="pre">CMAKE_*</span></code> cache variables whose names match patterns known to influence ABI or
+compilation (compiler flags, compiler identity, build type, sysroot, OS and CPU settings,
+etc.).  Variables like <code class="docutils literal notranslate"><span class="pre">CMAKE_MAKE_PROGRAM</span></code> or install-prefix variables that do not
+affect the compiled output are explicitly excluded.</p></li>
+<li><p>Top-level directory properties: <code class="docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code>, <code class="docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LINK_OPTIONS</span></code>, <code class="docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code>, and <code class="docutils literal notranslate"><span class="pre">LINK_DIRECTORIES</span></code> as set at the root
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> level (e.g. via <code class="docutils literal notranslate"><span class="pre">add_compile_options()</span></code> or
+<code class="docutils literal notranslate"><span class="pre">add_compile_definitions()</span></code>).</p></li>
+<li><p>Generator expressions found in any of the above are evaluated in an isolated cmake
+mini-project so that conditional expressions such as
+<code class="docutils literal notranslate"><span class="pre">$&lt;$&lt;CONFIG:Release&gt;:-O3&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">$&lt;$&lt;COMPILE_LANGUAGE:CXX&gt;:-std=c++17&gt;</span></code> are resolved
+to their concrete values before hashing.  This prevents genex tokens from leaking into
+the hash verbatim and causing false cache misses or cache hits.</p></li>
+<li><p>Any extra variables listed in <code class="docutils literal notranslate"><span class="pre">HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span></code>
+(per-dependency) or <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span></code> (global).</p></li>
+</ul>
+<p><strong>Controlling the fingerprinting mini-project</strong></p>
+<p>The isolated cmake process that evaluates generator expressions enables compiler-detection
+variables (<code class="docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_*</span></code>) that require an enabled language.  The
+<code class="docutils literal notranslate"><span class="pre">HFC_TOOLCHAIN_FINGERPRINT_LANGUAGES</span></code> cache variable controls which languages the
+mini-project enables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">root_project</span></code> <em>(default)</em></dt><dd><p>Mirror the languages enabled in the calling <code class="docutils literal notranslate"><span class="pre">project()</span></code> call.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">none</span></code></dt><dd><p>Use <code class="docutils literal notranslate"><span class="pre">LANGUAGES</span> <span class="pre">NONE</span></code> — fast but compiler-derived variables are not captured.</p>
+</dd>
+<dt><em>explicit list</em></dt><dd><p>A semicolon-separated list such as <code class="docutils literal notranslate"><span class="pre">C</span></code> or <code class="docutils literal notranslate"><span class="pre">C;CXX</span></code>.</p>
+</dd>
+</dl>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Force fingerprinting to use C and C++ regardless of the root project&#39;s languages</span>
+<span class="nf">set(</span><span class="no">HFC_TOOLCHAIN_FINGERPRINT_LANGUAGES</span><span class="w"> </span><span class="s">&quot;C;CXX&quot;</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="no">STRING</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="no">FORCE</span><span class="nf">)</span>
+</pre></div>
+</div>
+<p>Setting <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_TOOLCHAIN_FINGERPRINT_DISABLE_CAPTURE_TOP_LEVEL_DIR_PROPERTIES</span></code> to <code class="docutils literal notranslate"><span class="pre">ON</span></code>
+disables the capture of top-level directory properties, which can be useful in projects
+where those properties contain rapidly-changing values that would cause unnecessary rebuilds.</p>
+</section>
 <section id="rationale">
-<h2><a class="toc-backref" href="#id5" role="doc-backlink">Rationale</a><a class="headerlink" href="#rationale" title="Link to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Rationale</a><a class="headerlink" href="#rationale" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>Ressembling add_subdirectory through external cmake execution is key to providing reusable install trees :</dt><dd><ul class="simple">
 <li><p>One project depending on a library can reuse the library built by another project</p></li>
@@ -497,6 +564,7 @@ optimizing avoid the need of cloning the actual dependencies source files with a
 <li><a class="reference internal" href="#overview">Overview</a></li>
 <li><a class="reference internal" href="#commands">Commands</a></li>
 <li><a class="reference internal" href="#build-introspection">Build introspection</a></li>
+<li><a class="reference internal" href="#toolchain-fingerprinting">Toolchain fingerprinting</a></li>
 <li><a class="reference internal" href="#rationale">Rationale</a></li>
 </ul>
 </li>

@@ -82,6 +82,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     BUILD_TARGETS
     CUSTOM_INSTALL_TARGETS
     HERMETIC_CONFIG_EXTRA_ARGS
+    HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES
   )
 
   cmake_parse_arguments(
@@ -155,12 +156,38 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
   hfc_log_debug("Acquiring hermetic dependency configuration lock for ${content_name} -- Success")
 
+  #
+  # proxy toolchain generation
+  hfc_get_content_proxy_toolchain_dir(${content_name} proxy_toolchain_dir)
+  hfc_get_content_proxy_toolchain_path(${content_name} proxy_toolchain_path)
+  file(LOCK ${proxy_toolchain_dir} DIRECTORY GUARD FUNCTION)
+
+  set(proxy_toolchain_args
+    DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
+  )
+
+  if(DEFINED __PARAMS_HERMETIC_FIND_PACKAGES)
+    list(APPEND proxy_toolchain_args HERMETIC_FIND_PACKAGES "${__PARAMS_HERMETIC_FIND_PACKAGES}")
+  endif()
+
+  if(DEFINED __PARAMS_HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES)
+    list(APPEND proxy_toolchain_args HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES "${__PARAMS_HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES}")
+  endif()
+
+  if(DEFINED __PARAMS_HERMETIC_CONFIG_EXTRA_ARGS)
+    list(APPEND proxy_toolchain_args HERMETIC_CONFIG_EXTRA_ARGS "${__PARAMS_HERMETIC_CONFIG_EXTRA_ARGS}")
+  endif()
+
+  if(DEFINED __PARAMS_HERMETIC_CONFIG_LANGUAGE)
+    list(APPEND proxy_toolchain_args HERMETIC_CONFIG_LANGUAGE "${__PARAMS_HERMETIC_CONFIG_LANGUAGE}")
+  endif()
+
+  #
+  # system provided dependencies
   if (DEFINED FORCE_SYSTEM_${content_name})
     if (${FORCE_SYSTEM_${content_name}})
 
       hfc_log(WARNING "FORCE_SYSTEM_${content_name} is ON, HermeticFetchContent will only find_package the library on the system.")
-
-      hfc_get_content_proxy_toolchain_path(${content_name} proxy_toolchain_path)
 
       string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION
         [=[
@@ -192,11 +219,8 @@ function(hfc_make_available_single content_name build_at_configure_time)
         string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "list(APPEND CMAKE_MODULE_PATH \"${cmake_module_path_item}\")\n")
       endforeach()
 
-      hfc_generate_cmake_proxy_toolchain(${content_name}
-        HERMETIC_FIND_PACKAGES "${__PARAMS_HERMETIC_FIND_PACKAGES}"
-        PROJECT_TOOLCHAIN_EXTENSION "${__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION}"
-        DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
-      )
+      list(APPEND proxy_toolchain_args PROJECT_TOOLCHAIN_EXTENSION "${__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION}")
+      hfc_generate_cmake_proxy_toolchain(${content_name} ${proxy_toolchain_args})
 
       get_hermetic_target_cache_file_path(${content_name} target_cache_file)
       hfc_targets_cache_create_isolated(
@@ -221,6 +245,20 @@ function(hfc_make_available_single content_name build_at_configure_time)
     endif()
   endif()
 
+  #
+  # proxy toolchain generation continued
+  list(APPEND proxy_toolchain_args PROJECT_TOOLCHAIN_EXTENSION "${__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION}")
+  list(APPEND proxy_toolchain_args PROJECT_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}")
+
+  if(DEFINED __PARAMS_SOURCE_SUBDIR)
+    list(APPEND proxy_toolchain_args PROJECT_SOURCE_SUBDIR ${__PARAMS_SOURCE_SUBDIR})
+  endif()
+
+  hfc_generate_cmake_proxy_toolchain(${content_name} ${proxy_toolchain_args})
+  file(SHA256 "${proxy_toolchain_path}" proxy_toolchain_hash)
+
+  #
+  # build system selection
   if (DEFINED __PARAMS_HERMETIC_BUILD_SYSTEM)
     set (__PARAMS_HERMETIC_BUILD_SYSTEM "${__PARAMS_HERMETIC_BUILD_SYSTEM}")
   else()
@@ -250,7 +288,8 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
 
   hfc_log_debug(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
-  set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.install.done)
+  set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}.install.done)
+  set(hfc_configure_marker_file ${__PARAMS_BINARY_DIR}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}.configure.done)
 
   hfc_create_restore_prefixes(${content_name} ${__PARAMS_BINARY_DIR} ${cmake_contentInstallPath})
 
@@ -324,10 +363,6 @@ function(hfc_make_available_single content_name build_at_configure_time)
     endif()
 
     # built in source.
-    set(hfc_configure_marker_file ${__PARAMS_BINARY_DIR}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.configure.done)
-
-
-
     hfc_autotools_restore_or_configure(
       ${content_name}
       PROJECT_SOURCE_DIR ${__PARAMS_SOURCE_DIR}
@@ -349,13 +384,12 @@ function(hfc_make_available_single content_name build_at_configure_time)
       HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING  "${HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING}"
       HERMETIC_CONFIG_EXTRA_ARGS ${__PARAMS_HERMETIC_CONFIG_EXTRA_ARGS}
       HERMETIC_CONFIG_LANGUAGE ${__PARAMS_HERMETIC_CONFIG_LANGUAGE}
+      PROXY_TOOLCHAIN_PATH ${proxy_toolchain_path}
       ORIGIN ${${content_name}_origin}
       REVISION ${${content_name}_revision}
     )
 
   elseif (${__PARAMS_HERMETIC_BUILD_SYSTEM} STREQUAL "cmake")
-
-    set(hfc_configure_marker_file ${__PARAMS_BINARY_DIR}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.configure.done)
 
     hfc_cmake_restore_or_configure(
       ${content_name}
@@ -381,6 +415,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
       BUILD_TARGETS ${__PARAMS_BUILD_TARGETS}
       CUSTOM_INSTALL_TARGETS ${__PARAMS_CUSTOM_INSTALL_TARGETS}
+      PROXY_TOOLCHAIN_PATH ${proxy_toolchain_path}
 
       ORIGIN ${${content_name}_origin}
       REVISION ${${content_name}_revision}

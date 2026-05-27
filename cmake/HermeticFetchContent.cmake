@@ -63,6 +63,7 @@ Commands
       [HERMETIC_CONFIG_EXTRA_ARGS <configure flags>...]
       [HERMETIC_CONFIG_LANGUAGE C | CXX]
       [HERMETIC_FIND_PACKAGES <list of hermetic content names>]
+      [HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES <list of variable names>]
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
       [HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION <cmake code>]
@@ -204,6 +205,29 @@ Commands
         set(LIBXML2_WITH_PYTHON OFF)
       ]=]
     )
+
+  The ``HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES`` option extends the toolchain
+  fingerprint computed for this specific dependency with additional cmake variables or
+  environment variables beyond those captured by default.  This is useful when a dependency's
+  rebuild should be triggered by a project-specific variable that is not tracked by HFC by 
+  default (as are standard toolchain relevant things like compiler or linker flags), 
+  or by an environment variable (note: as for environment variable captures that CMake project
+  usually do, those are captured at configure time).
+
+  Environment variables are specified with the ``ENV{VAR_NAME}`` syntax:
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      MyLib
+      HERMETIC_BUILD_SYSTEM cmake
+      HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES
+        MY_CUSTOM_FLAG           # cmake variable
+        ENV{CI_BUILD_NUMBER}     # environment variable
+    )
+
+  See also the global ``HERMETIC_FETCHCONTENT_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES`` variable which applies
+  the same extension to all dependencies in the build.
 
   The ``HERMETIC_CREATE_TARGET_ALIASES`` options allows defining aliases for target during
   the configure phase. The CMake code provided will be invoked for every CMake target library
@@ -424,6 +448,60 @@ Prints the list of 'unknown type' libraries of ``${content_name}`` on the consol
 .. command:: build target "hfc_list_${content_name}_EXECUTABLES_locations"
 
 Prints the list of executables of ``${content_name}`` on the console.
+
+
+Toolchain fingerprinting
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+HermeticFetchContent computes a fingerprint of the active toolchain for each
+dependency.  The fingerprint is embedded in the proxy toolchain file that governs the
+dependency's isolated build; if the fingerprint changes the proxy toolchain hash changes,
+which causes HFC to invalidate the dependency and re-configure / re-build it.
+
+**What is captured**
+
+The fingerprint is assembled from:
+
+* All ``CMAKE_*`` cache variables whose names match patterns known to influence ABI or
+  compilation (compiler flags, compiler identity, build type, sysroot, OS and CPU settings,
+  etc.).  Variables like ``CMAKE_MAKE_PROGRAM`` or install-prefix variables that do not
+  affect the compiled output are explicitly excluded.
+* Top-level directory properties: ``COMPILE_DEFINITIONS``, ``COMPILE_OPTIONS``,
+  ``LINK_OPTIONS``, ``INCLUDE_DIRECTORIES``, and ``LINK_DIRECTORIES`` as set at the root
+  ``CMakeLists.txt`` level (e.g. via ``add_compile_options()`` or
+  ``add_compile_definitions()``).
+* Generator expressions found in any of the above are evaluated in an isolated cmake
+  mini-project so that conditional expressions such as
+  ``$<$<CONFIG:Release>:-O3>`` or ``$<$<COMPILE_LANGUAGE:CXX>:-std=c++17>`` are resolved
+  to their concrete values before hashing.  This prevents genex tokens from leaking into
+  the hash verbatim and causing false cache misses or cache hits.
+* Any extra variables listed in ``HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES``
+  (per-dependency) or ``HERMETIC_FETCHCONTENT_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES`` (global).
+
+**Controlling the fingerprinting mini-project**
+
+The isolated cmake process that evaluates generator expressions enables compiler-detection
+variables (``CMAKE_<LANG>_*``) that require an enabled language.  The
+``HFC_TOOLCHAIN_FINGERPRINT_LANGUAGES`` cache variable controls which languages the
+mini-project enables:
+
+``root_project`` *(default)*
+  Mirror the languages enabled in the calling ``project()`` call.
+
+``none``
+  Use ``LANGUAGES NONE`` — fast but compiler-derived variables are not captured.
+
+*explicit list*
+  A semicolon-separated list such as ``C`` or ``C;CXX``.
+
+.. code-block:: cmake
+
+  # Force fingerprinting to use C and C++ regardless of the root project's languages
+  set(HFC_TOOLCHAIN_FINGERPRINT_LANGUAGES "C;CXX" CACHE STRING "" FORCE)
+
+Setting ``HERMETIC_FETCHCONTENT_TOOLCHAIN_FINGERPRINT_DISABLE_CAPTURE_TOP_LEVEL_DIR_PROPERTIES`` to ``ON``
+disables the capture of top-level directory properties, which can be useful in projects
+where those properties contain rapidly-changing values that would cause unnecessary rebuilds.
 
 
 Rationale

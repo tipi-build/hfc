@@ -59,13 +59,26 @@
 <h1>Configuring Offline or Custom Sources<a class="headerlink" href="#configuring-offline-or-custom-sources" title="Link to this heading">¶</a></h1>
 <p>Hermetic FetchContent fetches several internal tools and modules from GitHub by default.
 In environments where access to public repositories is restricted (e.g. air-gapped networks,
-corporate proxies, or CI environments without internet access), you can override those sources
+corporate proxies, or CI environments without internet access), these sources can be overridden
 using CMake variables.</p>
-<p>These variables should be set <strong>before</strong> including HermeticFetchContent — typically in your
-project's toolchain file or in a <code class="docutils literal notranslate"><span class="pre">build_thirdparty.cmake</span></code> included early in your build:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># In your toolchain file or build_thirdparty.cmake</span>
-<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip&quot;</span><span class="nf">)</span>
-<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;80729092c01a32a1f987438b2c026e993e0b81d8&quot;</span><span class="nf">)</span>
+<p>These variables must be set <strong>before</strong> <code class="docutils literal notranslate"><span class="pre">include(HermeticFetchContent)</span></code> in the project's
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># In the project CMakeLists.txt, before include(HermeticFetchContent)</span>
+
+<span class="c"># -- Goldilock prebuilt binary (platform-specific) --</span>
+<span class="c"># (variable name pattern documented in &#39;Overriding the Prebuilt Download URL&#39; section below)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;&lt;url-to-goldilock-linux-x86_64-prebuilt-zip&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;&lt;sha1-of-the-above-archive&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;&lt;url-to-goldilock-darwin-arm64-prebuilt-zip&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;&lt;sha1-of-the-above-archive&gt;&quot;</span><span class="nf">)</span>
+
+<span class="c"># -- Goldilock source (fallback if prebuilt fails) --</span>
+<span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;&lt;url-to-goldilock-git-mirror&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_TAG</span><span class="w"> </span><span class="s">&quot;&lt;commit-hash-or-tag-to-checkout&gt;&quot;</span><span class="nf">)</span>
+
+<span class="c"># -- cmake-sbom source --</span>
+<span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;&lt;url-to-cmake-sbom-git-mirror&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_TAG</span><span class="w"> </span><span class="s">&quot;&lt;commit-hash-or-tag-to-checkout&gt;&quot;</span><span class="nf">)</span>
 
 <span class="c"># ... then include HFC</span>
 <span class="nf">include(</span><span class="nb">HermeticFetchContent</span><span class="nf">)</span>
@@ -97,10 +110,10 @@ to building from source.</p>
 <p>Where <code class="docutils literal notranslate"><span class="pre">&lt;system&gt;</span></code> is <code class="docutils literal notranslate"><span class="pre">CMAKE_HOST_SYSTEM_NAME</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">Linux</span></code>, <code class="docutils literal notranslate"><span class="pre">Darwin</span></code>) and <code class="docutils literal notranslate"><span class="pre">&lt;processor&gt;</span></code>
 is <code class="docutils literal notranslate"><span class="pre">CMAKE_HOST_SYSTEM_PROCESSOR</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">x86_64</span></code>, <code class="docutils literal notranslate"><span class="pre">arm64</span></code>).</p>
 <p>Example — serving the prebuilt binary from an internal HTTP mirror for Linux x86_64:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip&quot;</span><span class="nf">)</span>
-<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;80729092c01a32a1f987438b2c026e993e0b81d8&quot;</span><span class="nf">)</span>
-<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;https://artifacts.internal/goldilock/v1.2.1/goldilock-darwin-arm64.zip&quot;</span><span class="nf">)</span>
-<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;a1b2c3d4e5f6...&quot;</span><span class="nf">)</span>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;&lt;url-to-goldilock-linux-x86_64-prebuilt-zip&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64</span><span class="w"> </span><span class="s">&quot;&lt;sha1-of-the-above-archive&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;&lt;url-to-goldilock-darwin-arm64-prebuilt-zip&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="nb">HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64</span><span class="w"> </span><span class="s">&quot;&lt;sha1-of-the-above-archive&gt;&quot;</span><span class="nf">)</span>
 </pre></div>
 </div>
 </section>
@@ -117,8 +130,8 @@ built from source. The source repository can be overridden with:</p>
 </dd>
 </dl>
 <p>Example — using a local bare clone:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;file:///opt/git-mirrors/goldilock.git&quot;</span><span class="nf">)</span>
-<span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_TAG</span><span class="w"> </span><span class="s">&quot;5f8b9de72c10a6216c89a8807db8d420cff05512&quot;</span><span class="nf">)</span>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;&lt;url-to-goldilock-git-mirror&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="no">HFC_GOLDILOCK_GIT_TAG</span><span class="w"> </span><span class="s">&quot;&lt;commit-hash-or-tag-to-checkout&gt;&quot;</span><span class="nf">)</span>
 </pre></div>
 </div>
 </section>
@@ -140,12 +153,12 @@ automatically fetch and bootstrap the <code class="docutils literal notranslate"
 </dd>
 </dl>
 <p>Example — pointing to an internal mirror:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;https://git.internal.example.com/mirrors/cmake-sbom.git&quot;</span><span class="nf">)</span>
-<span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_TAG</span><span class="w"> </span><span class="s">&quot;v1.1.2&quot;</span><span class="nf">)</span>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_REPOSITORY</span><span class="w"> </span><span class="s">&quot;&lt;url-to-cmake-sbom-git-mirror&gt;&quot;</span><span class="nf">)</span>
+<span class="nf">set(</span><span class="no">HFC_CMAKE_SBOM_GIT_TAG</span><span class="w"> </span><span class="s">&quot;&lt;commit-hash-or-tag-to-checkout&gt;&quot;</span><span class="nf">)</span>
 </pre></div>
 </div>
 <p>To disable SBOM generation entirely:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Pass on the command line or set in your CMakeLists.txt</span>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Set in the project CMakeLists.txt before include(HermeticFetchContent)</span>
 <span class="nf">set(</span><span class="no">HFC_ENABLE_CMAKE_SBOM</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span>
 </pre></div>
 </div>

@@ -375,7 +375,9 @@ function(hfc_targets_cache_consume content_name)
 
     string(APPEND summary_content "# end of generated file\n")
 
-    file(WRITE "${HFC_SUMMARY_FILE_destination}" "${summary_content}")
+    file(WRITE "${HFC_SUMMARY_FILE_destination}.tmp" "${summary_content}")
+    file(COPY_FILE "${HFC_SUMMARY_FILE_destination}.tmp" "${HFC_SUMMARY_FILE_destination}" ONLY_IF_DIFFERENT)
+    file(REMOVE "${HFC_SUMMARY_FILE_destination}.tmp")
     hfc_log(STATUS "Wrote hermetic fetchcontent summary file for ${HFC_SUMMARY_FILE_contentName} to ${HFC_SUMMARY_FILE_destination}")
 
   endif()

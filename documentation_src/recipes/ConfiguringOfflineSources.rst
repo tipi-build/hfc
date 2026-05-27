@@ -5,17 +5,30 @@ Configuring Offline or Custom Sources
 
 Hermetic FetchContent fetches several internal tools and modules from GitHub by default.
 In environments where access to public repositories is restricted (e.g. air-gapped networks,
-corporate proxies, or CI environments without internet access), you can override those sources
+corporate proxies, or CI environments without internet access), these sources can be overridden
 using CMake variables.
 
-These variables should be set **before** including HermeticFetchContent — typically in your
-project's toolchain file or in a ``build_thirdparty.cmake`` included early in your build:
+These variables must be set **before** ``include(HermeticFetchContent)`` in the project's
+``CMakeLists.txt``:
 
 .. code-block:: cmake
 
-  # In your toolchain file or build_thirdparty.cmake
-  set(HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64 "https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip")
-  set(HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64 "80729092c01a32a1f987438b2c026e993e0b81d8")
+  # In the project CMakeLists.txt, before include(HermeticFetchContent)
+
+  # -- Goldilock prebuilt binary (platform-specific) --
+  # (variable name pattern documented in 'Overriding the Prebuilt Download URL' section below)
+  set(HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64 "<url-to-goldilock-linux-x86_64-prebuilt-zip>")
+  set(HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64 "<sha1-of-the-above-archive>")
+  set(HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64 "<url-to-goldilock-darwin-arm64-prebuilt-zip>")
+  set(HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64 "<sha1-of-the-above-archive>")
+
+  # -- Goldilock source (fallback if prebuilt fails) --
+  set(HFC_GOLDILOCK_GIT_REPOSITORY "<url-to-goldilock-git-mirror>")
+  set(HFC_GOLDILOCK_GIT_TAG "<commit-hash-or-tag-to-checkout>")
+
+  # -- cmake-sbom source --
+  set(HFC_CMAKE_SBOM_GIT_REPOSITORY "<url-to-cmake-sbom-git-mirror>")
+  set(HFC_CMAKE_SBOM_GIT_TAG "<commit-hash-or-tag-to-checkout>")
 
   # ... then include HFC
   include(HermeticFetchContent)
@@ -54,10 +67,10 @@ Example — serving the prebuilt binary from an internal HTTP mirror for Linux x
 
 .. code-block:: cmake
 
-  set(HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64 "https://artifacts.internal/goldilock/v1.2.1/goldilock-linux.zip")
-  set(HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64 "80729092c01a32a1f987438b2c026e993e0b81d8")
-  set(HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64 "https://artifacts.internal/goldilock/v1.2.1/goldilock-darwin-arm64.zip")
-  set(HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64 "a1b2c3d4e5f6...")
+  set(HFC_GOLDILOCK_URL_PREBUILT_Linux_x86_64 "<url-to-goldilock-linux-x86_64-prebuilt-zip>")
+  set(HFC_GOLDILOCK_SHA_PREBUILT_Linux_x86_64 "<sha1-of-the-above-archive>")
+  set(HFC_GOLDILOCK_URL_PREBUILT_Darwin_arm64 "<url-to-goldilock-darwin-arm64-prebuilt-zip>")
+  set(HFC_GOLDILOCK_SHA_PREBUILT_Darwin_arm64 "<sha1-of-the-above-archive>")
 
 
 Overriding the Source Repository
@@ -80,8 +93,8 @@ Example — using a local bare clone:
 
 .. code-block:: cmake
 
-  set(HFC_GOLDILOCK_GIT_REPOSITORY "file:///opt/git-mirrors/goldilock.git")
-  set(HFC_GOLDILOCK_GIT_TAG "5f8b9de72c10a6216c89a8807db8d420cff05512")
+  set(HFC_GOLDILOCK_GIT_REPOSITORY "<url-to-goldilock-git-mirror>")
+  set(HFC_GOLDILOCK_GIT_TAG "<commit-hash-or-tag-to-checkout>")
 
 
 cmake-sbom
@@ -110,12 +123,12 @@ Example — pointing to an internal mirror:
 
 .. code-block:: cmake
 
-  set(HFC_CMAKE_SBOM_GIT_REPOSITORY "https://git.internal.example.com/mirrors/cmake-sbom.git")
-  set(HFC_CMAKE_SBOM_GIT_TAG "v1.1.2")
+  set(HFC_CMAKE_SBOM_GIT_REPOSITORY "<url-to-cmake-sbom-git-mirror>")
+  set(HFC_CMAKE_SBOM_GIT_TAG "<commit-hash-or-tag-to-checkout>")
 
 To disable SBOM generation entirely:
 
 .. code-block:: cmake
 
-  # Pass on the command line or set in your CMakeLists.txt
+  # Set in the project CMakeLists.txt before include(HermeticFetchContent)
   set(HFC_ENABLE_CMAKE_SBOM OFF)

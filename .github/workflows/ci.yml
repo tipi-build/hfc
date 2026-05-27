@@ -61,6 +61,7 @@ jobs:
         with:          
           path: './hfc_project'
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2 # we need at least two revisions in the cloned copy so that our upgrade testing work
 
       - name: tipi builds project 
         run: |
