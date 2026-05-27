@@ -78,7 +78,6 @@ jobs:
           # for this to work
           tipi connect
           ls -al /usr/local/share/.tipi
-          exit 1
           git config --global user.email "hello@tipi.build"
           git config --global user.name "tipibuild"
           tipi run cmake -DCMAKE_TOOLCHAIN_FILE=toolchain/toolchain.cmake -GNinja -DHERMETIC_FETCHCONTENT_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_TEST_SHARED_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_PROJECT_HFC_BASEDIR=$TESTS_CACHED_HFC_BASEDIR ..
@@ -113,10 +112,16 @@ jobs:
             --env TESTS_CACHED_HFC_BASEDIR \
             --env HFC_TEST_DATA_DIR \
             --env BOOST_TEST_LOG_LEVEL \
+            --env TIPI_ACCESS_TOKEN \
+            --env TIPI_REFRESH_TOKEN \
+            --env TIPI_VAULT_PASSPHRASE \
             --user root \
             --detach \
             --network=none \
             --workdir /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}/hfc_project/build \
             tipibuild/tipi-ubuntu:latest \
             sleep infinity
+
+          docker cp /usr/local/share/.tipi/.access_key test-container-without-network:/usr/local/share/.tipi/.access_key
+          docker cp /usr/local/share/.tipi/.vault test-container-without-network:/usr/local/share/.tipi/.vault
           docker exec --user root test-container-without-network tipi run ctest --verbose -j -R offline_source_override_test
