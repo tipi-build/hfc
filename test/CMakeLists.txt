@@ -107,6 +107,8 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/hermetic_dependency_make_executable_findable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/run_hfc_discover_targets_overridest_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/targets_cache_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/hfc_version_stepping_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_bypass_provider_test.cpp"
 )
 
 foreach(test_file IN LISTS test_source_files)
@@ -117,4 +119,3 @@ endforeach()
 set_tests_properties (goldilock_provisioning_test  PROPERTIES
     ENVIRONMENT "FAKE_GOLDILOCK=$<TARGET_FILE:goldilock>;TRUE_GOLDILOCK=${HERMETIC_FETCHCONTENT_goldilock_BIN};STANDARD_COMPILER=${CMAKE_CXX_COMPILER}")
 set_tests_properties(check_find_package PROPERTIES WILL_FAIL TRUE)
-set_tests_properties(configure_stability_test PROPERTIES WILL_FAIL TRUE)

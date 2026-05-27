@@ -186,6 +186,8 @@ function(hfc_autotools_restore_or_configure content_name)
     BUILD_IN_SOURCE_TREE
     CMAKE_ADAPTER_GENERATOR_FN
 
+    PROXY_TOOLCHAIN_PATH
+
     # Cache related
     ORIGIN
     REVISION
@@ -229,23 +231,6 @@ function(hfc_autotools_restore_or_configure content_name)
   endif()
   cmake_language(CALL ${FN_ARG_CMAKE_ADAPTER_GENERATOR_FN}_get_install_target install_target_name)
 
-  # Toolchain to forward arguments
-  hfc_get_content_proxy_toolchain_path(${content_name} proxy_toolchain_path)
-
-  set(proxy_toolchain_args
-    PROJECT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}"
-    DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
-    PROJECT_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}"
-  )
-
-  if(FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS)
-    list(APPEND proxy_toolchain_args HERMETIC_CONFIG_EXTRA_ARGS ${FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS})
-  endif()
-
-  list(APPEND proxy_toolchain_args HERMETIC_CONFIG_LANGUAGE ${FN_ARG_HERMETIC_CONFIG_LANGUAGE})
-
-  hfc_generate_cmake_proxy_toolchain(${content_name} ${proxy_toolchain_args})
-
   make_directory(${FN_ARG_PROJECT_INSTALL_PREFIX})
   make_directory(${FN_ARG_PROJECT_SOURCE_DIR})
 
@@ -262,7 +247,7 @@ function(hfc_autotools_restore_or_configure content_name)
       ${FN_ARG_ORIGIN} ${FN_ARG_REVISION}
       ${autotools_cmake_adapter_destination} ${FN_ARG_PROJECT_SOURCE_DIR}
       ${FN_ARG_PROJECT_INSTALL_PREFIX}
-      "${proxy_toolchain_path}"
+      "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
       cmake_re_restore_command_return_code)
     if (cmake_re_restore_command_return_code EQUAL 0)
       set(dep_need_configure OFF)
@@ -283,7 +268,7 @@ function(hfc_autotools_restore_or_configure content_name)
 
       # If not restored, prepare the build tree (autotools sources need to be downloaded in the CMake project build tree, as the autotools sources can only build in-source-tree.
       # The CMake project sources are in the autotools_cmake_adapter_destination
-      hfc_autootols_prepare_mirror_build_tree_to_host_configure(${content_name} ${autotools_cmake_adapter_destination} ${FN_ARG_PROJECT_INSTALL_PREFIX} ${FN_ARG_PROJECT_SOURCE_DIR} ${proxy_toolchain_path} "${FN_ARG_ORIGIN}")
+      hfc_autootols_prepare_mirror_build_tree_to_host_configure(${content_name} ${autotools_cmake_adapter_destination} ${FN_ARG_PROJECT_INSTALL_PREFIX} ${FN_ARG_PROJECT_SOURCE_DIR} ${FN_ARG_PROXY_TOOLCHAIN_PATH} "${FN_ARG_ORIGIN}")
       if(IS_SYMLINK "${FN_ARG_PROJECT_INSTALL_PREFIX}")
         file(READ_SYMLINK  "${FN_ARG_PROJECT_INSTALL_PREFIX}" symlink_destination)
         get_filename_component(symlink_parent_dir "${symlink_destination}" DIRECTORY)
@@ -327,7 +312,7 @@ function(hfc_autotools_restore_or_configure content_name)
     ${content_name}
     PROJECT_INSTALL_PREFIX "${FN_ARG_PROJECT_INSTALL_PREFIX}"
     CMAKE_EXPORT_LIBRARY_DECLARATION "${FN_ARG_CMAKE_EXPORT_LIBRARY_DECLARATION}"
-    TOOLCHAIN_FILE "${proxy_toolchain_path}"
+    TOOLCHAIN_FILE "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
     OUT_TARGETS_CACHE_FILE target_cache_file
   )
 
@@ -344,7 +329,7 @@ function(hfc_autotools_restore_or_configure content_name)
 
   if(dep_need_configure)
     hfc_log_debug(" - need to run configure ${FN_ARG_HFC_CONFIGURE_MARKER_FILE}")
-    hfc_autootols_configure(${content_name} "${autotools_cmake_adapter_destination}" "${FN_ARG_PROJECT_INSTALL_PREFIX}" "${FN_ARG_PROJECT_BINARY_DIR}" "${proxy_toolchain_path}" "${FN_ARG_ORIGIN}" "${FN_ARG_REVISION}" "${FN_ARG_HFC_CONFIGURE_MARKER_FILE}")
+    hfc_autootols_configure(${content_name} "${autotools_cmake_adapter_destination}" "${FN_ARG_PROJECT_INSTALL_PREFIX}" "${FN_ARG_PROJECT_BINARY_DIR}" "${FN_ARG_PROXY_TOOLCHAIN_PATH}" "${FN_ARG_ORIGIN}" "${FN_ARG_REVISION}" "${FN_ARG_HFC_CONFIGURE_MARKER_FILE}")
   else()
     hfc_log_debug(" - NO need to run configure")
   endif()
@@ -363,7 +348,7 @@ function(hfc_autotools_restore_or_configure content_name)
       INSTALL_BYPRODUCTS "${library_byproducts}"
       IMPORTED_TARGETS "${imported_libraries}"
       INSTALL_TARGET "${install_target_name}"
-      TOOLCHAIN_FILE "${proxy_toolchain_path}"
+      TOOLCHAIN_FILE "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
       ORIGIN "${FN_ARG_ORIGIN}"
       REVISION "${FN_ARG_REVISION}"
       BUILD_IN_SOURCE_TREE "${FN_ARG_BUILD_IN_SOURCE_TREE}"

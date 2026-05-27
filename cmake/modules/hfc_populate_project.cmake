@@ -326,6 +326,16 @@ function(hfc_populate_project_declare content_name)
 
     if (NOT "${FN_ARG_BUILD_IN_SOURCE_TREE}" STREQUAL "")
 
+      # Ensure the binary dir exists before populating into it — needed when
+      # cmake-re creates a fresh worktree (e.g. after a toolchain fingerprint change).
+      # It may already be a symlink (created by cmake-re) pointing to the worktree.
+      if(IS_SYMLINK "${FN_ARG_BINARY_DIR}")
+        file(READ_SYMLINK "${FN_ARG_BINARY_DIR}" _hfc_binary_dir_target)
+        file(MAKE_DIRECTORY "${_hfc_binary_dir_target}")
+      elseif(NOT EXISTS "${FN_ARG_BINARY_DIR}")
+        file(MAKE_DIRECTORY "${FN_ARG_BINARY_DIR}")
+      endif()
+
       set(lock_dir "${FN_ARG_SOURCE_DIR}")
       hfc_goldilock_acquire("${lock_dir}" lock_success)
       set(content_name_clone_in_build_folder ${content_name}_clone_to_build_folder)

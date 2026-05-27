@@ -46,16 +46,39 @@ function(hfc_generate_external_project content_name)
   cmake_parse_arguments(TEMPLATE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   hfc_required_args(TEMPLATE ${oneValueArgs_required})
 
-  # clear old files / if we're here we will be rebuilding that stuff anyway
-  if(EXISTS "${TEMPLATE_EP_TARGETS_DIR}")
-    hfc_log_debug("Clearing out old external project at: ${TEMPLATE_EP_TARGETS_DIR}")
-    file(REMOVE_RECURSE "${TEMPLATE_EP_TARGETS_DIR}")
+  file(MAKE_DIRECTORY "${TEMPLATE_BINARY_DIR}")
+
+  # generate the new CMakeLists.txt to a temp file first so we can compare
+  set(_ep_cmakelists "${TEMPLATE_EP_TARGETS_DIR}/CMakeLists.txt")
+  set(_ep_cmakelists_tmp "${TEMPLATE_EP_TARGETS_DIR}.cmake_tmp")
+  configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/externalProject_Add_install.CMakeLists.txt.in" "${_ep_cmakelists_tmp}" @ONLY)
+
+  # only clean and recreate the EP dir when the content actually changed
+  # (or when it doesn't exist yet). keeping the dir intact when content is
+  # unchanged preserves CMakeLists.txt mtime, which prevents cmake from
+  # detecting a "change" and cascading into spurious further re-runs.
+  set(_ep_needs_update FALSE)
+  if(NOT EXISTS "${_ep_cmakelists}")
+    set(_ep_needs_update TRUE)
+  else()
+    file(SHA256 "${_ep_cmakelists_tmp}" _ep_new_hash)
+    file(SHA256 "${_ep_cmakelists}"     _ep_old_hash)
+    if(NOT "${_ep_new_hash}" STREQUAL "${_ep_old_hash}")
+      set(_ep_needs_update TRUE)
+    endif()
   endif()
 
-  file(MAKE_DIRECTORY "${TEMPLATE_BINARY_DIR}")
-  file(MAKE_DIRECTORY "${TEMPLATE_EP_TARGETS_DIR}")
-
-  # generate the actual external project
-  configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/externalProject_Add_install.CMakeLists.txt.in" "${TEMPLATE_EP_TARGETS_DIR}/CMakeLists.txt" @ONLY)
+  if(_ep_needs_update)
+    # clean old EP cmake state so it starts fresh with the new configuration
+    if(EXISTS "${TEMPLATE_EP_TARGETS_DIR}")
+      hfc_log_debug("Clearing out old external project at: ${TEMPLATE_EP_TARGETS_DIR}")
+      file(REMOVE_RECURSE "${TEMPLATE_EP_TARGETS_DIR}")
+    endif()
+    file(MAKE_DIRECTORY "${TEMPLATE_EP_TARGETS_DIR}")
+    file(RENAME "${_ep_cmakelists_tmp}" "${_ep_cmakelists}")
+  else()
+    hfc_log_debug("External project at ${TEMPLATE_EP_TARGETS_DIR} unchanged, preserving directory")
+    file(REMOVE "${_ep_cmakelists_tmp}")
+  endif()
 
 endfunction()
