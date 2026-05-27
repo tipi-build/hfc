@@ -76,6 +76,7 @@ namespace hfc::test {
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
     std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
+    BOOST_TEST_MESSAGE("Configure output: " + output);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Downloading prebuilt goldilock from " + custom_url),
                           "Expected the custom file:// prebuilt URL in download log. Output:\n" + output);
@@ -117,6 +118,7 @@ namespace hfc::test {
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
     std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
+    BOOST_TEST_MESSAGE("Configure output: " + output);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Downloading prebuilt goldilock from " + custom_url),
                           "Expected the custom file:// URL to be attempted. Output:\n" + output);
@@ -158,6 +160,7 @@ namespace hfc::test {
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
     std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
+    BOOST_TEST_MESSAGE("Configure output: " + output);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Downloading prebuilt goldilock from " + custom_url),
                           "Expected the custom file:// URL to be attempted. Output:\n" + output);
@@ -194,6 +197,7 @@ namespace hfc::test {
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
     std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
+    BOOST_TEST_MESSAGE("Configure output: " + output);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Building goldilock from source"),
                           "Expected source build to be triggered. Output:\n" + output);
@@ -235,6 +239,7 @@ namespace hfc::test {
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
     std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
+    BOOST_TEST_MESSAGE("Configure output: " + output);
 
     BOOST_REQUIRE_MESSAGE(boost::contains(output, "Enabling HFC cmake-sbom support (" + custom_repo),
                           "Expected the local file:// cmake-sbom repository URL in the log. Output:\n" + output);
@@ -277,6 +282,7 @@ namespace hfc::test {
     auto toolchain = get_fresh_provisioning_toolchain(template_path);
     std::string cmake_configure_command = get_cmake_configure_command(template_path, data, "", toolchain);
     auto output = run_command(cmake_configure_command, template_path, test_env);
+    BOOST_TEST_MESSAGE("Configure output: " + output);
 
     // The source dir should contain the first 8 chars of the custom tag
     std::string expected_dir_fragment = "hfc_cmake_sbom-" + custom_tag.substr(0, 8);
