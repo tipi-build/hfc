@@ -1,5 +1,8 @@
 
 cmake_minimum_required(VERSION 3.27.6)
+
+list(APPEND CMAKE_PROJECT_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/hfc_toolchain_fingerprint_bootstrap.cmake")
+
 project(
   ModernCMakeExample
   VERSION 1.0

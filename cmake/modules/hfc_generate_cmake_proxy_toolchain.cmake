@@ -2,6 +2,7 @@ include_guard()
 
 include(hfc_log)
 include(hfc_targets_cache_common)
+include(hfc_toolchain_fingerprint)
 
 function(hfc_get_content_proxy_toolchain_dir content_name OUT_result)
   set(${OUT_result} "${FETCHCONTENT_BASE_DIR}/${content_name}-toolchain" PARENT_SCOPE)
@@ -43,6 +44,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   set(multi_value_params
     HERMETIC_FIND_PACKAGES
     HERMETIC_CONFIG_EXTRA_ARGS
+    HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES
   )
 
   cmake_parse_arguments(FN_ARG "${options_params}" "${one_value_params}" "${multi_value_params}" ${ARGN})
@@ -129,6 +131,16 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   #
   set(destination_file_tmp "${FN_ARG_DESTINATION_TOOLCHAIN_PATH}.tmp")
 
+  # gather a toolchain fingerprint for this project's toolchain
+  compute_augmented_toolchain_fingerprint(live_toolchain_fingerprint 
+    ADDITIONAL_VARIABLES "${HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES}"
+  )
+
+  # TODO: 
+  # query the "install marker info" for all HERMETIC_FIND_PACKAGES and integrate this
+  # into the proxy toolchain generation in order for the transient changes to be
+  # resolved, figure out how to handle system provided dependencies in an efficient way
+
   # generate the proxy toolchain (isolate ourselves from variable polution from parent scope)
   block(SCOPE_FOR VARIABLES
     PROPAGATE
@@ -152,6 +164,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       HERMETIC_FETCHCONTENT_INSTALL_DIR
       FETCHCONTENT_BASE_DIR
       hfc_contents_forwarding_code
+      live_toolchain_fingerprint
   )
     set(HERMETIC_FETCHCONTENT_CMAKE_TOOLCHAIN_FILE "${toolchain_path_abs}")
     set(HERMETIC_FETCHCONTENT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}")
@@ -159,6 +172,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
     set(HERMETIC_FETCHCONTENT_FIND_PACKAGES "${FN_ARG_HERMETIC_FIND_PACKAGES}")
     set(HERMETIC_FETCHCONTENT_PROJECT_DEPENDENCIES_CONTENTS "${project_dependency_contents}")
+    set(HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT "${live_toolchain_fingerprint}")
 
     # Convert list to string for template substitution (optional parameter)
     if(FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS)
