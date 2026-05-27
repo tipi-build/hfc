@@ -77,6 +77,8 @@ jobs:
           # HERMETIC_FETCHCONTENT_TOOLS_DIR needs to be set to the same value as HFC_TEST_SHARED_TOOLS_DIR 
           # for this to work
           tipi connect
+          ls -al /usr/local/share/.tipi
+          exit 1
           git config --global user.email "hello@tipi.build"
           git config --global user.name "tipibuild"
           tipi run cmake -DCMAKE_TOOLCHAIN_FILE=toolchain/toolchain.cmake -GNinja -DHERMETIC_FETCHCONTENT_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_TEST_SHARED_TOOLS_DIR=$TESTS_CACHED_HFC_TOOLS_DIR -DHFC_PROJECT_HFC_BASEDIR=$TESTS_CACHED_HFC_BASEDIR ..
