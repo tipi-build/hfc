@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.27.6)
+project(arrow-example VERSION "0.0.1")
+include(thirdparty/build_thirdparty.cmake)
+add_executable(arrow_example "arrow_example.cpp")
+target_link_libraries(arrow_example Parquet::parquet_static Arrow::arrow_static)

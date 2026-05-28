@@ -156,3 +156,53 @@ jobs:
           cd hfc_project/example/openssl
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
           tipi run cmake --build ./build
+
+  build-example-with-arrow-cmake-re:
+    name: build example arrow with cmake-re
+    runs-on: ubuntu-latest-8-cores
+    container:
+      image: tipibuild/tipi-ubuntu:latest
+      options: --user root
+    steps:
+      - name: checkout pull request
+        uses: actions/checkout@v4
+        with:
+          path: './hfc_project'
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: prepare example runner
+        run: |
+          cd hfc_project/example/arrow
+          git init
+          git config --global user.email "hello@tipi.build"
+          git config --global user.name "tipibuild"
+          tipi connect
+      - name: build with cmake-re
+        run: |
+          cd hfc_project/example/arrow
+          cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
+          cmake-re --build ./build_re --host
+
+  build-example-with-arrow-cmake:
+    name: build example arrow with cmake
+    runs-on: ubuntu-latest-8-cores
+    container:
+      image: tipibuild/tipi-ubuntu:latest
+      options: --user root
+    steps:
+      - name: checkout pull request
+        uses: actions/checkout@v4
+        with:
+          path: './hfc_project'
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: prepare example runner
+        run: |
+          cd hfc_project/example/arrow
+          git init
+          git config --global user.email "hello@tipi.build"
+          git config --global user.name "tipibuild"
+          tipi connect
+      - name: build with cmake
+        run: |
+          cd hfc_project/example/arrow
+          tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
+          tipi run cmake --build ./build
