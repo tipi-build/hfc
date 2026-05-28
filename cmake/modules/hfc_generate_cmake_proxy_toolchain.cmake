@@ -131,8 +131,11 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   #
   set(destination_file_tmp "${FN_ARG_DESTINATION_TOOLCHAIN_PATH}.tmp")
 
-  # gather a toolchain fingerprint for this project's toolchain
-  compute_augmented_toolchain_fingerprint(live_toolchain_fingerprint 
+  # gather a toolchain fingerprint for this project's toolchain via an isolated
+  # cmake process so that add_compile_definitions() / add_compile_options() etc.
+  # in the toolchain file are captured correctly on all cmake implementations
+  compute_augmented_toolchain_fingerprint_isolated(live_toolchain_fingerprint
+    TOOLCHAIN_FILE "${toolchain_path_abs}"
     ADDITIONAL_VARIABLES "${HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES}"
   )
 

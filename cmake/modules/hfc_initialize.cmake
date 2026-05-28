@@ -333,6 +333,16 @@ function(hfc_initialize HFC_ROOT_DIR)
 
     set_property(GLOBAL PROPERTY HERMETIC_FETCHCONTENT_INITIALIZED ON)
     set(HERMETIC_FETCHCONTENT_ROOT_DIR "${HFC_ROOT_DIR}" CACHE INTERNAL "Root directory of Hermetic_FetchContent")
+
+    if(NOT DEFINED HFC_TOOLCHAIN_FINGERPRINT_LANGUAGES)
+      # Controls which languages are enabled in the isolated cmake mini-project used to compute
+      # the toolchain fingerprint. Valid values:
+      #   "root_project" - mirror the languages enabled in the calling project() (default)
+      #   "none"         - LANGUAGES NONE (fast; compiler-derived cache vars are not captured)
+      #   "<list>"       - explicit semicolon-separated list, e.g. "CXX" or "C;CXX"
+      set(HFC_TOOLCHAIN_FINGERPRINT_LANGUAGES "root_project" CACHE STRING
+        "Languages for the toolchain fingerprint mini-project (root_project | none | C | CXX | C;CXX | ...)")
+    endif()
     set(HERMETIC_FETCHCONTENT_CONSUMED_CACHETARGETFILES "" CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
 
     # this is global information but stateless / needs to be re-set at start

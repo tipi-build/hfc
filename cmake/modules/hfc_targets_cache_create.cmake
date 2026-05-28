@@ -218,7 +218,9 @@ function(hfc_targets_cache_create)
   endif()
 
   hfc_log_debug("Writing targets cache data to ${FN_ARG_CACHE_DESTINATION_FILE}")
-  file(WRITE "${FN_ARG_CACHE_DESTINATION_FILE}" "${targets_cache_content}")
+  file(WRITE "${FN_ARG_CACHE_DESTINATION_FILE}.tmp" "${targets_cache_content}")
+  file(COPY_FILE "${FN_ARG_CACHE_DESTINATION_FILE}.tmp" "${FN_ARG_CACHE_DESTINATION_FILE}" ONLY_IF_DIFFERENT)
+  file(REMOVE "${FN_ARG_CACHE_DESTINATION_FILE}.tmp")
 
 endfunction()
 
