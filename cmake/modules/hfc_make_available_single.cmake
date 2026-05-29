@@ -79,6 +79,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
   set(multi_value_params
     # Hermetic FetchContent arguments
     HERMETIC_FIND_PACKAGES
+    HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR
     BUILD_TARGETS
     CUSTOM_INSTALL_TARGETS
     HERMETIC_CONFIG_EXTRA_ARGS
@@ -168,6 +169,10 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
   if(DEFINED __PARAMS_HERMETIC_FIND_PACKAGES)
     list(APPEND proxy_toolchain_args HERMETIC_FIND_PACKAGES "${__PARAMS_HERMETIC_FIND_PACKAGES}")
+  endif()
+
+  if(DEFINED __PARAMS_HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR)
+    list(APPEND proxy_toolchain_args HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR "${__PARAMS_HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR}")
   endif()
 
   if(DEFINED __PARAMS_HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES)
@@ -297,6 +302,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
   hfc_log_debug(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
   set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}.install.done)
   set(hfc_configure_marker_file ${__PARAMS_BINARY_DIR}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}.configure.done)
+  set_property(GLOBAL PROPERTY HFC_${content_name}_FINGERPRINT "${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}")
 
   hfc_create_restore_prefixes(${content_name} ${__PARAMS_BINARY_DIR} ${cmake_contentInstallPath})
 

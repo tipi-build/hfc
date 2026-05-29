@@ -19,9 +19,28 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
     OUT_FOUND package_found
     OUT_TARGETS_INSTALL_PREFIX targetcache_install_prefix
     OUT_TARGETS_CACHE_FILE targetscache_file
+    OUT_FIND_PACKAGE_FORWARD_TO_NATIVE package_forward_to_native
   )
 
-  if("${package_found}" AND (NOT "${FORCE_SYSTEM_${package_name}}"))
+  if("${package_found}" AND "${package_forward_to_native}" AND (NOT "${FORCE_SYSTEM_${package_name}}"))
+    hfc_log_debug(" - forwarding to native find_package() with HFC install root: ${targetcache_install_prefix}")
+    set(${package_name}_ROOT "${targetcache_install_prefix}")
+    set(${package_name_uppercase}_ROOT "${targetcache_install_prefix}")
+    set(BACKUP_CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ${CMAKE_FIND_ROOT_PATH_MODE_PROGRAM})
+    set(BACKUP_CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ${CMAKE_FIND_ROOT_PATH_MODE_LIBRARY})
+    set(BACKUP_CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ${CMAKE_FIND_ROOT_PATH_MODE_INCLUDE})
+    set(BACKUP_CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ${CMAKE_FIND_ROOT_PATH_MODE_PACKAGE})
+    set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM BOTH)
+    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
+    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
+    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
+    find_package(${package_name} ${ARGN} BYPASS_PROVIDER NO_DEFAULT_PATH)
+    set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_PROGRAM})
+    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_LIBRARY})
+    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_INCLUDE})
+    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ${BACKUP_CMAKE_FIND_ROOT_PATH_MODE_PACKAGE})
+
+  elseif("${package_found}" AND (NOT "${FORCE_SYSTEM_${package_name}}"))
     hfc_log_debug(" - loading target cache from ${targetscache_file}")
 
     hfc_targets_cache_consume(
@@ -115,6 +134,7 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
     cmake_policy(POP)
   endif()
 
-  set(${package_name_uppercase}_FOUND ${package_found})
+  #set(${package_name_uppercase}_FOUND ${package_found})
+  set(${content_name}_FOUND ${package_found})
 
 endmacro()

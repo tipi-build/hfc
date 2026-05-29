@@ -1049,6 +1049,91 @@ namespace hfc::test {
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
   }
 
+  // Verifies that changing the parent toolchain causes a transitive proxy
+  // toolchain invalidation through a HERMETIC_FIND_PACKAGES dependency chain:
+  //
+  //   parent toolchain changes
+  //     -> HfcDependencyProvidedLib proxy toolchain changes
+  //          (live_toolchain_fingerprint baked into HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT)
+  //       -> HFC_HfcDependencyProvidedLib_FINGERPRINT changes
+  //         -> mathlib proxy toolchain changes
+  //              (HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS entry updated)
+  //           -> mathlib is reconfigured
+  //
+  // Uses the check_find_package template which already has the two-dependency
+  // structure: HfcDependencyProvidedLib (autotools) consumed by mathlib via
+  // HERMETIC_FIND_PACKAGES.
+  BOOST_FIXTURE_TEST_CASE(configure_stability_transitive_invalidation_via_find_packages, test_isolation_fixture) {
+    auto cmake_path = bp::search_path("cmake");
+    if(cmake_path.string().empty()) {
+      throw std::runtime_error("cmake not found on PATH");
+    }
+    test_variant data{cmake_path, false};
+
+    fs::path project_path = prepare_project_to_be_tested("check_find_package", data.is_cmake_re, temp_dir);
+    write_project_tipi_id(project_path);
+    write_simple_main(project_path, { "MathFunctions.h", "MathFunctionscbrt.h", "lib.h" });
+
+    std::string cmake_configure_command = get_cmake_configure_command(project_path, data);
+
+    auto hfc_dep_proxy  = project_path / "build" / "_deps" / "HfcDependencyProvidedLib-toolchain" / "hfc_hermetic_proxy_toolchain.cmake";
+    auto mathlib_proxy  = project_path / "build" / "_deps" / "mathlib-toolchain"                 / "hfc_hermetic_proxy_toolchain.cmake";
+    auto mathlib_build_dir       = project_path / "build" / "_deps" / "mathlib-build";
+    auto path_mathlib_config_log = mathlib_build_dir / "CMakeFiles" / "CMakeConfigureLog.yaml";
+
+    // ── Configure 1 ─────────────────────────────────────────────────────────
+    std::cout << "⚗️ [Configure 1]" << std::endl;
+    run_command(cmake_configure_command, project_path, test_env);
+
+    BOOST_REQUIRE(fs::exists(hfc_dep_proxy));
+    BOOST_REQUIRE(fs::exists(mathlib_proxy));
+    BOOST_REQUIRE(fs::exists(path_mathlib_config_log));
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    file_fingerprint fp_hfc_dep_proxy{hfc_dep_proxy};
+    file_fingerprint fp_mathlib_proxy{mathlib_proxy};
+    file_fingerprint fp_mathlib_config_log{path_mathlib_config_log};
+
+    // ── Configure 2 / no changes ─────────────────────────────────────────────
+    std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
+    run_command(cmake_configure_command, project_path, test_env);
+
+    BOOST_REQUIRE_MESSAGE(fp_hfc_dep_proxy.is_unchanged(),
+      "HfcDependencyProvidedLib proxy toolchain changed without any input change");
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_proxy.is_unchanged(),
+      "mathlib proxy toolchain changed without any input change");
+    BOOST_REQUIRE(fp_mathlib_config_log.is_unchanged());
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    // ── Modify parent toolchain ──────────────────────────────────────────────
+    // Appending to the toolchain changes the live_toolchain_fingerprint baked
+    // into HfcDependencyProvidedLib's proxy toolchain, which changes its SHA256
+    // hash, which changes HFC_HfcDependencyProvidedLib_FINGERPRINT, which
+    // appears in mathlib's HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS.
+    fs::path project_toolchain = get_project_toolchain_path(project_path);
+    append_to_toolchain(project_toolchain, "\nadd_compile_definitions(\"HFC_TRANSITIVE_CHANGE=1\")");
+
+    // ── Configure 3 / toolchain changed ─────────────────────────────────────
+    std::cout << "⚗️ [Configure 3 / toolchain changed]" << std::endl;
+    run_command(cmake_configure_command, project_path, test_env);
+
+    // First hop: HfcDependencyProvidedLib's proxy toolchain must reflect the
+    // new live_toolchain_fingerprint
+    BOOST_REQUIRE_MESSAGE(fp_hfc_dep_proxy.has_changed(),
+      "HfcDependencyProvidedLib proxy toolchain did not change after parent toolchain modification");
+
+    // Second hop: mathlib's proxy toolchain must reflect the updated
+    // HFC_HfcDependencyProvidedLib_FINGERPRINT via DEPENDENCY_FINGERPRINTS
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_proxy.has_changed(),
+      "mathlib proxy toolchain did not change -- HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS transitive invalidation failed");
+
+    // Consequence: mathlib was reconfigured because its proxy toolchain changed
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_config_log.has_changed(),
+      "mathlib was not reconfigured after transitive dependency fingerprint change");
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+  }
+
+
   // Generator expressions in add_compile_definitions() / add_compile_options()
   // are hashed as literal strings, not as evaluated values.  When the GENEX
   // references state that is NOT a CMAKE_* cache variable (here a user-defined

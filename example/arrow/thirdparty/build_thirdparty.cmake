@@ -204,7 +204,26 @@ FetchContent_MakeHermetic(
     set(BOOST_BUILD_TEST OFF CACHE BOOL "" FORCE)
     set(BOOST_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
   ]=]
-     
+
+  # Boost utility targets are defined in BoostConfig.cmake but not in the individual
+  # component *-targets.cmake files that HFC scans. Add them explicitly so that
+  # consumers (e.g. Arrow) that reference Boost::disable_autolinking can find them.
+  HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
+    if(NOT TARGET Boost::diagnostic_definitions)
+      add_library(Boost::diagnostic_definitions INTERFACE IMPORTED)
+    endif()
+    if(NOT TARGET Boost::disable_autolinking)
+      add_library(Boost::disable_autolinking INTERFACE IMPORTED)
+    endif()
+    if(NOT TARGET Boost::dynamic_linking)
+      add_library(Boost::dynamic_linking INTERFACE IMPORTED)
+    endif()
+    if(NOT TARGET Boost::boost)
+      add_library(Boost::boost INTERFACE IMPORTED)
+      set_property(TARGET Boost::boost PROPERTY INTERFACE_LINK_LIBRARIES Boost::headers)
+    endif()
+  ]=]
+
   SBOM_LICENSE "Boost Software License - Version 1.0"
   SBOM_SUPPLIER "Boost.org"
 )
@@ -338,6 +357,7 @@ set(ARROW_HERMETIC_SETTINGS [=[
 FetchContent_MakeHermetic(
    arrow
    HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;CURL;lz4;zstd;Bzip2;Boost;Snappy;Thrift;xsimd;jemalloc"
+   HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR "xsimd;Thrift"
    HERMETIC_TOOLCHAIN_EXTENSION "${ARROW_HERMETIC_SETTINGS}"
    HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
      # Arrow always references this target from arrow_static even when no deps are bundled

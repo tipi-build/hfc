@@ -43,6 +43,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
   set(multi_value_params
     HERMETIC_FIND_PACKAGES
+    HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR
     HERMETIC_CONFIG_EXTRA_ARGS
     HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES
   )
@@ -85,11 +86,17 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   set(project_dependency_contents "include(hfc_targets_cache_common)\n")
   foreach(package IN LISTS FN_ARG_HERMETIC_FIND_PACKAGES)
 
+    set(_fwd_to_native_arg "")
+    if("${package}" IN_LIST FN_ARG_HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR)
+      set(_fwd_to_native_arg "FIND_PACKAGE_FORWARD_TO_NATIVE TRUE ")
+    endif()
+
     string(APPEND
       project_dependency_contents
       "hfc_targets_cache_register_dependency_for_provider(${package} "
         "TARGETS_INSTALL_PREFIX \"${HERMETIC_FETCHCONTENT_${package}_INSTALL_PREFIX}\" "
         "TARGETS_CACHE_FILE \"${HERMETIC_FETCHCONTENT_${package}_TARGETS_CACHE_FILE}\" "
+        "${_fwd_to_native_arg}"
       ")\n"
     )
 
@@ -139,10 +146,19 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     ADDITIONAL_VARIABLES "${HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES}"
   )
 
-  # TODO: 
-  # query the "install marker info" for all HERMETIC_FIND_PACKAGES and integrate this
-  # into the proxy toolchain generation in order for the transient changes to be
-  # resolved, figure out how to handle system provided dependencies in an efficient way
+  # Build a combined fingerprint of all HERMETIC_FIND_PACKAGES dependencies so
+  # that any change in a consumed dependency's fingerprint propagates into this
+  # proxy toolchain file.  Because the file content changes, its SHA256 hash
+  # changes, which flows into HFC_${content_name}_FINGERPRINT and from there
+  # into the proxy toolchains of anything that lists this content as a dependency
+  # -- giving automatic transitive invalidation through the dependency chain.
+  set(dependency_fingerprints_content "")
+  foreach(_dep IN LISTS FN_ARG_HERMETIC_FIND_PACKAGES)
+    get_property(_dep_fingerprint GLOBAL PROPERTY HFC_${_dep}_FINGERPRINT)
+    if(_dep_fingerprint)
+      string(APPEND dependency_fingerprints_content "${_dep}=${_dep_fingerprint}\n")
+    endif()
+  endforeach()
 
   # generate the proxy toolchain (isolate ourselves from variable polution from parent scope)
   block(SCOPE_FOR VARIABLES
@@ -168,6 +184,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       FETCHCONTENT_BASE_DIR
       hfc_contents_forwarding_code
       live_toolchain_fingerprint
+      dependency_fingerprints_content
   )
     set(HERMETIC_FETCHCONTENT_CMAKE_TOOLCHAIN_FILE "${toolchain_path_abs}")
     set(HERMETIC_FETCHCONTENT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}")
@@ -176,6 +193,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     set(HERMETIC_FETCHCONTENT_FIND_PACKAGES "${FN_ARG_HERMETIC_FIND_PACKAGES}")
     set(HERMETIC_FETCHCONTENT_PROJECT_DEPENDENCIES_CONTENTS "${project_dependency_contents}")
     set(HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT "${live_toolchain_fingerprint}")
+    set(HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS "${dependency_fingerprints_content}")
 
     # Convert list to string for template substitution (optional parameter)
     if(FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS)
