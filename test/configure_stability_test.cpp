@@ -20,6 +20,7 @@
 namespace hfc::test { 
   namespace fs = boost::filesystem;
   namespace bp = boost::process;
+  namespace utf = boost::unit_test;
   using namespace std::string_literals;
 
 
@@ -1045,6 +1046,123 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c3_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_b3_installed_libMathFunctions.is_unchanged());
     BOOST_REQUIRE(ffingerprint_b3_project_binary.is_unchanged());
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+  }
+
+  // Generator expressions in add_compile_definitions() / add_compile_options()
+  // are hashed as literal strings, not as evaluated values.  When the GENEX
+  // references state that is NOT a CMAKE_* cache variable (here a user-defined
+  // cache variable accessed via $CACHE{...}), changing that state between
+  // configure runs produces an identical fingerprint even though the effective
+  // compilation flags differ.
+  //
+  // The GENEX $<$<BOOL:$CACHE{HFC_TEST_GENEX_FLAG}>:HFC_GENEX_FLAG_ACTIVE>
+  // is stored as a constant string regardless of the flag value.  HFC should
+  // detect the change and reconfigure the dependency -- but currently does not.
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, configure_stability_cmake_dependency_genex_blind_spot,
+      boost::unit_test::data::make(hfc::test::cmake_hidden_input_variants()), data){
+
+    fs::path project_path = prepare_project_to_be_tested("configure_stability_cmake_dependency_genex_blind_spot", data.is_cmake_re, temp_dir);
+    write_project_tipi_id(project_path);
+    write_simple_main(project_path, { "MathFunctions.h" }, "simple_example.cpp");
+
+    // Use the dedicated genex-blindspot toolchain which contains two GENEXs:
+    //   GENEX 1: $<$<BOOL:$CACHE{HFC_TEST_GENEX_FLAG}>:HFC_GENEX_FLAG_ACTIVE>
+    //            references a forwarded non-CMAKE_ cache variable
+    //   GENEX 2: $<$<CONFIG:Release>:HFC_TEST_RELEASE_MODE>
+    //            pure toolchain-local expression, no forwarding needed
+    fs::path toolchain_with_genex = get_project_toolchain_path(project_path, "linux-toolchain-genex-blindspot.cmake");
+
+    std::string cmake_configure_flag_off = get_cmake_configure_command(project_path, data, "-DHFC_TEST_GENEX_FLAG=OFF", toolchain_with_genex);
+    std::string cmake_configure_flag_on  = get_cmake_configure_command(project_path, data, "-DHFC_TEST_GENEX_FLAG=ON",  toolchain_with_genex);
+    std::string cmake_build_command      = get_cmake_build_command(project_path, data);
+
+    BOOST_REQUIRE(is_empty_directory(project_path / "build"));
+
+    auto mathlib_build_dir   = project_path / "build" / "_deps" / "mathlib-build";
+    auto mathlib_install_dir = project_path / "build" / "_deps" / "mathlib-install";
+    auto path_mathlib_CMakeConfigureLog = mathlib_build_dir / "CMakeFiles" / "CMakeConfigureLog.yaml";
+
+    auto extract_toolchain_fingerprint = [](const std::string& cmake_output) -> std::string {
+      boost::smatch m;
+      if(boost::regex_search(cmake_output, m, boost::regex{" - toolchain fingerprint: ([0-9a-f]+)"})) {
+        return m[1];
+      }
+      return "";
+    };
+
+    // Extracts the generation-time evaluated GENEX values logged by
+    // compute_augmented_toolchain_fingerprint_isolated after reading
+    // _hfc_genex_evals.txt from the mini-project.
+    auto extract_genex_evals = [](const std::string& cmake_output) -> std::string {
+      boost::smatch m;
+      if(boost::regex_search(cmake_output, m, boost::regex{" - toolchain genex evals: ([^\n]+)"})) {
+        return m[1];
+      }
+      return "";
+    };
+
+    // ── Configure 1 / GENEX flag = OFF ─────────────────────────────────────
+    std::cout << "⚗️ [Configure 1 / HFC_TEST_GENEX_FLAG=OFF]" << std::endl;
+    std::string output_c1 = run_command(cmake_configure_flag_off, project_path, test_env);
+
+    BOOST_REQUIRE(fs::exists(path_mathlib_CMakeConfigureLog));
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    std::string fingerprint_c1 = extract_toolchain_fingerprint(output_c1);
+    BOOST_REQUIRE_MESSAGE(!fingerprint_c1.empty(), "toolchain fingerprint not found in configure output");
+
+    // GENEX 2 (config-based) is always present; GENEX 1 (forwarded flag) is absent when OFF
+    std::string genex_evals_c1 = extract_genex_evals(output_c1);
+    BOOST_REQUIRE_MESSAGE(!genex_evals_c1.empty(), "genex evals not found in configure output -- _hfc_genex_evals.txt was not produced");
+    BOOST_REQUIRE_MESSAGE(genex_evals_c1.find("HFC_TEST_RELEASE_MODE") != std::string::npos,
+      "GENEX 2 (HFC_TEST_RELEASE_MODE) not found in genex evals: " << genex_evals_c1);
+    BOOST_REQUIRE_MESSAGE(genex_evals_c1.find("HFC_GENEX_FLAG_ACTIVE") == std::string::npos,
+      "GENEX 1 (HFC_GENEX_FLAG_ACTIVE) should be absent when flag=OFF, but found in: " << genex_evals_c1);
+
+    // ── Build 1 ─────────────────────────────────────────────────────────────
+    std::cout << "⚗️ [Build 1]" << std::endl;
+    run_command(cmake_build_command, project_path, test_env);
+
+    BOOST_REQUIRE(fs::exists(mathlib_install_dir / "lib" / "libMathFunctions.a"));
+    BOOST_REQUIRE(fs::exists(project_path / "build" / "MyExample"));
+
+    file_fingerprint ffingerprint_c1_CMakeConfigureLog{path_mathlib_CMakeConfigureLog};
+
+    // ── Configure 2 / no changes ────────────────────────────────────────────
+    std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
+    std::string output_c2 = run_command(cmake_configure_flag_off, project_path, test_env);
+
+    std::string fingerprint_c2 = extract_toolchain_fingerprint(output_c2);
+    BOOST_REQUIRE_MESSAGE(fingerprint_c1 == fingerprint_c2,
+      "fingerprint should be stable when nothing changes: " << fingerprint_c1 << " -> " << fingerprint_c2);
+    BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    // ── Configure 3 / GENEX flag toggled to ON ──────────────────────────────
+    std::cout << "⚗️ [Configure 3 / HFC_TEST_GENEX_FLAG=ON]" << std::endl;
+    std::string output_c3 = run_command(cmake_configure_flag_on, project_path, test_env);
+
+    std::string fingerprint_c3 = extract_toolchain_fingerprint(output_c3);
+    BOOST_REQUIRE_MESSAGE(!fingerprint_c3.empty(), "toolchain fingerprint not found in configure output");
+
+    // Both GENEXs must appear in the evaluated output:
+    //   GENEX 1 (forwarded flag=ON)  -> HFC_GENEX_FLAG_ACTIVE
+    //   GENEX 2 (pure config-based)  -> HFC_TEST_RELEASE_MODE
+    std::string genex_evals_c3 = extract_genex_evals(output_c3);
+    BOOST_REQUIRE_MESSAGE(!genex_evals_c3.empty(), "genex evals not found in configure output -- _hfc_genex_evals.txt was not produced");
+    BOOST_REQUIRE_MESSAGE(genex_evals_c3.find("HFC_GENEX_FLAG_ACTIVE") != std::string::npos,
+      "GENEX 1 (HFC_GENEX_FLAG_ACTIVE) not found in genex evals after flag=ON: " << genex_evals_c3);
+    BOOST_REQUIRE_MESSAGE(genex_evals_c3.find("HFC_TEST_RELEASE_MODE") != std::string::npos,
+      "GENEX 2 (HFC_TEST_RELEASE_MODE) not found in genex evals: " << genex_evals_c3);
+
+    // The fingerprint must have changed because GENEX 1's evaluation changed
+    BOOST_REQUIRE_MESSAGE(fingerprint_c1 != fingerprint_c3,
+      "GENEX blind spot: fingerprint did not change after toggling $CACHE{HFC_TEST_GENEX_FLAG} OFF -> ON: " << fingerprint_c3);
+
+    BOOST_REQUIRE_MESSAGE(ffingerprint_c1_CMakeConfigureLog.has_changed(),
+      "GENEX blind spot: dependency was not reconfigured after GENEX-accessible state change");
+
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
   }
 
