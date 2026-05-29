@@ -204,7 +204,21 @@ FetchContent_MakeHermetic(
     set(BOOST_BUILD_TEST OFF CACHE BOOL "" FORCE)
     set(BOOST_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
   ]=]
-     
+
+  HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
+    # Boost::dynamic_linking is created by BoostConfig.cmake logic (not exported)
+    # but referenced in INTERFACE_LINK_LIBRARIES of Boost targets
+    if(NOT TARGET Boost::dynamic_linking)
+      add_library(Boost::dynamic_linking INTERFACE IMPORTED)
+      set_property(TARGET Boost::dynamic_linking PROPERTY INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
+    endif()
+
+    if(NOT TARGET Boost::disable_autolinking)
+      add_library(Boost::disable_autolinking INTERFACE IMPORTED)
+      set_property(TARGET Boost::disable_autolinking PROPERTY INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
+    endif()
+  ]=]
+
   SBOM_LICENSE "Boost Software License - Version 1.0"
   SBOM_SUPPLIER "Boost.org"
 )
@@ -238,7 +252,8 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeHermetic(
-  Thrift 
+  Thrift
+  HERMETIC_VERSION "0.23.0"
   HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;Boost"
   HERMETIC_TOOLCHAIN_EXTENSION [=[
   set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
