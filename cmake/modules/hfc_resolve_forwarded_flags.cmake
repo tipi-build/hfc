@@ -1,6 +1,7 @@
 include_guard()
 
 include(hfc_log)
+include(hfc_genex_eval)
 
 # Configure + generate a nested "flags-resolver" CMake subproject that uses
 # file(GENERATE) + $<GENEX_EVAL> + $<TARGET_GENEX_EVAL> to evaluate any
@@ -83,7 +84,7 @@ function(hfc_resolve_forwarded_flags)
     if(NOT DEFINED ${_out_var})
       continue()
     endif()
-    file(STRINGS "${resolver_bin}/resolved_${_stem}.txt" _resolved)
+    hfc_genex_eval_read_resolved("${resolver_bin}" "resolved_${_stem}" _resolved)
     set(${${_out_var}} "${_resolved}" PARENT_SCOPE)
   endwhile()
 endfunction()

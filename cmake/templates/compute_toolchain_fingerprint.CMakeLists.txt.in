@@ -10,9 +10,25 @@ list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@")
 list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@/modules")
 
 include(hfc_toolchain_fingerprint)
+include(hfc_genex_eval)
 
+## Configure-time fingerprint
+# Hashes CMAKE_* cache variables, env vars, and any extra tracked variables.
+# GENEXs found in those variables are returned via hfc_detected_genex_exprs
+# for evaluation below
 compute_live_toolchain_fingerprint(hfc_isolated_toolchain_fingerprint
     GENEX_VARIABLES_TO_EVAL hfc_detected_genex_exprs
 )
-
 file(WRITE "@FINGERPRINT_OUTPUT_FILE@" "${hfc_isolated_toolchain_fingerprint}")
+
+## Generation-time GENEX evaluation
+# Evaluates all directory-property GENEXs (compile defs/options, include dirs,
+# link options/dirs) 
+# Extra GENEX expressions (hfc_detected_genex_exprs) detected from cache/additional 
+# variables above are folded in alongside the directory properties.
+hfc_genex_eval_capture_dir_properties("@CMAKE_BUILD_TYPE@")
+hfc_genex_eval_create_probe_target()
+hfc_genex_eval_produce_evals_file(
+    "${CMAKE_BINARY_DIR}/_hfc_genex_evals"
+    ADDITIONAL_GENEX_EXPRESSIONS ${hfc_detected_genex_exprs}
+)

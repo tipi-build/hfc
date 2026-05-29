@@ -1,34 +1,36 @@
 include_guard(GLOBAL)
 include(${CMAKE_CURRENT_LIST_DIR}/hfc_log.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/hfc_genex_eval.cmake)
 
-# this computes a live SHA256 fingerprint of the active CMake toolchain
-# taking into account all influential CMAKE_* cache variables,
-# as well as the following parameters and special rules:
-# - HFC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES  / global list appended to the additional variables
+# Computes a live SHA256 fingerprint of the active CMake toolchain taking into
+# account all influential CMAKE_* cache variables, as well as:
+# - HFC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES  / global list of extra vars
+#
+# GENEX_VARIABLES_TO_EVAL is an optional single-value OUTPUT parameter name.
+# When provided the function sets that variable in the caller's scope with the
+# list of raw GENEX expressions detected in cache/extra variables. These can
+# be used in the calling context to evaluate GENEXes as needed
+#
+# NOTE: directory-property GENEXs are NOT collected here as they are handled entirely
+# by hfc_genex_eval_capture_dir_properties() + hfc_genex_eval_produce_evals_file()
 function(compute_live_toolchain_fingerprint out_var)
-    # GENEX_VARIABLES_TO_EVAL is an optional single-value OUTPUT parameter name.
-    # When provided, the function sets that variable in the caller's scope with
-    # the list of GENEX expressions detected in the captured toolchain state.
-    # The function also schedules file(GENERATE) to evaluate them at generation
-    # time, writing results to ${CMAKE_BINARY_DIR}/_hfc_genex_evals.txt, which
-    # compute_augmented_toolchain_fingerprint_isolated() picks up after cmake exits.
     cmake_parse_arguments(PARSE_ARGV 1 FN_ARG "" "GENEX_VARIABLES_TO_EVAL" "")
 
     get_cmake_property(all_cache_vars CACHE_VARIABLES)
     set(toolchain_state "")
     set(_hfc_detected_genex_exprs "")
 
-    # helper: if value contains a generator expression, record it for later evaluation
+    # helper: if value contains a generator expression, record it
     macro(_hfc_collect_genex_if_present value)
         if("${value}" MATCHES "\\$<")
             list(APPEND _hfc_detected_genex_exprs "${value}")
         endif()
     endmacro()
 
-    # Capture Top-Level Directory Properties that calls to add_compile_options(), include_directories(), etc.
-    # as defined if evaluated at the root level by the toolchain.
-    # we provide a way to disable this as users might be in a situation where their main CMakeLists.txt
-    # has some of those that would polute the capture
+    # Capture Top-Level Directory Properties as literal strings for the
+    # configure-time hash.  GENEX evaluation of these properties is delegated
+    # to hfc_genex_eval_produce_evals_file() in the calling template so that
+    # $<LINK_LANGUAGE>, probe-target language context, etc. are handled correctly.
     if(NOT HFC_TOOLCHAIN_FINGERPRINT_DISABLE_CAPTURE_TOP_LEVEL_DIR_PROPERTIES)
       get_directory_property(dir_compile_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
       get_directory_property(dir_compile_opts DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_OPTIONS)
@@ -41,12 +43,6 @@ function(compute_live_toolchain_fingerprint out_var)
       string(APPEND toolchain_state "TOPLEVEL_DIR_LINK_OPTIONS=${dir_link_opts}\n")
       string(APPEND toolchain_state "TOPLEVEL_DIR_INCLUDE_DIRECTORIES=${dir_include_dirs}\n")
       string(APPEND toolchain_state "TOPLEVEL_DIR_LINK_DIRECTORIES=${dir_link_dirs}\n")
-
-      _hfc_collect_genex_if_present("${dir_compile_defs}")
-      _hfc_collect_genex_if_present("${dir_compile_opts}")
-      _hfc_collect_genex_if_present("${dir_link_opts}")
-      _hfc_collect_genex_if_present("${dir_include_dirs}")
-      _hfc_collect_genex_if_present("${dir_link_dirs}")
     endif()
 
     # Sort the list to guarantee deterministic hashing regardless of cache order
@@ -106,24 +102,9 @@ function(compute_live_toolchain_fingerprint out_var)
         endforeach()
     endif()
 
-    # Schedule generation-time evaluation of any detected GENEX expressions.
-    # file(GENERATE) runs after configure completes, so $CACHE{}, $<CONFIG>, and
-    # all other generator expressions are evaluated correctly.  The result is
-    # written to _hfc_genex_evals.txt and read by
-    # compute_augmented_toolchain_fingerprint_isolated() after cmake exits.
-    if(_hfc_detected_genex_exprs)
-        list(REMOVE_DUPLICATES _hfc_detected_genex_exprs)
-        set(_hfc_genex_file_content "")
-        foreach(_hfc_expr IN LISTS _hfc_detected_genex_exprs)
-            string(APPEND _hfc_genex_file_content "${_hfc_expr}\n")
-        endforeach()
-        file(GENERATE
-            OUTPUT "${CMAKE_BINARY_DIR}/_hfc_genex_evals.txt"
-            CONTENT "${_hfc_genex_file_content}"
-        )
-    endif()
-
-    # report detected GENEX expressions to the caller if requested
+    # Report detected GENEX expressions (from cache/extra vars) to the caller.
+    # Directory-property GENEXs are not included here; they are evaluated by
+    # the template via hfc_genex_eval_produce_evals_file().
     if(FN_ARG_GENEX_VARIABLES_TO_EVAL)
         set(${FN_ARG_GENEX_VARIABLES_TO_EVAL} "${_hfc_detected_genex_exprs}" PARENT_SCOPE)
     endif()
@@ -254,13 +235,11 @@ function(compute_augmented_toolchain_fingerprint_isolated out_var)
         # Fold the evaluated values into the fingerprint so that changes in
         # GENEX-accessible state (e.g. $CACHE{} variables not in the CMAKE_*
         # capture list) are reflected in the final hash.
-        set(_hfc_genex_evals_file "${tmp_dir}/_hfc_genex_evals.txt")
-        if(EXISTS "${_hfc_genex_evals_file}")
-            file(READ "${_hfc_genex_evals_file}" _hfc_genex_evals)
-            string(STRIP "${_hfc_genex_evals}" _hfc_genex_evals)
-            string(REPLACE "\n" ";" _hfc_genex_evals_log "${_hfc_genex_evals}")
-            hfc_log(STATUS " - toolchain genex evals: ${_hfc_genex_evals_log}")
-            string(APPEND live_fingerprint "\nGENEX_EVALS=${_hfc_genex_evals}")
+        hfc_genex_eval_read_resolved("${tmp_dir}" "_hfc_genex_evals" _hfc_genex_evals)
+        if(_hfc_genex_evals)
+            hfc_log(STATUS " - toolchain genex evals: ${_hfc_genex_evals}")
+            list(JOIN _hfc_genex_evals "\n" _hfc_genex_evals_str)
+            string(APPEND live_fingerprint "\nGENEX_EVALS=${_hfc_genex_evals_str}")
         endif()
 
         set_property(GLOBAL PROPERTY "${dedup_property}" "${live_fingerprint}")
