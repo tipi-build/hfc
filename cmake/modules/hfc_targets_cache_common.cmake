@@ -139,6 +139,7 @@ endfunction()
 # hfc_targets_cache_register_dependency_for_provider(
 #   TARGETS_INSTALL_PREFIX <target install prefix> # path to the installed/ tree
 #   TARGETS_CACHE_FILE <library cache file>       # library cache file
+#   VERSION <version string>                      # optional: package version
 # )
 function(hfc_targets_cache_register_dependency_for_provider content_name)
 
@@ -147,6 +148,7 @@ function(hfc_targets_cache_register_dependency_for_provider content_name)
   set(oneValueArgs
     TARGETS_INSTALL_PREFIX
     TARGETS_CACHE_FILE
+    VERSION
   )
   set(multiValueArgs "")
 
@@ -164,17 +166,22 @@ function(hfc_targets_cache_register_dependency_for_provider content_name)
   set(HERMETIC_FETCHCONTENT_${content_name}_INSTALL_PREFIX "${FN_ARG_TARGETS_INSTALL_PREFIX}" CACHE INTERNAL "Hermetic dependency install prefix for ${content_name}")
   set(HERMETIC_FETCHCONTENT_${content_name}_TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}" CACHE INTERNAL "Hermetic dependency targets cache files for ${content_name}")
 
+  if(FN_ARG_VERSION)
+    set(HERMETIC_FETCHCONTENT_${content_name}_VERSION "${FN_ARG_VERSION}" CACHE INTERNAL "Hermetic dependency version for ${content_name}")
+  endif()
+
 endfunction()
 
 
 #
-# Retrieve info for registered target cache dependencies for a given content_name
+# Retrieve info registered by hfc_targets_cache_register_dependency_for_provider for a given content_name
 #
 # Usage:
-# hfc_targets_cache_register_dependency_for_provider(
+# hfc_targets_cache_get_registered_info(
 #   OUT_FOUND <variable name>                           # TRUE if the dependency was found
 #   OUT_TARGETS_INSTALL_PREFIX <target install prefix>  # path to the installed/ tree
 #   OUT_TARGETS_CACHE_FILE <library cache file>         # path to the targets cache file
+#   OUT_VERSION <variable name>                         # optional: package version
 # )
 function(hfc_targets_cache_get_registered_info content_name)
 
@@ -184,6 +191,7 @@ function(hfc_targets_cache_get_registered_info content_name)
     OUT_FOUND
     OUT_TARGETS_INSTALL_PREFIX
     OUT_TARGETS_CACHE_FILE
+    OUT_VERSION
   )
   set(multiValueArgs "")
 
@@ -207,6 +215,9 @@ function(hfc_targets_cache_get_registered_info content_name)
     set(${FN_ARG_OUT_FOUND} TRUE PARENT_SCOPE)
     set(${FN_ARG_OUT_TARGETS_INSTALL_PREFIX} "${HERMETIC_FETCHCONTENT_${content_name}_INSTALL_PREFIX}" PARENT_SCOPE)
     set(${FN_ARG_OUT_TARGETS_CACHE_FILE} "${HERMETIC_FETCHCONTENT_${content_name}_TARGETS_CACHE_FILE}" PARENT_SCOPE)
+    if(FN_ARG_OUT_VERSION AND DEFINED HERMETIC_FETCHCONTENT_${content_name}_VERSION)
+      set(${FN_ARG_OUT_VERSION} "${HERMETIC_FETCHCONTENT_${content_name}_VERSION}" PARENT_SCOPE)
+    endif()
   else()
     set(${FN_ARG_OUT_FOUND} FALSE PARENT_SCOPE)
   endif()

@@ -83,11 +83,17 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   set(project_dependency_contents "include(hfc_targets_cache_common)\n")
   foreach(package IN LISTS FN_ARG_HERMETIC_FIND_PACKAGES)
 
+    set(_hfc_proxy_version_arg "")
+    if(DEFINED HERMETIC_FETCHCONTENT_${package}_VERSION)
+      set(_hfc_proxy_version_arg "VERSION \"${HERMETIC_FETCHCONTENT_${package}_VERSION}\" ")
+    endif()
+
     string(APPEND
       project_dependency_contents
       "hfc_targets_cache_register_dependency_for_provider(${package} "
         "TARGETS_INSTALL_PREFIX \"${HERMETIC_FETCHCONTENT_${package}_INSTALL_PREFIX}\" "
         "TARGETS_CACHE_FILE \"${HERMETIC_FETCHCONTENT_${package}_TARGETS_CACHE_FILE}\" "
+        "${_hfc_proxy_version_arg}"
       ")\n"
     )
 

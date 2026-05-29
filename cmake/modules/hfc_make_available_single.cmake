@@ -69,6 +69,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_DISCOVER_TARGETS_FILE_PATTERN
 
     HERMETIC_BUILD_AT_CONFIGURE_TIME
+    HERMETIC_VERSION
 
     # Disambiguate parameter parsing with all supported
     # fetchcontent-details
@@ -390,6 +391,11 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
     hfc_log(FATAL_ERROR "Hermetic FetchContent does not currently support the target build system ${__PARAMS_HERMETIC_BUILD_SYSTEM}. Please choose one of the following 'cmake' (default) 'autotools' 'openssl' in your FetchContent_MakeHermetic() declaration.")
 
+  endif()
+
+  # User-specified HERMETIC_VERSION takes priority over auto-detection
+  if(__PARAMS_HERMETIC_VERSION)
+    set(HERMETIC_FETCHCONTENT_${content_name}_VERSION "${__PARAMS_HERMETIC_VERSION}" CACHE INTERNAL "User-specified hermetic dependency version for ${content_name}" FORCE)
   endif()
 
   hfc_goldilock_release("${hfc_configure_lock_file}" lock_success)

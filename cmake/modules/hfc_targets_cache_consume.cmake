@@ -26,6 +26,10 @@ function(hfc_targets_cache_consume content_name)
 
   if("${content_name}" IN_LIST HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS)
     hfc_log(STATUS "Target cache for ${content_name} already consumed - skipping")
+    # Still populate OUT_IMPORTED_LIBRARIES from the cached list so the provider can set variables
+    if(FN_ARG_OUT_IMPORTED_LIBRARIES AND DEFINED HERMETIC_FETCHCONTENT_${content_name}_IMPORTED_LIBRARIES)
+      set(${FN_ARG_OUT_IMPORTED_LIBRARIES} "${HERMETIC_FETCHCONTENT_${content_name}_IMPORTED_LIBRARIES}" PARENT_SCOPE)
+    endif()
     return()
   endif()
 
@@ -325,14 +329,62 @@ function(hfc_targets_cache_consume content_name)
     set(${FN_ARG_OUT_LIBRARY_BYPRODUCTS} "${out_byproducts}" PARENT_SCOPE)
   endif()
 
+  # Cache the imported libraries list so it can be returned on subsequent "already consumed" calls
+  set(HERMETIC_FETCHCONTENT_${content_name}_IMPORTED_LIBRARIES "${processed_targets}" CACHE INTERNAL "Imported libraries for ${content_name}")
+
   # store global state info
   set(all_consumed_target_contents ${HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS} ${content_name})
   list(REMOVE_DUPLICATES all_consumed_target_contents)
   set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS ${all_consumed_target_contents} CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
+
+  # Extract package version from ConfigVersion.cmake in the install prefix
+  # Try both exact case and lowercase since packages install inconsistently
+  set(_hfc_detected_version "")
+  string(TOLOWER "${content_name}" _hfc_content_name_lower)
+  file(GLOB _hfc_config_version_files
+    "${FN_ARG_TARGET_INSTALL_PREFIX}/lib/cmake/${content_name}/*ConfigVersion.cmake"
+    "${FN_ARG_TARGET_INSTALL_PREFIX}/lib/cmake/${content_name}/*-config-version.cmake"
+    "${FN_ARG_TARGET_INSTALL_PREFIX}/lib/cmake/${_hfc_content_name_lower}/*ConfigVersion.cmake"
+    "${FN_ARG_TARGET_INSTALL_PREFIX}/lib/cmake/${_hfc_content_name_lower}/*-config-version.cmake"
+  )
+  hfc_log_debug("Version detection for ${content_name}: config_version_files=${_hfc_config_version_files}")
+  if(_hfc_config_version_files)
+    list(GET _hfc_config_version_files 0 _hfc_config_version_file)
+    # Read as text instead of include() because ConfigVersion files contain return()
+    # which would exit our calling function (CMake include() return() semantics)
+    file(READ "${_hfc_config_version_file}" _hfc_config_version_content)
+    string(REGEX MATCH "set\\(PACKAGE_VERSION \"([0-9]+([.][0-9]+)*)\"" _hfc_version_match "${_hfc_config_version_content}")
+    if(CMAKE_MATCH_1)
+      set(_hfc_detected_version "${CMAKE_MATCH_1}")
+    endif()
+    hfc_log_debug("Version detection for ${content_name}: detected=${_hfc_detected_version}")
+  endif()
+
+  # Fallback: parse version from pkg-config .pc files in the install prefix
+  if(NOT _hfc_detected_version)
+    file(GLOB _hfc_pc_files
+      "${FN_ARG_TARGET_INSTALL_PREFIX}/lib/pkgconfig/${_hfc_content_name_lower}*.pc"
+      "${FN_ARG_TARGET_INSTALL_PREFIX}/lib/pkgconfig/${content_name}*.pc"
+    )
+    if(_hfc_pc_files)
+      list(GET _hfc_pc_files 0 _hfc_pc_file)
+      file(STRINGS "${_hfc_pc_file}" _hfc_pc_version_line REGEX "^Version:")
+      if(_hfc_pc_version_line)
+        string(REGEX REPLACE "^Version:[ \t]*" "" _hfc_detected_version "${_hfc_pc_version_line}")
+      endif()
+    endif()
+  endif()
+
+  set(_hfc_register_version_arg "")
+  if(_hfc_detected_version)
+    set(_hfc_register_version_arg VERSION "${_hfc_detected_version}")
+  endif()
+
   hfc_targets_cache_register_dependency_for_provider(
     ${content_name}
     TARGETS_INSTALL_PREFIX "${FN_ARG_TARGET_INSTALL_PREFIX}"
     TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}"
+    ${_hfc_register_version_arg}
   )
 
   #

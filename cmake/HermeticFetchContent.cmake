@@ -66,7 +66,9 @@ Commands
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
       [HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION <cmake code>]
+      [HERMETIC_CMAKE_ADDITIONAL_EXPORTS <cmake code>]
       [HERMETIC_DISCOVER_TARGETS_FILE_PATTERN <regex pattern>]
+      [HERMETIC_VERSION <version string>]
     )
 
   The ``FetchContent_MakeHermetic()`` function records options that describe the additional
@@ -343,6 +345,48 @@ Commands
   but is not complying to the common file nameming scheme for those exports (hermetic fetchContent
   uses the following by default ``([Tt]argets|[Ee]xport(s?))\.cmake``), another pattern can be
   supplied using the ``HERMETIC_DISCOVER_TARGETS_FILE_PATTERN`` option.
+
+  The ``HERMETIC_CMAKE_ADDITIONAL_EXPORTS`` option enables injecting CMake code that will be
+  executed after HFC's target discovery phase completes. This is useful for declaring targets
+  that are created by package config logic (e.g. ``BoostConfig.cmake``) but are not present
+  in the package's export files. These targets are typically utility or interface targets
+  referenced in ``INTERFACE_LINK_LIBRARIES`` of exported targets.
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      Boost
+      HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
+        # Boost::disable_autolinking is created by BoostConfig.cmake logic
+        # but referenced in INTERFACE_LINK_LIBRARIES of Boost targets
+        if(NOT TARGET Boost::disable_autolinking)
+          add_library(Boost::disable_autolinking INTERFACE IMPORTED)
+          set_property(TARGET Boost::disable_autolinking
+            PROPERTY INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
+        endif()
+      ]=]
+    )
+
+  The ``HERMETIC_VERSION`` option allows specifying an explicit version string for the package.
+  When provided, this version takes priority over any auto-detected version. The version is
+  exposed as ``${PackageName}_VERSION`` and ``${PACKAGENAME}_VERSION`` when the package is
+  consumed via ``find_package()`` in dependent sub-builds.
+
+  HFC automatically detects version from installed ``*ConfigVersion.cmake`` files and
+  pkg-config ``.pc`` files. ``HERMETIC_VERSION`` is needed for packages that do not install
+  any version metadata (e.g. Apache Thrift does not provide a ``ConfigVersion.cmake`` or
+  ``.pc`` file).
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      Thrift
+      HERMETIC_VERSION "0.23.0"
+      HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;Boost"
+      HERMETIC_TOOLCHAIN_EXTENSION [=[
+        set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+      ]=]
+    )
 
 .. command:: HermeticFetchContent_MakeAvailableAtBuildTime
 
