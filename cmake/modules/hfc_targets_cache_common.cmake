@@ -143,7 +143,7 @@ endfunction()
 function(hfc_targets_cache_register_dependency_for_provider content_name)
 
   # arguments parsing
-  set(options "")
+  set(options FIND_PACKAGE_FORWARD_TO_NATIVE)
   set(oneValueArgs
     TARGETS_INSTALL_PREFIX
     TARGETS_CACHE_FILE
@@ -163,6 +163,7 @@ function(hfc_targets_cache_register_dependency_for_provider content_name)
   set(HERMETIC_FETCHCONTENT_${content_name}_FOUND ON CACHE INTERNAL "Hermetic dependency ${content_name} is known")
   set(HERMETIC_FETCHCONTENT_${content_name}_INSTALL_PREFIX "${FN_ARG_TARGETS_INSTALL_PREFIX}" CACHE INTERNAL "Hermetic dependency install prefix for ${content_name}")
   set(HERMETIC_FETCHCONTENT_${content_name}_TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}" CACHE INTERNAL "Hermetic dependency targets cache files for ${content_name}")
+  set(HERMETIC_FETCHCONTENT_${content_name}_FIND_PACKAGE_FORWARD_TO_NATIVE "${FN_ARG_FIND_PACKAGE_FORWARD_TO_NATIVE}" CACHE INTERNAL "Forward find_package(${content_name}) to native cmake using HFC install prefix as root")
 
 endfunction()
 
@@ -184,6 +185,7 @@ function(hfc_targets_cache_get_registered_info content_name)
     OUT_FOUND
     OUT_TARGETS_INSTALL_PREFIX
     OUT_TARGETS_CACHE_FILE
+    OUT_FIND_PACKAGE_FORWARD_TO_NATIVE
   )
   set(multiValueArgs "")
 
@@ -207,6 +209,9 @@ function(hfc_targets_cache_get_registered_info content_name)
     set(${FN_ARG_OUT_FOUND} TRUE PARENT_SCOPE)
     set(${FN_ARG_OUT_TARGETS_INSTALL_PREFIX} "${HERMETIC_FETCHCONTENT_${content_name}_INSTALL_PREFIX}" PARENT_SCOPE)
     set(${FN_ARG_OUT_TARGETS_CACHE_FILE} "${HERMETIC_FETCHCONTENT_${content_name}_TARGETS_CACHE_FILE}" PARENT_SCOPE)
+    if(FN_ARG_OUT_FIND_PACKAGE_FORWARD_TO_NATIVE)
+      set(${FN_ARG_OUT_FIND_PACKAGE_FORWARD_TO_NATIVE} "${HERMETIC_FETCHCONTENT_${content_name}_FIND_PACKAGE_FORWARD_TO_NATIVE}" PARENT_SCOPE)
+    endif()
   else()
     set(${FN_ARG_OUT_FOUND} FALSE PARENT_SCOPE)
   endif()

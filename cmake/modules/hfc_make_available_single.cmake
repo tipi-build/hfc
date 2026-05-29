@@ -79,11 +79,50 @@ function(hfc_make_available_single content_name build_at_configure_time)
   set(multi_value_params
     # Hermetic FetchContent arguments
     HERMETIC_FIND_PACKAGES
+    HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR
     BUILD_TARGETS
     CUSTOM_INSTALL_TARGETS
     HERMETIC_CONFIG_EXTRA_ARGS
     HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES
   )
+
+  # Pre-scan __fetchcontent_arguments for HERMETIC_<pkg>_FIND_PACKAGE_EXTRA_CODE
+  # BEFORE cmake_parse_arguments. These dynamic keyword patterns are not in any
+  # known parameter category, so cmake_parse_arguments would otherwise consume them
+  # as values of HERMETIC_FIND_PACKAGES (a multi_value_arg), corrupting that list.
+  # We strip them out here, rebuild __fetchcontent_arguments without them, and fold
+  # each code block into __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION after parsing.
+  # Use bracket arguments [=[...]=] for multi-statement code to avoid semicolons
+  # being interpreted as cmake list separators.
+  set(_hfc_clean_args "")
+  set(_hfc_scan_list ${__fetchcontent_arguments})
+  list(LENGTH _hfc_scan_list _hfc_scan_len)
+  set(_hfc_scan_i 0)
+  while(_hfc_scan_i LESS _hfc_scan_len)
+    list(GET _hfc_scan_list ${_hfc_scan_i} _hfc_scan_item)
+    if(_hfc_scan_item MATCHES "^HERMETIC_(.+)_FIND_PACKAGE_EXTRA_CODE$")
+      math(EXPR _hfc_scan_val_i "${_hfc_scan_i} + 1")
+      if(_hfc_scan_val_i LESS _hfc_scan_len)
+        list(GET _hfc_scan_list ${_hfc_scan_val_i} _hfc_scan_code)
+        set(_hfc_extra_code_${CMAKE_MATCH_1} "${_hfc_scan_code}")
+        list(APPEND _hfc_extra_code_pkgs "${CMAKE_MATCH_1}")
+        math(EXPR _hfc_scan_i "${_hfc_scan_i} + 2")
+      else()
+        hfc_log(FATAL_ERROR "HERMETIC_${CMAKE_MATCH_1}_FIND_PACKAGE_EXTRA_CODE requires a value")
+      endif()
+    else()
+      list(APPEND _hfc_clean_args "${_hfc_scan_item}")
+      math(EXPR _hfc_scan_i "${_hfc_scan_i} + 1")
+    endif()
+  endwhile()
+  set(__fetchcontent_arguments ${_hfc_clean_args})
+  unset(_hfc_clean_args)
+  unset(_hfc_scan_list)
+  unset(_hfc_scan_len)
+  unset(_hfc_scan_i)
+  unset(_hfc_scan_item)
+  unset(_hfc_scan_val_i)
+  unset(_hfc_scan_code)
 
   cmake_parse_arguments(
     __PARAMS
@@ -92,6 +131,17 @@ function(hfc_make_available_single content_name build_at_configure_time)
     "${multi_value_params}"
     ${__fetchcontent_arguments}
   )
+
+  # Fold the collected extra-code blocks into the toolchain extension now that
+  # __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION is available from cmake_parse_arguments.
+  foreach(_hfc_epkg IN LISTS _hfc_extra_code_pkgs)
+    string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION
+      "set(HERMETIC_${_hfc_epkg}_FIND_PACKAGE_EXTRA_CODE [==[${_hfc_extra_code_${_hfc_epkg}}]==])\n"
+    )
+    unset(_hfc_extra_code_${_hfc_epkg})
+  endforeach()
+  unset(_hfc_extra_code_pkgs)
+  unset(_hfc_epkg)
 
   if(NOT __PARAMS_MAKE_EXECUTABLES_FINDABLE)
     set(__PARAMS_MAKE_EXECUTABLES_FINDABLE FALSE)
@@ -168,6 +218,10 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
   if(DEFINED __PARAMS_HERMETIC_FIND_PACKAGES)
     list(APPEND proxy_toolchain_args HERMETIC_FIND_PACKAGES "${__PARAMS_HERMETIC_FIND_PACKAGES}")
+  endif()
+
+  if(DEFINED __PARAMS_HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR)
+    list(APPEND proxy_toolchain_args HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR "${__PARAMS_HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR}")
   endif()
 
   if(DEFINED __PARAMS_HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES)
@@ -290,6 +344,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
   hfc_log_debug(" - Hash of ${content_name} persisted details is ${${content_name}_DETAILS_HASH}" )
   set(hfc_install_marker_file ${cmake_contentInstallPath}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}.install.done)
   set(hfc_configure_marker_file ${__PARAMS_BINARY_DIR}/hfc.${content_name}.${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}.configure.done)
+  set_property(GLOBAL PROPERTY HFC_${content_name}_FINGERPRINT "${${content_name}_DETAILS_HASH}.${proxy_toolchain_hash}")
 
   hfc_create_restore_prefixes(${content_name} ${__PARAMS_BINARY_DIR} ${cmake_contentInstallPath})
 

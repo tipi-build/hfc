@@ -204,5 +204,6 @@ jobs:
       - name: build with cmake
         run: |
           cd hfc_project/example/arrow
+          export HERMETIC_FETCHCONTENT_LOG_DEBUG=ON
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
           tipi run cmake --build ./build

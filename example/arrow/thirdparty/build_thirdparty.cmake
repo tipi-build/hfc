@@ -6,6 +6,8 @@ if(DEFINED ENV{COMMIT_ID} AND NOT "$ENV{COMMIT_ID}" STREQUAL "")
     set(hfc_REVISION "$ENV{COMMIT_ID}")
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "/workspaces/hfc/cmake")
+
 include(HermeticFetchContent OPTIONAL RESULT_VARIABLE hfc_included)
 if(NOT hfc_included)
   FetchContent_Populate(
@@ -58,7 +60,7 @@ FetchContent_MakeHermetic(
       IMPORTED_LINK_INTERFACE_LANGUAGES "C"
       IMPORTED_LOCATION "${OPENSSL_CRYPTO_LIBRARY}")
     _OpenSSL_target_add_dependencies(OpenSSL::Crypto)
-    
+
     add_library(OpenSSL::SSL UNKNOWN IMPORTED)
     set_target_properties(OpenSSL::SSL PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}")
@@ -85,7 +87,7 @@ FetchContent_Declare(
 
 FetchContent_MakeHermetic(
   ZLIB
-  
+
   HERMETIC_TOOLCHAIN_EXTENSION [=[
     set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
   ]=]
@@ -204,7 +206,21 @@ FetchContent_MakeHermetic(
     set(BOOST_BUILD_TEST OFF CACHE BOOL "" FORCE)
     set(BOOST_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
   ]=]
-     
+
+  HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
+    # Boost::dynamic_linking is created by BoostConfig.cmake logic (not exported)
+    # but referenced in INTERFACE_LINK_LIBRARIES of Boost targets
+    if(NOT TARGET Boost::dynamic_linking)
+      add_library(Boost::dynamic_linking INTERFACE IMPORTED)
+      set_property(TARGET Boost::dynamic_linking PROPERTY INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
+    endif()
+
+    if(NOT TARGET Boost::disable_autolinking)
+      add_library(Boost::disable_autolinking INTERFACE IMPORTED)
+      set_property(TARGET Boost::disable_autolinking PROPERTY INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
+    endif()
+  ]=]
+
   SBOM_LICENSE "Boost Software License - Version 1.0"
   SBOM_SUPPLIER "Boost.org"
 )
@@ -218,12 +234,12 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeHermetic(
-  Snappy 
+  Snappy
   HERMETIC_TOOLCHAIN_EXTENSION [=[
     set(SNAPPY_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(SNAPPY_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
   ]=]
-  
+
 
   SBOM_LICENSE "BSD License 2.0"
   SBOM_SUPPLIER "Google Inc."
@@ -238,23 +254,22 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeHermetic(
-  Thrift 
+  Thrift
   HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;Boost"
   HERMETIC_TOOLCHAIN_EXTENSION [=[
-  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-  set(BUILD_TUTORIALS OFF CACHE BOOL "" FORCE)
-  set(BUILD_COMPILER OFF CACHE BOOL "" FORCE)
-  set(BUILD_CPP ON CACHE BOOL "" FORCE)
-  set(BUILD_C_GLIB OFF CACHE BOOL "" FORCE)
-  set(BUILD_JAVASCRIPT OFF CACHE BOOL "" FORCE)
-  set(BUILD_JAVA OFF CACHE BOOL "" FORCE)
-  set(BUILD_KOTLIN OFF CACHE BOOL "" FORCE)
-  set(BUILD_NODEJS OFF CACHE BOOL "" FORCE)
-  set(BUILD_PYTHON OFF CACHE BOOL "" FORCE)
-  set(Boost_with_cmake ON CACHE BOOL "" FORCE)
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    set(BUILD_TUTORIALS OFF CACHE BOOL "" FORCE)
+    set(BUILD_COMPILER OFF CACHE BOOL "" FORCE)
+    set(BUILD_CPP ON CACHE BOOL "" FORCE)
+    set(BUILD_C_GLIB OFF CACHE BOOL "" FORCE)
+    set(BUILD_JAVASCRIPT OFF CACHE BOOL "" FORCE)
+    set(BUILD_JAVA OFF CACHE BOOL "" FORCE)
+    set(BUILD_KOTLIN OFF CACHE BOOL "" FORCE)
+    set(BUILD_NODEJS OFF CACHE BOOL "" FORCE)
+    set(BUILD_PYTHON OFF CACHE BOOL "" FORCE)
+    set(Boost_with_cmake ON CACHE BOOL "" FORCE)
   ]=]
 
-  
   SBOM_LICENSE "Apache License Version 2.0"
   SBOM_SUPPLIER "Apache Software Foundation"
 )
@@ -273,7 +288,7 @@ FetchContent_MakeHermetic(
   set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
   set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
   ]=]
-  
+
 
   SBOM_LICENSE "BSD-3-Clause license"
   SBOM_SUPPLIER "Johan Mabille and Sylvain Corlay"
@@ -288,19 +303,19 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeHermetic(
-  jemalloc 
+  jemalloc
   HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
     [=[
       add_library(jemalloc::jemalloc STATIC IMPORTED)
       set_property(TARGET jemalloc::jemalloc PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libjemalloc.a")
       set_property(TARGET jemalloc::jemalloc PROPERTY INTERFACE_INCLUDE_DIRECTORIES @HFC_PREFIX_PLACEHOLDER@/include)
     ]=]
-
   HERMETIC_BUILD_SYSTEM autotools
   SBOM_LICENSE "Modified BSD 2-Clause"
   SBOM_SUPPLIER "Jason Evans, Mozilla Foundation., Facebook, Inc."
-
 )
+
+HermeticFetchContent_AddContentAliases(jemalloc "jemallocAlt")
 
 HermeticFetchContent_MakeAvailableAtConfigureTime(jemalloc)
 
@@ -333,21 +348,37 @@ set(ARROW_HERMETIC_SETTINGS [=[
   set(ARROW_USE_CCACHE OFF CACHE BOOL "" FORCE)
   set(FETCHCONTENT_QUIET OFF CACHE BOOL "" FORCE)
   set(ARROW_BUNDLED_STATIC_LIBS "" CACHE STRING "" FORCE)
+
+  # force jemalloc lookup in system:
+  set(jemalloc_SOURCE "SYSTEM" CACHE STRING "" FORCE)
 ]=])
 
 FetchContent_MakeHermetic(
-   arrow
-   HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;CURL;lz4;zstd;Bzip2;Boost;Snappy;Thrift;xsimd;jemalloc"
-   HERMETIC_TOOLCHAIN_EXTENSION "${ARROW_HERMETIC_SETTINGS}"
-   HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
-     # Arrow always references this target from arrow_static even when no deps are bundled
-     if(NOT TARGET Arrow::arrow_bundled_dependencies)
-       add_library(Arrow::arrow_bundled_dependencies STATIC IMPORTED)
-       set_property(TARGET Arrow::arrow_bundled_dependencies PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libarrow_bundled_dependencies.a")
-     endif()
-   ]=]
-   SBOM_LICENSE "Apache License Version 2.0"
-   SBOM_SUPPLIER "The Apache Foundation"
+  arrow
+  HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;CURL;lz4;zstd;Bzip2;Boost;Snappy;Thrift;xsimd;jemalloc;jemallocAlt"
+
+  HERMETIC_TOOLCHAIN_EXTENSION "${ARROW_HERMETIC_SETTINGS}"
+  HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
+    # Arrow always references this target from arrow_static even when no deps are bundled
+    if(NOT TARGET Arrow::arrow_bundled_dependencies)
+      add_library(Arrow::arrow_bundled_dependencies STATIC IMPORTED)
+      set_property(TARGET Arrow::arrow_bundled_dependencies PROPERTY IMPORTED_LOCATION "@HFC_PREFIX_PLACEHOLDER@/lib/libarrow_bundled_dependencies.a")
+    endif()
+
+    # Arrow uses jemalloc internally but doesn't export it in INTERFACE_LINK_LIBRARIES
+    set_property(TARGET Arrow::arrow_static APPEND PROPERTY INTERFACE_LINK_LIBRARIES jemalloc::jemalloc)
+  ]=]
+  #HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR "xsimd;Thrift"
+  HERMETIC_Thrift_FIND_PACKAGE_EXTRA_CODE [=[
+    set(Thrift_VERSION "0.23.0")
+  ]=]
+  HERMETIC_xsimd_FIND_PACKAGE_EXTRA_CODE [=[
+    set(xsimd_VERSION "13.0.0")
+  ]=]
+
+
+  SBOM_LICENSE "Apache License Version 2.0"
+  SBOM_SUPPLIER "The Apache Foundation"
 )
 
 HermeticFetchContent_MakeAvailableAtConfigureTime(arrow)

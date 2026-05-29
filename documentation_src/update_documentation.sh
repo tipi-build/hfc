@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+export LC_ALL=C.UTF-8
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if [ -z "$SCRIPT_DIR" ]
