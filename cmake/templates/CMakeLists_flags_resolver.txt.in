@@ -4,61 +4,8 @@ cmake_minimum_required(VERSION 3.27.6)
 # and those conditionals need to resolve the same way the real build does.
 project(@PROJECT_NAME@-flags-resolver C CXX)
 
-set(_resolver_config "@CMAKE_BUILD_TYPE@")
-string(TOUPPER "${_resolver_config}" _resolver_config_upper)
+include("@HERMETIC_FETCHCONTENT_ROOT_DIR@/modules/hfc_genex_eval.cmake")
 
-get_directory_property(_hfc_compile_defs       DIRECTORY "${CMAKE_SOURCE_DIR}" COMPILE_DEFINITIONS)
-get_directory_property(_hfc_compile_defs_cfg   DIRECTORY "${CMAKE_SOURCE_DIR}" COMPILE_DEFINITIONS_${_resolver_config_upper})
-get_directory_property(_hfc_compile_options    DIRECTORY "${CMAKE_SOURCE_DIR}" COMPILE_OPTIONS)
-get_directory_property(_hfc_include_dirs       DIRECTORY "${CMAKE_SOURCE_DIR}" INCLUDE_DIRECTORIES)
-get_directory_property(_hfc_link_options       DIRECTORY "${CMAKE_SOURCE_DIR}" LINK_OPTIONS)
-get_directory_property(_hfc_link_dirs          DIRECTORY "${CMAKE_SOURCE_DIR}" LINK_DIRECTORIES)
-
-# $<LINK_LANGUAGE:...> cannot be evaluated by file(GENERATE), so we work around
-# it by using $<COMPILE_LANGUAGE:...> instead.
-string(REPLACE "$<LINK_LANGUAGE" "$<COMPILE_LANGUAGE" _hfc_link_options "${_hfc_link_options}")
-string(REPLACE "$<LINK_LANGUAGE" "$<COMPILE_LANGUAGE" _hfc_link_dirs    "${_hfc_link_dirs}")
-
-# Single probe target pulling both a C and a C++ source, used
-# to evaluate generator expressions.
-file(WRITE "${CMAKE_BINARY_DIR}/__hfc_probe.c"   "void __hfc_probe_c(void){}\n")
-file(WRITE "${CMAKE_BINARY_DIR}/__hfc_probe.cpp" "void __hfc_probe_cxx(){}\n")
-add_library(__hfc_probe STATIC EXCLUDE_FROM_ALL
-  "${CMAKE_BINARY_DIR}/__hfc_probe.c"
-  "${CMAKE_BINARY_DIR}/__hfc_probe.cpp"
-)
-
-# One option per line so the caller can still detect SHELL:/LINKER: prefixes
-# on individual tokens after reading back.
-string(REPLACE ";" "\n" _content_compile_options  "${_hfc_compile_options}")
-string(REPLACE ";" "\n" _content_compile_defs     "${_hfc_compile_defs}")
-string(REPLACE ";" "\n" _content_compile_defs_cfg "${_hfc_compile_defs_cfg}")
-string(REPLACE ";" "\n" _content_include_dirs     "${_hfc_include_dirs}")
-string(REPLACE ";" "\n" _content_link_options     "${_hfc_link_options}")
-string(REPLACE ";" "\n" _content_link_dirs        "${_hfc_link_dirs}")
-
-file(GENERATE
-  OUTPUT  "${CMAKE_BINARY_DIR}/resolved_compile_definitions_$<LOWER_CASE:$<COMPILE_LANGUAGE>>.txt"
-  CONTENT "${_content_compile_defs}\n${_content_compile_defs_cfg}\n"
-  TARGET  __hfc_probe
-)
-file(GENERATE
-  OUTPUT  "${CMAKE_BINARY_DIR}/resolved_compile_options_$<LOWER_CASE:$<COMPILE_LANGUAGE>>.txt"
-  CONTENT "${_content_compile_options}\n"
-  TARGET  __hfc_probe
-)
-file(GENERATE
-  OUTPUT  "${CMAKE_BINARY_DIR}/resolved_include_directories_$<LOWER_CASE:$<COMPILE_LANGUAGE>>.txt"
-  CONTENT "${_content_include_dirs}\n"
-  TARGET  __hfc_probe
-)
-file(GENERATE
-  OUTPUT  "${CMAKE_BINARY_DIR}/resolved_link_options_$<LOWER_CASE:$<COMPILE_LANGUAGE>>.txt"
-  CONTENT "${_content_link_options}\n"
-  TARGET  __hfc_probe
-)
-file(GENERATE
-  OUTPUT  "${CMAKE_BINARY_DIR}/resolved_link_directories_$<LOWER_CASE:$<COMPILE_LANGUAGE>>.txt"
-  CONTENT "${_content_link_dirs}\n"
-  TARGET  __hfc_probe
-)
+hfc_genex_eval_capture_dir_properties("@CMAKE_BUILD_TYPE@")
+hfc_genex_eval_create_probe_target()
+hfc_genex_eval_produce_flag_files("${CMAKE_BINARY_DIR}")

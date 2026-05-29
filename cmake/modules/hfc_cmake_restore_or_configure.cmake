@@ -7,7 +7,6 @@ include(hfc_cmake_targets_discover)
 include(hfc_cmake_register_content_build)
 include(hfc_cmake_re_restore_install_tree)
 include(hfc_run_project_configure)
-include(hfc_generate_cmake_proxy_toolchain)
 include(hfc_populate_project)
 
 #[=======================================================================[.rst:
@@ -50,6 +49,7 @@ function(hfc_cmake_restore_or_configure content_name)
     MAKE_EXECUTABLES_FINDABLE
     HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING
     HERMETIC_DISCOVER_TARGETS_FILE_PATTERN
+    PROXY_TOOLCHAIN_PATH
 
     # Cache related
     ORIGIN
@@ -77,18 +77,6 @@ function(hfc_cmake_restore_or_configure content_name)
     )
   endif()
 
-  hfc_get_content_proxy_toolchain_dir(${content_name} proxy_toolchain_dir)
-  hfc_get_content_proxy_toolchain_path(${content_name} proxy_toolchain_path)
-  file(LOCK ${proxy_toolchain_dir} DIRECTORY GUARD FUNCTION)
-
-  hfc_generate_cmake_proxy_toolchain(${content_name}
-    HERMETIC_FIND_PACKAGES "${FN_ARG_HERMETIC_FIND_PACKAGES}"
-    PROJECT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}"
-    DESTINATION_TOOLCHAIN_PATH "${proxy_toolchain_path}"
-    PROJECT_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}"
-    PROJECT_SOURCE_SUBDIR "${FN_ARG_PROJECT_SOURCE_SUBDIR}"
-  )
-
   make_directory(${FN_ARG_PROJECT_INSTALL_PREFIX})
   make_directory(${FN_ARG_PROJECT_BINARY_DIR})
   make_directory(${FN_ARG_PROJECT_SOURCE_DIR})
@@ -106,7 +94,7 @@ function(hfc_cmake_restore_or_configure content_name)
         ${FN_ARG_ORIGIN} ${FN_ARG_REVISION}
         ${FN_ARG_PROJECT_SOURCE_DIR} ${FN_ARG_PROJECT_BINARY_DIR}
         ${FN_ARG_PROJECT_INSTALL_PREFIX}
-        "${proxy_toolchain_path}"
+        "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
         cmake_re_restore_command_return_code)
     if (cmake_re_restore_command_return_code EQUAL 0)
       set(dep_need_configure OFF)
@@ -135,7 +123,7 @@ function(hfc_cmake_restore_or_configure content_name)
       PROJECT_SOURCE_SUBDIR "${FN_ARG_PROJECT_SOURCE_SUBDIR}"
       PROJECT_BINARY_DIR "${FN_ARG_PROJECT_BINARY_DIR}"
       PROJECT_INSTALL_PREFIX "${FN_ARG_PROJECT_INSTALL_PREFIX}"
-      TOOLCHAIN_FILE "${proxy_toolchain_path}"
+      TOOLCHAIN_FILE "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
       ORIGIN "${FN_ARG_ORIGIN}"
       HFC_CONFIGURE_MARKER_FILE "${FN_ARG_HFC_CONFIGURE_MARKER_FILE}"
     )
@@ -163,7 +151,7 @@ function(hfc_cmake_restore_or_configure content_name)
       PROJECT_INSTALL_PREFIX "${FN_ARG_PROJECT_INSTALL_PREFIX}"
       PROJECT_BINARY_DIR "${FN_ARG_PROJECT_BINARY_DIR}"
       CMAKE_EXPORT_LIBRARY_DECLARATION "${FN_ARG_CMAKE_EXPORT_LIBRARY_DECLARATION}"
-      TOOLCHAIN_FILE "${proxy_toolchain_path}"
+      TOOLCHAIN_FILE "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
       OUT_TARGETS_CACHE_FILE target_cache_file
     )
 
@@ -189,7 +177,7 @@ function(hfc_cmake_restore_or_configure content_name)
         TARGET_SEARCH_PATH "${targets_search_path}"
         CACHE_DESTINATION_FILE "${target_cache_file}"
         CREATE_TARGET_ALIASES "${FN_ARG_CREATE_TARGET_ALIASES}"
-        TOOLCHAIN_FILE "${proxy_toolchain_path}"
+        TOOLCHAIN_FILE "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
         TEMP_DIR "${CMAKE_BINARY_DIR}/_deps/targets_dump_tmp"
         CMAKE_ADDITIONAL_EXPORTS "${FN_ARG_CMAKE_ADDITIONAL_EXPORTS}"
         ${discover_find_target_files_additional_arg}
@@ -229,7 +217,7 @@ function(hfc_cmake_restore_or_configure content_name)
         PROJECT_BINARY_DIR "${FN_ARG_PROJECT_BINARY_DIR}"
         PROJECT_INSTALL_PREFIX "${FN_ARG_PROJECT_INSTALL_PREFIX}"
         PROJECT_DEPENDENCIES "${FN_ARG_PROJECT_DEPENDENCIES}"
-        TOOLCHAIN_FILE "${proxy_toolchain_path}"
+        TOOLCHAIN_FILE "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
         REGISTER_BUILD_AT_CONFIGURE_TIME "${FN_ARG_BUILD_AT_CONFIGURE_TIME}"
         HFC_INSTALL_MARKER_FILE "${FN_ARG_HFC_INSTALL_MARKER_FILE}"
         ORIGIN "${FN_ARG_ORIGIN}"

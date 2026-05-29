@@ -89,4 +89,13 @@ set(HFC_SUMMARY_FILE_contentName "@HFC_SUMMARY_CONTENT_NAME@" CACHE INTERNAL "Co
 # @HERMETIC_CONFIG_LANGUAGE@
 ##
 
+## Root project live toolchain fingerprint
+set(HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT "@HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT@")
+
+## Fingerprints of all HERMETIC_FIND_PACKAGES dependencies at the time this
+## proxy toolchain was generated.  Any change in a consumed dependency causes
+## this file's content to change, which changes the SHA256 used to form
+## HFC_${content_name}_FINGERPRINT, propagating invalidation transitively.
+set(HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS "@HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS@")
+
 # end of file

@@ -63,6 +63,7 @@ Commands
       [HERMETIC_CONFIG_EXTRA_ARGS <configure flags>...]
       [HERMETIC_CONFIG_LANGUAGE C | CXX]
       [HERMETIC_FIND_PACKAGES <list of hermetic content names>]
+      [HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR <list of hermetic content names>]
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
       [HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION <cmake code>]
@@ -204,6 +205,23 @@ Commands
         set(LIBXML2_WITH_PYTHON OFF)
       ]=]
     )
+
+  The ``HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR`` option is a refinement of
+  ``HERMETIC_FIND_PACKAGES`` for packages whose own ``<Pkg>Config.cmake`` or ``Find<Pkg>.cmake``
+  defines targets or variables that HFC's generated target cache cannot fully replicate (for
+  example utility targets defined in a top-level config file that are not part of any individual
+  component export).
+
+  Packages listed here must also appear in ``HERMETIC_FIND_PACKAGES``. When the content under
+  configuration calls ``find_package(<Pkg>)``, instead of serving the request from HFC's target
+  cache, HFC will:
+
+  1. Set ``<Pkg>_ROOT`` (and ``<PKG>_ROOT``) to the HFC install prefix for that package.
+  2. Invoke CMake's native ``find_package(<Pkg> ... BYPASS_PROVIDER NO_DEFAULT_PATH)`` so that
+     the package's own config or find module runs in full, rooted at the HFC install prefix.
+
+  The ``NO_DEFAULT_PATH`` constraint ensures that CMake cannot escape the HFC install prefix
+  and accidentally resolve the package from a system-wide location.
 
   The ``HERMETIC_CREATE_TARGET_ALIASES`` options allows defining aliases for target during
   the configure phase. The CMake code provided will be invoked for every CMake target library
