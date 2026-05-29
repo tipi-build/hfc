@@ -11,6 +11,8 @@ list(APPEND CMAKE_MODULE_PATH "@HERMETIC_FETCHCONTENT_ROOT_DIR@/modules")
 
 include(hfc_toolchain_fingerprint)
 
-compute_live_toolchain_fingerprint(hfc_isolated_toolchain_fingerprint)
+compute_live_toolchain_fingerprint(hfc_isolated_toolchain_fingerprint
+    GENEX_VARIABLES_TO_EVAL hfc_detected_genex_exprs
+)
 
 file(WRITE "@FINGERPRINT_OUTPUT_FILE@" "${hfc_isolated_toolchain_fingerprint}")

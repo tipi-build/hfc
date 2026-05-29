@@ -6,9 +6,24 @@ include(${CMAKE_CURRENT_LIST_DIR}/hfc_log.cmake)
 # as well as the following parameters and special rules:
 # - HFC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES  / global list appended to the additional variables
 function(compute_live_toolchain_fingerprint out_var)
+    # GENEX_VARIABLES_TO_EVAL is an optional single-value OUTPUT parameter name.
+    # When provided, the function sets that variable in the caller's scope with
+    # the list of GENEX expressions detected in the captured toolchain state.
+    # The function also schedules file(GENERATE) to evaluate them at generation
+    # time, writing results to ${CMAKE_BINARY_DIR}/_hfc_genex_evals.txt, which
+    # compute_augmented_toolchain_fingerprint_isolated() picks up after cmake exits.
+    cmake_parse_arguments(PARSE_ARGV 1 FN_ARG "" "GENEX_VARIABLES_TO_EVAL" "")
 
     get_cmake_property(all_cache_vars CACHE_VARIABLES)
     set(toolchain_state "")
+    set(_hfc_detected_genex_exprs "")
+
+    # helper: if value contains a generator expression, record it for later evaluation
+    macro(_hfc_collect_genex_if_present value)
+        if("${value}" MATCHES "\\$<")
+            list(APPEND _hfc_detected_genex_exprs "${value}")
+        endif()
+    endmacro()
 
     # Capture Top-Level Directory Properties that calls to add_compile_options(), include_directories(), etc.
     # as defined if evaluated at the root level by the toolchain.
@@ -26,6 +41,12 @@ function(compute_live_toolchain_fingerprint out_var)
       string(APPEND toolchain_state "TOPLEVEL_DIR_LINK_OPTIONS=${dir_link_opts}\n")
       string(APPEND toolchain_state "TOPLEVEL_DIR_INCLUDE_DIRECTORIES=${dir_include_dirs}\n")
       string(APPEND toolchain_state "TOPLEVEL_DIR_LINK_DIRECTORIES=${dir_link_dirs}\n")
+
+      _hfc_collect_genex_if_present("${dir_compile_defs}")
+      _hfc_collect_genex_if_present("${dir_compile_opts}")
+      _hfc_collect_genex_if_present("${dir_link_opts}")
+      _hfc_collect_genex_if_present("${dir_include_dirs}")
+      _hfc_collect_genex_if_present("${dir_link_dirs}")
     endif()
 
     # Sort the list to guarantee deterministic hashing regardless of cache order
@@ -43,7 +64,7 @@ function(compute_live_toolchain_fingerprint out_var)
          var_name MATCHES "^CMAKE_USER_MAKE_RULES_OVERRIDE" OR
          var_name MATCHES "^CMAKE_INTERPROCEDURAL_OPTIMIZATION" OR
          var_name MATCHES "^CMAKE_SYSROOT" OR
-         var_name MATCHES "^CMAKE_CROSSCOMPILING_" OR           
+         var_name MATCHES "^CMAKE_CROSSCOMPILING_" OR
          var_name MATCHES "^CMAKE_LINK_" OR
          var_name MATCHES "^CMAKE_RUNTIME_" OR
          var_name MATCHES "^CMAKE_MODULE_" OR
@@ -53,14 +74,15 @@ function(compute_live_toolchain_fingerprint out_var)
          var_name MATCHES "^CMAKE_SYSTEM_" OR
          var_name MATCHES "^CMAKE_HOST_" OR
          var_name MATCHES "^CMAKE_BUILD_"
-        )            
+        )
           get_property(var_value CACHE ${var_name} PROPERTY VALUE)
           string(APPEND toolchain_state "${var_name}=${var_value}\n")
+          _hfc_collect_genex_if_present("${var_value}")
       endif()
     endforeach()
 
     set(extra_vars ${HFC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES})
-    
+
     if(extra_vars)
         # keep this as deterministic as possible
         list(REMOVE_DUPLICATES extra_vars)
@@ -75,6 +97,7 @@ function(compute_live_toolchain_fingerprint out_var)
             else()
                 if(DEFINED "${extra_var}")
                     string(APPEND toolchain_state "${extra_var}=${${extra_var}}\n")
+                    _hfc_collect_genex_if_present("${${extra_var}}")
                 else()
                     # Explicitly track undefined variables to catch if they get defined later (semantically defined != empty)
                     string(APPEND toolchain_state "${extra_var}//NOTFOUND\n")
@@ -83,63 +106,32 @@ function(compute_live_toolchain_fingerprint out_var)
         endforeach()
     endif()
 
-    string(SHA256 fingerprint "${toolchain_state}")
-    set(${out_var} "${fingerprint}" PARENT_SCOPE)
-endfunction()
-
-# this computes a live SHA256 fingerprint of the active CMake toolchain
-# taking into account all influential CMAKE_* cache variables,
-# as well as the following parameters and special rules:
-#
-# - out_var  / stores the resulting SHA256 hash in the parent scope
-# - ADDITIONAL_VARIABLES  / optional list of extra variables to track
-# - HFC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES  / global list appended to the additional variables
-# - ENV{<name>}  / special string format to explicitly track environment variables
-# - NOTFOUND  / recorded if an additional variable is requested but currently undefined
-# - by default relevant Top-Level directory properties are captured as well, this can be disabled by setting HFC_TOOLCHAIN_FINGERPRINT_DISABLE_CAPTURE_TOP_LEVEL_DIR_PROPERTIES=ON
-function(compute_augmented_toolchain_fingerprint out_var)
-    set(options "")
-    set(oneValueArgs "")
-    set(multiValueArgs ADDITIONAL_VARIABLES)
-    cmake_parse_arguments(PARSE_ARGV 1 FN_ARG "${options}" "${oneValueArgs}" "${multiValueArgs}")
-
-    get_property(root_toolchain_fingerprint_computed GLOBAL PROPERTY HERMETIC_FETCHCONTENT_BOOTSTRAP_PROJECT_TOOLCHAIN_FINGERPRINT SET)
-
-    if(NOT root_toolchain_fingerprint_computed)
-        # just run that code... it will set the global property
-        include(hfc_toolchain_fingerprint_bootstrap)
-    endif()
-
-    get_property(root_toolchain_fingerprint GLOBAL PROPERTY HERMETIC_FETCHCONTENT_BOOTSTRAP_PROJECT_TOOLCHAIN_FINGERPRINT)
-    set(toolchain_state "${root_toolchain_fingerprint}\n")
-
-    set(extra_vars ${FN_ARG_ADDITIONAL_VARIABLES} ${HFC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES} ${HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES})
-    
-    if(extra_vars)
-        # keep this as deterministic as possible
-        list(REMOVE_DUPLICATES extra_vars)
-        list(SORT extra_vars)
-
-        foreach(extra_var IN LISTS extra_vars)
-            # Check for the literal string format "ENV{VAR_NAME}"
-            if(extra_var MATCHES "^ENV\\{(.+)\\}$")
-                set(env_name "${CMAKE_MATCH_1}")
-                set(env_value "$ENV{${env_name}}")
-                string(APPEND toolchain_state "ENV_${env_name}=${env_value}\n")
-            else()
-                if(DEFINED "${extra_var}")
-                    string(APPEND toolchain_state "${extra_var}=${${extra_var}}\n")
-                else()
-                    # Explicitly track undefined variables to catch if they get defined later (semantically defined != empty)
-                    string(APPEND toolchain_state "${extra_var}//NOTFOUND\n")
-                endif()
-            endif()
+    # Schedule generation-time evaluation of any detected GENEX expressions.
+    # file(GENERATE) runs after configure completes, so $CACHE{}, $<CONFIG>, and
+    # all other generator expressions are evaluated correctly.  The result is
+    # written to _hfc_genex_evals.txt and read by
+    # compute_augmented_toolchain_fingerprint_isolated() after cmake exits.
+    if(_hfc_detected_genex_exprs)
+        list(REMOVE_DUPLICATES _hfc_detected_genex_exprs)
+        set(_hfc_genex_file_content "")
+        foreach(_hfc_expr IN LISTS _hfc_detected_genex_exprs)
+            string(APPEND _hfc_genex_file_content "${_hfc_expr}\n")
         endforeach()
+        file(GENERATE
+            OUTPUT "${CMAKE_BINARY_DIR}/_hfc_genex_evals.txt"
+            CONTENT "${_hfc_genex_file_content}"
+        )
+    endif()
+
+    # report detected GENEX expressions to the caller if requested
+    if(FN_ARG_GENEX_VARIABLES_TO_EVAL)
+        set(${FN_ARG_GENEX_VARIABLES_TO_EVAL} "${_hfc_detected_genex_exprs}" PARENT_SCOPE)
     endif()
 
     string(SHA256 fingerprint "${toolchain_state}")
     set(${out_var} "${fingerprint}" PARENT_SCOPE)
 endfunction()
+
 
 # computes the augmented toolchain fingerprint in an isolated cmake mini-project
 # so that add_compile_definitions(), add_compile_options() etc. in the toolchain
@@ -193,30 +185,31 @@ function(compute_augmented_toolchain_fingerprint_isolated out_var)
     else()
         set(toolchain_sha256 "no-toolchain")
     endif()
-    string(SHA256 dedup_key "${toolchain_sha256}:${CMAKE_BUILD_TYPE}:${TEMPLATE_ENABLE_LANGUAGES}")
+
+    # generate forwarded variable declarations to inject before project() in the
+    # mini-project, mirroring how the proxy toolchain forwards them (preserving
+    # cache type) so the toolchain can reference these values during its execution
+    set(FORWARDED_CMAKE_VARIABLES_CONTENT "")
+    foreach(cmake_variable IN LISTS HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES)
+        if(DEFINED ${cmake_variable})
+            set(additional_set_args "")
+            get_property(var_type_in_cache CACHE ${cmake_variable} PROPERTY TYPE)
+            if(var_type_in_cache)
+                set(additional_set_args "CACHE ${var_type_in_cache} \"\" FORCE")
+            endif()
+            string(APPEND FORWARDED_CMAKE_VARIABLES_CONTENT
+                "set(${cmake_variable} \"${${cmake_variable}}\" ${additional_set_args})\n"
+            )
+        endif()
+    endforeach()
+
+    string(SHA256 dedup_key "${toolchain_sha256}:${CMAKE_BUILD_TYPE}:${TEMPLATE_ENABLE_LANGUAGES}:${FORWARDED_CMAKE_VARIABLES_CONTENT}")
     set(dedup_property "HERMETIC_FETCHCONTENT_TOOLCHAIN_FINGERPRINT_${dedup_key}")
 
     get_property(live_fingerprint_cached GLOBAL PROPERTY "${dedup_property}" SET)
     if(live_fingerprint_cached)
         get_property(live_fingerprint GLOBAL PROPERTY "${dedup_property}")
     else()
-        # generate forwarded variable declarations to inject before project() in the
-        # mini-project, mirroring how the proxy toolchain forwards them (preserving
-        # cache type) so the toolchain can reference these values during its execution
-        set(FORWARDED_CMAKE_VARIABLES_CONTENT "")
-        foreach(cmake_variable IN LISTS HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES)
-            if(DEFINED ${cmake_variable})
-                set(additional_set_args "")
-                get_property(var_type_in_cache CACHE ${cmake_variable} PROPERTY TYPE)
-                if(var_type_in_cache)
-                    set(additional_set_args "CACHE ${var_type_in_cache} \"\" FORCE")
-                endif()
-                string(APPEND FORWARDED_CMAKE_VARIABLES_CONTENT
-                    "set(${cmake_variable} \"${${cmake_variable}}\" ${additional_set_args})\n"
-                )
-            endif()
-        endforeach()
-
         string(RANDOM LENGTH 10 rand_str)
         set(tmp_dir "${FETCHCONTENT_BASE_DIR}/.hfc_fingerprint_tmp_${rand_str}")
         file(MAKE_DIRECTORY "${tmp_dir}")
@@ -255,6 +248,20 @@ function(compute_augmented_toolchain_fingerprint_isolated out_var)
 
         file(READ "${FINGERPRINT_OUTPUT_FILE}" live_fingerprint)
         string(STRIP "${live_fingerprint}" live_fingerprint)
+
+        # If compute_live_toolchain_fingerprint detected GENEX expressions, they
+        # were evaluated at generation time and written to _hfc_genex_evals.txt.
+        # Fold the evaluated values into the fingerprint so that changes in
+        # GENEX-accessible state (e.g. $CACHE{} variables not in the CMAKE_*
+        # capture list) are reflected in the final hash.
+        set(_hfc_genex_evals_file "${tmp_dir}/_hfc_genex_evals.txt")
+        if(EXISTS "${_hfc_genex_evals_file}")
+            file(READ "${_hfc_genex_evals_file}" _hfc_genex_evals)
+            string(STRIP "${_hfc_genex_evals}" _hfc_genex_evals)
+            string(REPLACE "\n" ";" _hfc_genex_evals_log "${_hfc_genex_evals}")
+            hfc_log(STATUS " - toolchain genex evals: ${_hfc_genex_evals_log}")
+            string(APPEND live_fingerprint "\nGENEX_EVALS=${_hfc_genex_evals}")
+        endif()
 
         set_property(GLOBAL PROPERTY "${dedup_property}" "${live_fingerprint}")
 

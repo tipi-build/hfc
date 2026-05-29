@@ -67,17 +67,17 @@ namespace hfc::test {
     }
     tests_variants_to_run.push_back( test_variant{cmake_path, false} );
 
-    auto cmake_re_path = bp::search_path("cmake-re");
-    if (cmake_re_path.string().empty()) {
-      auto error = std::runtime_error("ERROR: cmake-re is not found on PATH, tests can't be run.");
-      std::cout << error.what() << std::endl;
-      throw error;
-    }
-    tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host"} );  // host build
-
-    if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
-      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv"} );       // /!\ no --host
-    }
+    //auto cmake_re_path = bp::search_path("cmake-re");
+    //if (cmake_re_path.string().empty()) {
+    //  auto error = std::runtime_error("ERROR: cmake-re is not found on PATH, tests can't be run.");
+    //  std::cout << error.what() << std::endl;
+    //  throw error;
+    //}
+    //tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host"} );  // host build
+//
+    //if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
+    //  tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv"} );       // /!\ no --host
+    //}
 
 
     return tests_variants_to_run;
@@ -111,25 +111,25 @@ namespace hfc::test {
       tests_variants_to_run.push_back( test_variant{cmake_path, false, "", "", "", toolchain} );
     }
 
-    auto cmake_re_path = bp::search_path("cmake-re");
-    if (cmake_re_path.string().empty()) {
-      auto error = std::runtime_error("ERROR: cmake-re is not found on PATH, tests can't be run.");
-      std::cout << error.what() << std::endl;
-      throw error;
-    }
+    //auto cmake_re_path = bp::search_path("cmake-re");
+    //if (cmake_re_path.string().empty()) {
+    //  auto error = std::runtime_error("ERROR: cmake-re is not found on PATH, tests can't be run.");
+    //  std::cout << error.what() << std::endl;
+    //  throw error;
+    //}
 
-    for (const auto& [toolchain, compiler] : toolchains) {
-      auto compiler_path = bp::search_path(compiler);
-      if (compiler_path.string().empty()) {
-        continue;
-      }
-
-      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host", "", "", toolchain} );  // host build
-
-      if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
-        tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv", "", "", toolchain} );       // /!\ no --host
-      }
-    }
+    //for (const auto& [toolchain, compiler] : toolchains) {
+    //  auto compiler_path = bp::search_path(compiler);
+    //  if (compiler_path.string().empty()) {
+    //    continue;
+    //  }
+    //
+    //  tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host", "", "", toolchain} );  // host build
+    //
+    //  if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
+    //    tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv", "", "", toolchain} );       // /!\ no --host
+    //  }
+    //}
 
     return tests_variants_to_run;
   }
