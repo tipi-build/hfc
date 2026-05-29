@@ -14,11 +14,13 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
 
   string(TOUPPER "${package_name}" package_name_uppercase)
 
+  set(targetcache_version "")
   hfc_targets_cache_get_registered_info(
     ${package_name}
     OUT_FOUND package_found
     OUT_TARGETS_INSTALL_PREFIX targetcache_install_prefix
     OUT_TARGETS_CACHE_FILE targetscache_file
+    OUT_VERSION targetcache_version
   )
 
   if("${package_found}" AND (NOT "${FORCE_SYSTEM_${package_name}}"))
@@ -32,6 +34,10 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
       OUT_IMPORTED_LIBRARIES imported_libraries
       OUT_LIBRARY_BYPRODUCTS library_byproducts
     )
+
+    if(NOT targetcache_version AND DEFINED HERMETIC_FETCHCONTENT_${package_name}_VERSION)
+      set(targetcache_version "${HERMETIC_FETCHCONTENT_${package_name}_VERSION}")
+    endif()
 
     hfc_log_debug(" - emulating found package: ${package_name}")
     set(${package_name_uppername}_ROOT_DIR "${targetcache_install_prefix}")
@@ -88,6 +94,11 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
       set(${package_name_uppercase}_LIBRARIES "${package_LIBRARIES}")
     endif()
 
+    if(targetcache_version)
+      set(${package_name}_VERSION "${targetcache_version}")
+      set(${package_name_uppercase}_VERSION "${targetcache_version}")
+    endif()
+
   else()
     cmake_policy(PUSH)
     cmake_policy(SET CMP0057 NEW) # make sure we have IN_LIST
@@ -115,6 +126,9 @@ macro(hfc_provide_dependency_FINDPACKAGE method content_name)
     cmake_policy(POP)
   endif()
 
+  # Set both exact-case and uppercase FOUND variables for compatibility.
+  # The uppercase variant is not CMake standard but a lot of users still refer to it that way.
+  set(${package_name}_FOUND ${package_found})
   set(${package_name_uppercase}_FOUND ${package_found})
 
 endmacro()

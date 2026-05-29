@@ -3,6 +3,7 @@
 
 include(hfc_log)
 include(hfc_custom_echo_command)
+include(hfc_detect_version)
 
 
 #
@@ -329,10 +330,17 @@ function(hfc_targets_cache_consume content_name)
   set(all_consumed_target_contents ${HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS} ${content_name})
   list(REMOVE_DUPLICATES all_consumed_target_contents)
   set(HERMETIC_FETCHCONTENT_TARGETS_CACHE_CONSUMED_CONTENTS ${all_consumed_target_contents} CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
+
+  hfc_detect_version(${content_name}
+    INSTALL_PREFIX "${FN_ARG_TARGET_INSTALL_PREFIX}"
+    OUT_VERSION_ARG _hfc_register_version_arg
+  )
+
   hfc_targets_cache_register_dependency_for_provider(
     ${content_name}
     TARGETS_INSTALL_PREFIX "${FN_ARG_TARGET_INSTALL_PREFIX}"
     TARGETS_CACHE_FILE "${FN_ARG_TARGETS_CACHE_FILE}"
+    ${_hfc_register_version_arg}
   )
 
   #
