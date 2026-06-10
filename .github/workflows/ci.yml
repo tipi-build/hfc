@@ -61,6 +61,7 @@ jobs:
         with:          
           path: './hfc_project'
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
 
       - name: tipi builds project 
         run: |
