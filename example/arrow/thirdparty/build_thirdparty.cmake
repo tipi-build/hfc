@@ -255,6 +255,7 @@ FetchContent_Declare(
 
 FetchContent_MakeHermetic(
   Thrift
+  HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE "0.23.0"
   HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;Boost"
   HERMETIC_TOOLCHAIN_EXTENSION [=[
     set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
@@ -368,14 +369,6 @@ FetchContent_MakeHermetic(
     # Arrow uses jemalloc internally but doesn't export it in INTERFACE_LINK_LIBRARIES
     set_property(TARGET Arrow::arrow_static APPEND PROPERTY INTERFACE_LINK_LIBRARIES jemalloc::jemalloc)
   ]=]
-  #HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR "xsimd;Thrift"
-  HERMETIC_Thrift_FIND_PACKAGE_EXTRA_CODE [=[
-    set(Thrift_VERSION "0.23.0")
-  ]=]
-  HERMETIC_xsimd_FIND_PACKAGE_EXTRA_CODE [=[
-    set(xsimd_VERSION "13.0.0")
-  ]=]
-
 
   SBOM_LICENSE "Apache License Version 2.0"
   SBOM_SUPPLIER "The Apache Foundation"

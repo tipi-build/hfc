@@ -125,7 +125,9 @@ but enables additional configuration through the <span class="target" id="index-
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CREATE_TARGET_ALIASES</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_PREPATCHED_RESOLVER</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_CMAKE_ADDITIONAL_EXPORTS</span><span class="w"> </span><span class="nv">&lt;cmake code&gt;</span><span class="p">]</span>
 <span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_DISCOVER_TARGETS_FILE_PATTERN</span><span class="w"> </span><span class="nv">&lt;regex pattern&gt;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="no">HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE</span><span class="w"> </span><span class="nv">&lt;version string&gt;</span><span class="p">]</span>
 <span class="nf">)</span>
 </pre></div>
 </div>
@@ -430,6 +432,44 @@ for Hermetic FetchContent to be able to construct a so-called &quot;targets cach
 but is not complying to the common file nameming scheme for those exports (hermetic fetchContent
 uses the following by default <code class="docutils literal notranslate"><span class="pre">([Tt]argets|[Ee]xport(s?))\.cmake</span></code>), another pattern can be
 supplied using the <code class="docutils literal notranslate"><span class="pre">HERMETIC_DISCOVER_TARGETS_FILE_PATTERN</span></code> option.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">HERMETIC_CMAKE_ADDITIONAL_EXPORTS</span></code> option allows injecting CMake code that defines
+additional imported targets during the target discovery phase.  The code is evaluated after the
+standard target export files have been loaded, so it can reference targets already discovered.
+This is useful when a dependency's install tree contains targets that are referenced by other
+exported targets but are not themselves part of any export file (e.g. utility or interface-only
+targets created by config-mode scripts).</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">Boost</span>
+<span class="w">  </span><span class="no">HERMETIC_BUILD_SYSTEM</span><span class="w"> </span><span class="nb">cmake</span>
+<span class="w">  </span><span class="no">HERMETIC_CMAKE_ADDITIONAL_EXPORTS</span><span class="w"> </span><span class="p">[=[</span>
+<span class="w">    </span><span class="c"># Boost::dynamic_linking is created by BoostConfig.cmake logic (not exported)</span>
+<span class="w">    </span><span class="c"># but referenced in INTERFACE_LINK_LIBRARIES of Boost targets</span>
+<span class="w">    </span><span class="nf">if(</span><span class="no">NOT</span><span class="w"> </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Boost</span><span class="o">::</span><span class="nb">dynamic_linking</span><span class="nf">)</span>
+<span class="w">      </span><span class="nf">add_library(</span><span class="nb">Boost</span><span class="o">::</span><span class="nb">dynamic_linking</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="no">IMPORTED</span><span class="nf">)</span>
+<span class="w">      </span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Boost</span><span class="o">::</span><span class="nb">dynamic_linking</span><span class="w"> </span><span class="no">PROPERTY</span>
+<span class="w">        </span><span class="no">INTERFACE_COMPILE_DEFINITIONS</span><span class="w"> </span><span class="s">&quot;BOOST_ALL_NO_LIB&quot;</span><span class="nf">)</span>
+<span class="w">    </span><span class="nf">endif()</span>
+<span class="w">  </span><span class="p">]=]</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
+<p>HFC automatically detects version from the dependencie's installed <code class="docutils literal notranslate"><span class="pre">*ConfigVersion.cmake</span></code>
+files and pkg-config <code class="docutils literal notranslate"><span class="pre">.pc</span></code> files. If no such metadata is made available by a dependency or
+when manual overriding is necessary, the option <code class="docutils literal notranslate"><span class="pre">HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE</span></code> can
+be used to provide a static value. When provided, this version takes priority over any
+auto-detected version.</p>
+<p>The version information is exposed as <code class="docutils literal notranslate"><span class="pre">${PackageName}_VERSION</span></code> and <code class="docutils literal notranslate"><span class="pre">${PACKAGENAME}_VERSION</span></code>
+when the package is consumed via <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> in dependent sub-builds.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">FetchContent_MakeHermetic(</span>
+<span class="w">  </span><span class="nb">Thrift</span>
+<span class="w">  </span><span class="no">HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE</span><span class="w"> </span><span class="s">&quot;0.23.0&quot;</span>
+<span class="w">  </span><span class="no">HERMETIC_FIND_PACKAGES</span><span class="w"> </span><span class="s">&quot;OpenSSL;ZLIB;Boost&quot;</span>
+<span class="w">  </span><span class="no">HERMETIC_TOOLCHAIN_EXTENSION</span><span class="w"> </span><span class="p">[=[</span>
+<span class="w">    </span><span class="nf">set(</span><span class="no">BUILD_TESTING</span><span class="w"> </span><span class="no">OFF</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="no">BOOL</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="no">FORCE</span><span class="nf">)</span>
+<span class="w">  </span><span class="p">]=]</span>
+<span class="nf">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="cmake command">

@@ -56,12 +56,14 @@ macro(hfc_provide_dependency_FINDPACKAGE method _hfc_prov_content_name_arg)
 
   string(TOUPPER "${_hfc_prov_package_name}" _hfc_prov_package_name_uppercase)
 
+  set(_hfc_prov_targetcache_version "")
   hfc_targets_cache_get_registered_info(
     ${_hfc_prov_package_name}
     OUT_FOUND _hfc_prov_package_found
     OUT_TARGETS_INSTALL_PREFIX _hfc_prov_targetcache_install_prefix
     OUT_TARGETS_CACHE_FILE _hfc_prov_targetscache_file
     OUT_FIND_PACKAGE_FORWARD_TO_NATIVE _hfc_prov_package_forward_to_native
+    OUT_VERSION _hfc_prov_targetcache_version
   )
 
   if("${_hfc_prov_package_found}" AND "${_hfc_prov_package_forward_to_native}" AND (NOT "${FORCE_SYSTEM_${_hfc_prov_package_name}}"))
@@ -159,6 +161,11 @@ macro(hfc_provide_dependency_FINDPACKAGE method _hfc_prov_content_name_arg)
       set(${_hfc_prov_package_name_uppercase}_LIBRARIES "${_hfc_prov_package_LIBRARIES}")
     endif()
 
+    if(_hfc_prov_targetcache_version)
+      set(${_hfc_prov_package_name}_VERSION "${_hfc_prov_targetcache_version}")
+      set(${_hfc_prov_package_name_uppercase}_VERSION "${_hfc_prov_targetcache_version}")
+    endif()
+
   else()
     cmake_policy(PUSH)
     cmake_policy(SET CMP0057 NEW) # make sure we have IN_LIST
@@ -240,6 +247,7 @@ macro(hfc_provide_dependency_FINDPACKAGE method _hfc_prov_content_name_arg)
   unset(_hfc_prov_package_found)
   unset(_hfc_prov_targetcache_install_prefix)
   unset(_hfc_prov_targetscache_file)
+  unset(_hfc_prov_targetcache_version)
   unset(_hfc_prov_package_forward_to_native)
   unset(_hfc_prov_imported_libraries)
   unset(_hfc_prov_library_byproducts)

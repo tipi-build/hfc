@@ -69,7 +69,9 @@ Commands
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
       [HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION <cmake code>]
+      [HERMETIC_CMAKE_ADDITIONAL_EXPORTS <cmake code>]
       [HERMETIC_DISCOVER_TARGETS_FILE_PATTERN <regex pattern>]
+      [HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE <version string>]
     )
 
   The ``FetchContent_MakeHermetic()`` function records options that describe the additional
@@ -419,6 +421,49 @@ Commands
   but is not complying to the common file nameming scheme for those exports (hermetic fetchContent
   uses the following by default ``([Tt]argets|[Ee]xport(s?))\.cmake``), another pattern can be
   supplied using the ``HERMETIC_DISCOVER_TARGETS_FILE_PATTERN`` option.
+
+  The ``HERMETIC_CMAKE_ADDITIONAL_EXPORTS`` option allows injecting CMake code that defines
+  additional imported targets during the target discovery phase.  The code is evaluated after the
+  standard target export files have been loaded, so it can reference targets already discovered.
+  This is useful when a dependency's install tree contains targets that are referenced by other
+  exported targets but are not themselves part of any export file (e.g. utility or interface-only
+  targets created by config-mode scripts).
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      Boost
+      HERMETIC_BUILD_SYSTEM cmake
+      HERMETIC_CMAKE_ADDITIONAL_EXPORTS [=[
+        # Boost::dynamic_linking is created by BoostConfig.cmake logic (not exported)
+        # but referenced in INTERFACE_LINK_LIBRARIES of Boost targets
+        if(NOT TARGET Boost::dynamic_linking)
+          add_library(Boost::dynamic_linking INTERFACE IMPORTED)
+          set_property(TARGET Boost::dynamic_linking PROPERTY
+            INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
+        endif()
+      ]=]
+    )
+
+  HFC automatically detects version from the dependencie's installed ``*ConfigVersion.cmake``
+  files and pkg-config ``.pc`` files. If no such metadata is made available by a dependency or
+  when manual overriding is necessary, the option ``HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE`` can
+  be used to provide a static value. When provided, this version takes priority over any
+  auto-detected version.
+
+  The version information is exposed as ``${PackageName}_VERSION`` and ``${PACKAGENAME}_VERSION``
+  when the package is consumed via ``find_package()`` in dependent sub-builds.
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      Thrift
+      HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE "0.23.0"
+      HERMETIC_FIND_PACKAGES "OpenSSL;ZLIB;Boost"
+      HERMETIC_TOOLCHAIN_EXTENSION [=[
+        set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+      ]=]
+    )
 
 .. command:: HermeticFetchContent_MakeAvailableAtBuildTime
 
