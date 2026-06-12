@@ -63,6 +63,8 @@ Commands
       [HERMETIC_CONFIG_EXTRA_ARGS <configure flags>...]
       [HERMETIC_CONFIG_LANGUAGE C | CXX]
       [HERMETIC_FIND_PACKAGES <list of hermetic content names>]
+      [HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR <list of hermetic content names>]
+      [HERMETIC_<content-name>_FIND_PACKAGE_EXTRA_CODE <cmake code>]
       [HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES <list of variable names>]
       [HERMETIC_CREATE_TARGET_ALIASES <cmake code>]
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
@@ -203,6 +205,56 @@ Commands
       HERMETIC_TOOLCHAIN_EXTENSION [=[
         set(LIBXML2_WITH_LZMA OFF)
         set(LIBXML2_WITH_PYTHON OFF)
+      ]=]
+    )
+
+  The ``HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR`` option is a refinement of
+  ``HERMETIC_FIND_PACKAGES`` for packages whose own ``<Pkg>Config.cmake`` or ``Find<Pkg>.cmake``
+  defines targets or variables that HFC's generated target cache cannot fully replicate (for
+  example utility targets defined in a top-level config file that are not part of any individual
+  component export).
+
+  Packages listed here must also appear in ``HERMETIC_FIND_PACKAGES``. When the content under
+  configuration calls ``find_package(<Pkg>)``, instead of serving the request from HFC's target
+  cache, HFC will:
+
+  1. Set ``<Pkg>_ROOT`` (and ``<PKG>_ROOT``) to the HFC install prefix for that package.
+  2. Invoke CMake's native ``find_package(<Pkg> ... BYPASS_PROVIDER)`` so that the package's
+     own config or find module runs in full, rooted at the HFC install prefix.
+
+  Hermeticity is preserved by disabling all default search paths (via ``CMAKE_FIND_USE_*``
+  variables) except ``<Pkg>_ROOT``, so CMake cannot accidentally resolve the package from a
+  system-wide location.  The ``CMAKE_FIND_USE_*`` approach is used instead of the
+  ``NO_DEFAULT_PATH`` keyword because ``NO_DEFAULT_PATH`` triggers CMake's full
+  ``find_package()`` signature which skips module mode entirely, preventing
+  ``Find<Pkg>.cmake`` modules in ``CMAKE_MODULE_PATH`` from being found.
+
+  The ``HERMETIC_<content-name>_FIND_PACKAGE_EXTRA_CODE`` option allows injecting arbitrary
+  CMake code into the dependency provider at the point where it handles
+  ``find_package(<content-name>)`` for the content being declared.  One option is required per
+  dependency for which extra code is needed; the ``<content-name>`` part of the option name must
+  match the name passed to ``HERMETIC_FIND_PACKAGES``.
+
+  The code is executed after the dependency has been resolved (either from the HFC target cache
+  or via the native-forward path).  A typical use-case is setting variables that the consuming
+  project expects from a normal ``find_package()`` call but that HFC's target-cache emulation does
+  not populate, such as version strings or ``<Pkg>_DIR``.
+
+  The variable ``<content-name>_HERMETIC_INSTALL_PREFIX`` is set for the duration of the injected
+  code to the HFC install prefix of the resolved dependency (using the same ``<content-name>`` that
+  was passed to ``find_package()`` and to the option name).  This lets the extra code point the
+  consuming project at files inside the HFC install tree, for example ``<Pkg>_DIR`` or a packaged
+  version file:
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      mathlib
+      HERMETIC_BUILD_SYSTEM cmake
+      HERMETIC_FIND_PACKAGES "MyDep"
+      HERMETIC_MyDep_FIND_PACKAGE_EXTRA_CODE [=[
+        set(MyDep_VERSION "1.2.3")
+        set(MyDep_DIR "${MyDep_HERMETIC_INSTALL_PREFIX}/lib/cmake/MyDep")
       ]=]
     )
 
@@ -503,6 +555,26 @@ Setting ``HERMETIC_FETCHCONTENT_TOOLCHAIN_FINGERPRINT_DISABLE_CAPTURE_TOP_LEVEL_
 disables the capture of top-level directory properties, which can be useful in projects
 where those properties contain rapidly-changing values that would cause unnecessary rebuilds.
 
+
+.. command:: HermeticFetchContent_AddContentAliases
+
+  .. code-block:: cmake
+
+    HermeticFetchContent_AddContentAliases(<canonical-name> <alias1> [<alias2> ...])
+
+  Registers alternative names for an already-available content so that
+  ``find_package(<alias>)`` or ``HermeticFetchContent_MakeAvailable*(<alias>)``
+  calls — including those from hermetic sub-builds — reuse the existing build
+  instead of triggering a new one.  Call this *after* making the canonical
+  content available.
+
+  .. code-block:: cmake
+
+    HermeticFetchContent_MakeAvailableAtConfigureTime(different-mathlib)
+    HermeticFetchContent_AddContentAliases(different-mathlib "mathlib")
+
+  See also ``HERMETIC_CREATE_TARGET_ALIASES`` to control the CMake target names
+  exposed to consumers of the aliased content.
 
 Rationale
 ^^^^^^^^^

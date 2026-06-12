@@ -43,6 +43,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
   set(multi_value_params
     HERMETIC_FIND_PACKAGES
+    HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR
     HERMETIC_CONFIG_EXTRA_ARGS
     HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES
   )
@@ -81,18 +82,55 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
   endif()
 
+  # Pre-resolve the defer-to-native list to canonical names. Both this list and
+  # HERMETIC_FIND_PACKAGES may contain aliases, and several aliases can resolve to
+  # the same canonical package. Comparing on canonical names makes "defer this
+  # package" independent of which alias was used and of list order (see the dedup
+  # below, which is also keyed on canonical names).
+  set(defer_native_canonical_packages "")
+  foreach(defer_package IN LISTS FN_ARG_HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR)
+    HermeticFetchContent_ResolveContentNameAlias(${defer_package} defer_canonical_package)
+    list(APPEND defer_native_canonical_packages "${defer_canonical_package}")
+  endforeach()
+
   # gather targets information
   set(project_dependency_contents "include(hfc_targets_cache_common)\n")
+  set(hfc_registered_canonical_packages "")
   foreach(package IN LISTS FN_ARG_HERMETIC_FIND_PACKAGES)
 
-    string(APPEND
-      project_dependency_contents
-      "hfc_targets_cache_register_dependency_for_provider(${package} "
-        "TARGETS_INSTALL_PREFIX \"${HERMETIC_FETCHCONTENT_${package}_INSTALL_PREFIX}\" "
-        "TARGETS_CACHE_FILE \"${HERMETIC_FETCHCONTENT_${package}_TARGETS_CACHE_FILE}\" "
-      ")\n"
-    )
+    # Register under the canonical content name (resolving aliases) so that
+    # the sub-build's provider finds it after alias resolution — keeping the
+    # same register-by-canonical-name + alias-forwarding mechanism at every level.
+    HermeticFetchContent_ResolveContentNameAlias(${package} canonical_package)
 
+    set(fwd_to_native_arg "")
+    if("${canonical_package}" IN_LIST defer_native_canonical_packages)
+      set(fwd_to_native_arg "FIND_PACKAGE_FORWARD_TO_NATIVE TRUE ")
+    endif()
+
+    # Skip if already registered (multiple aliases may resolve to the same canonical name)
+    if(NOT "${canonical_package}" IN_LIST hfc_registered_canonical_packages)
+      list(APPEND hfc_registered_canonical_packages "${canonical_package}")
+      string(APPEND
+        project_dependency_contents
+        "hfc_targets_cache_register_dependency_for_provider(${canonical_package} "
+          "TARGETS_INSTALL_PREFIX \"${HERMETIC_FETCHCONTENT_${canonical_package}_INSTALL_PREFIX}\" "
+          "TARGETS_CACHE_FILE \"${HERMETIC_FETCHCONTENT_${canonical_package}_TARGETS_CACHE_FILE}\" "
+          "${fwd_to_native_arg}"
+        ")\n"
+      )
+    endif()
+
+  endforeach()
+
+  # Validate that every defer-to-native entry actually names a hermetic dependency.
+  foreach(defer_canonical IN LISTS defer_native_canonical_packages)
+    if(NOT "${defer_canonical}" IN_LIST hfc_registered_canonical_packages)
+      hfc_log(FATAL_ERROR
+        "HERMETIC_DEFER_NATIVE_ROOTED_FIND_PACKAGE_FOR lists '${defer_canonical}' which is not among "
+        "this content's HERMETIC_FIND_PACKAGES (${FN_ARG_HERMETIC_FIND_PACKAGES}). "
+        "Every defer-to-native package must also be listed in HERMETIC_FIND_PACKAGES.")
+    endif()
   endforeach()
 
   # forward important information from the command line arguments down via the proxy toolchains
@@ -117,13 +155,30 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     endif()
   endforeach()
 
-  # forward content alias information for all contents that were consumed so far
+  # Forward available-contents list and only the aliases relevant to this child dependency.
+  # Filtering by HERMETIC_FIND_PACKAGES ensures that aliases for unrelated contents do not
+  # affect this proxy toolchain's hash, which would otherwise cause spurious cache misses
+  # on reconfigure (aliases are stored in global properties and re-registered fresh each run,
+  # but deps listed in HERMETIC_FIND_PACKAGES are the only ones a sub-build can resolve).
   set(hfc_contents_forwarding_code "")
   string(APPEND hfc_contents_forwarding_code "set(HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_FROM_PARENT \"${HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS}\")\n")
 
-  foreach(consumed_content_name IN LISTS HERMETIC_FETCHCONTENT_ALIASED_CONTENTS)
-    __HermeticFetchContent_GetAliasesForContentVariableName("${consumed_content_name}" consumed_content_aliases)
-    foreach(alias_name IN LISTS ${consumed_content_aliases})
+  get_property(hfc_aliased_contents_list GLOBAL PROPERTY HERMETIC_FETCHCONTENT_ALIASED_CONTENTS)
+  foreach(consumed_content_name IN LISTS hfc_aliased_contents_list)
+    # Only forward an alias if its canonical content has already been made available in
+    # the parent build at the time this proxy toolchain is generated.
+    # HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS is reset to "" by
+    # hfc_initialize on every cmake invocation and grows in the same order each run, so
+    # this filter is stable across configure/reconfigure (no stale-cache issue).
+    # Using AVAILABLE_TO_DEPENDENT_PROJECTS rather than HERMETIC_FIND_PACKAGES is
+    # intentional: it also covers the HFC-in-HFC "first record wins" case where a
+    # sub-project declares the aliased name itself and HFC needs to intercept it, even
+    # when the canonical is not listed in HERMETIC_FIND_PACKAGES.
+    if(NOT "${consumed_content_name}" IN_LIST HERMETIC_FETCHCONTENT_CONTENTS_AVAILABLE_TO_DEPENDENT_PROJECTS)
+      continue()
+    endif()
+    get_property(content_aliases GLOBAL PROPERTY "HERMETIC_FETCHCONTENT_${consumed_content_name}_ALIASES")
+    foreach(alias_name IN LISTS content_aliases)
       string(APPEND hfc_contents_forwarding_code "HermeticFetchContent_AddContentAliases(${consumed_content_name} \"${alias_name}\")\n")
     endforeach()
   endforeach()
@@ -136,8 +191,22 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
   # in the toolchain file are captured correctly on all cmake implementations
   compute_augmented_toolchain_fingerprint_isolated(live_toolchain_fingerprint
     TOOLCHAIN_FILE "${toolchain_path_abs}"
-    ADDITIONAL_VARIABLES "${HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES}"
+    ADDITIONAL_VARIABLES "${FN_ARG_HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES}"
   )
+
+  # Build a combined fingerprint of all HERMETIC_FIND_PACKAGES dependencies so
+  # that any change in a consumed dependency's fingerprint propagates into this
+  # proxy toolchain file.  Because the file content changes, its SHA256 hash
+  # changes, which flows into HFC_${content_name}_FINGERPRINT and from there
+  # into the proxy toolchains of anything that lists this content as a dependency
+  # -- giving automatic transitive invalidation through the dependency chain.
+  set(dependency_fingerprints_content "")
+  foreach(_dep IN LISTS hfc_registered_canonical_packages)
+    get_property(_dep_fingerprint GLOBAL PROPERTY HFC_${_dep}_FINGERPRINT)
+    if(_dep_fingerprint)
+      string(APPEND dependency_fingerprints_content "${_dep}=${_dep_fingerprint}\n")
+    endif()
+  endforeach()
 
   # generate the proxy toolchain (isolate ourselves from variable polution from parent scope)
   block(SCOPE_FOR VARIABLES
@@ -163,6 +232,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       FETCHCONTENT_BASE_DIR
       hfc_contents_forwarding_code
       live_toolchain_fingerprint
+      dependency_fingerprints_content
   )
     set(HERMETIC_FETCHCONTENT_CMAKE_TOOLCHAIN_FILE "${toolchain_path_abs}")
     set(HERMETIC_FETCHCONTENT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}")
@@ -171,6 +241,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     set(HERMETIC_FETCHCONTENT_FIND_PACKAGES "${FN_ARG_HERMETIC_FIND_PACKAGES}")
     set(HERMETIC_FETCHCONTENT_PROJECT_DEPENDENCIES_CONTENTS "${project_dependency_contents}")
     set(HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT "${live_toolchain_fingerprint}")
+    set(HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS "${dependency_fingerprints_content}")
 
     # Convert list to string for template substitution (optional parameter)
     if(FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS)
