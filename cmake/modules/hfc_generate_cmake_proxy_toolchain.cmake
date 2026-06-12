@@ -111,12 +111,19 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     # Skip if already registered (multiple aliases may resolve to the same canonical name)
     if(NOT "${canonical_package}" IN_LIST hfc_registered_canonical_packages)
       list(APPEND hfc_registered_canonical_packages "${canonical_package}")
+
+      set(_hfc_proxy_version_arg "")
+      if(DEFINED HERMETIC_FETCHCONTENT_${canonical_package}_VERSION)
+        set(_hfc_proxy_version_arg "VERSION \"${HERMETIC_FETCHCONTENT_${canonical_package}_VERSION}\" ")
+      endif()
+
       string(APPEND
         project_dependency_contents
         "hfc_targets_cache_register_dependency_for_provider(${canonical_package} "
           "TARGETS_INSTALL_PREFIX \"${HERMETIC_FETCHCONTENT_${canonical_package}_INSTALL_PREFIX}\" "
           "TARGETS_CACHE_FILE \"${HERMETIC_FETCHCONTENT_${canonical_package}_TARGETS_CACHE_FILE}\" "
           "${fwd_to_native_arg}"
+          "${_hfc_proxy_version_arg}"
         ")\n"
       )
     endif()

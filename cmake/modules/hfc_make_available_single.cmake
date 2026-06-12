@@ -6,6 +6,7 @@ include(hfc_determine_cache_id)
 include(hfc_populate_project)
 include(hfc_generate_cmake_proxy_toolchain)
 include(hfc_targets_cache_create)
+include(hfc_detect_version)
 
 # This creates prefixes where HermeticFetchContent will reuse buildLocation or installed location
 function(hfc_create_restore_prefixes content_name buildLocation installedLocation)
@@ -69,6 +70,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_DISCOVER_TARGETS_FILE_PATTERN
 
     HERMETIC_BUILD_AT_CONFIGURE_TIME
+    HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE
 
     # Disambiguate parameter parsing with all supported
     # fetchcontent-details
@@ -480,6 +482,18 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
     hfc_log(FATAL_ERROR "Hermetic FetchContent does not currently support the target build system ${__PARAMS_HERMETIC_BUILD_SYSTEM}. Please choose one of the following 'cmake' (default) 'autotools' 'openssl' in your FetchContent_MakeHermetic() declaration.")
 
+  endif()
+
+  if(__PARAMS_HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE)
+    set(HERMETIC_FETCHCONTENT_${content_name}_VERSION "${__PARAMS_HERMETIC_FIND_PACKAGE_VERSION_OVERRIDE}" CACHE INTERNAL "User-specified hermetic dependency version for ${content_name}" FORCE)
+  else()
+    hfc_detect_version(${content_name}
+      INSTALL_PREFIX "${cmake_contentInstallPath}"
+      OUT_VERSION _hfc_detected_version
+    )
+    if(_hfc_detected_version)
+      set(HERMETIC_FETCHCONTENT_${content_name}_VERSION "${_hfc_detected_version}" CACHE INTERNAL "Auto-detected hermetic dependency version for ${content_name}")
+    endif()
   endif()
 
   hfc_goldilock_release("${hfc_configure_lock_file}" lock_success)
