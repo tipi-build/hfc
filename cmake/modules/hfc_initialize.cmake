@@ -343,6 +343,22 @@ function(hfc_initialize HFC_ROOT_DIR)
       set(HFC_TOOLCHAIN_FINGERPRINT_LANGUAGES "root_project" CACHE STRING
         "Languages for the toolchain fingerprint mini-project (root_project | none | C | CXX | C;CXX | ...)")
     endif()
+
+    # Automatic detection of compiler/linker flags that take a file as their
+    # argument (e.g. -fsanitize-ignorelist=msan.ignore). When enabled (default),
+    # the referenced file's content hash is folded into the toolchain
+    # fingerprint so editing that file invalidates dependencies automatically.
+    if(NOT DEFINED HERMETIC_FETCHCONTENT_DISABLE_FILE_FLAG_DETECTION)
+      set(HERMETIC_FETCHCONTENT_DISABLE_FILE_FLAG_DETECTION OFF CACHE BOOL
+        "Disable automatic detection & content-hashing of file-bearing compiler/linker flags")
+    endif()
+    # Extra "flag=path" style flags to treat as file-bearing, on top of the
+    # built-in GCC/Clang table (e.g. for compiler-specific or custom flags).
+    if(NOT DEFINED HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS)
+      set(HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS "" CACHE STRING
+        "Additional file-bearing 'flag=path' flags to detect for fingerprinting")
+    endif()
+
     set(HERMETIC_FETCHCONTENT_CONSUMED_CACHETARGETFILES "" CACHE INTERNAL "Cache target files consumed by Hermetic_FetchContent")
 
     # this is global information but stateless / needs to be re-set at start

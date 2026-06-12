@@ -529,6 +529,50 @@ The fingerprint is assembled from:
   the hash verbatim and causing false cache misses or cache hits.
 * Any extra variables listed in ``HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES``
   (per-dependency) or ``HERMETIC_FETCHCONTENT_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES`` (global).
+* The **content** of files referenced by file-bearing compiler / linker flags (see below).
+
+**Automatic file-flag detection**
+
+Some compiler and linker flags take a *file* as their argument, for example
+``-fsanitize-ignorelist=msan.ignore`` or ``-include forced_include.h``.  The flag
+*string* is captured by the fingerprint, but the file it points at is an out-of-line
+build input: editing the file changes the compiled output while leaving every flag
+string byte-for-byte identical.  Without detection, HFC would reuse an
+already-built dependency with stale instrumentation, and users had to work around it
+by hashing the file themselves and injecting the digest on the command line.
+
+HFC now detects these flags automatically (in compiler flags, link flags, and the
+top-level directory ``COMPILE_OPTIONS`` / ``LINK_OPTIONS`` properties, including
+generator-expression-wrapped flags once evaluated), resolves the referenced file,
+and folds its ``SHA256`` content hash into the toolchain fingerprint.  Editing the
+file therefore triggers a rebuild with no manual hashing required.
+
+The built-in table covers the common GCC and Clang file-bearing flags: sanitizer /
+coverage ignore- and allow-lists (``-fsanitize-ignorelist=``,
+``-fsanitize-coverage-ignorelist=``, ``-fsanitize-memory-ignorelist=`` …), PGO /
+sample / auto profiles (``-fprofile-use=``, ``-fprofile-sample-use=``,
+``-fauto-profile=`` …), XRay lists, modules (``-fmodule-file=``,
+``-fmodule-mapper=``), plugins / specs (``-fplugin=``, ``-specs=``), preprocessor
+``-include`` / ``-imacros``, linker scripts and symbol lists
+(``--version-script``, ``--dynamic-list``, ``--retain-symbols-file``, ``-T`` …,
+including ``-Wl,`` and ``-Xlinker`` wrapping), and ``@response`` files.
+
+A referenced file that cannot be resolved (a relative path HFC cannot anchor, or a
+missing file) is skipped with a debug log and never aborts configuration.
+
+Two cache variables control the feature:
+
+``HERMETIC_FETCHCONTENT_DISABLE_FILE_FLAG_DETECTION`` *(default* ``OFF`` *)*
+  Set to ``ON`` to disable detection entirely.
+
+``HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS``
+  A list of extra ``flag`` prefixes whose ``flag=path`` argument should also be
+  treated as a file input, on top of the built-in table.
+
+.. code-block:: cmake
+
+  # Treat a custom "flag=path" flag as a file input in addition to the built-ins
+  set(HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS "-fmy-custom-list" CACHE STRING "" FORCE)
 
 **Controlling the fingerprinting mini-project**
 

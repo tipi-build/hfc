@@ -1359,4 +1359,124 @@ namespace hfc::test {
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
   }
 
+  // Automatic file-flag detection.
+  //
+  // The toolchain passes a genuine file-bearing compiler flag
+  // ("-include forced_include.h") WITHOUT any manual hashing. Previously a user
+  // had to compute the file hash themselves and inject it (see the hidden_input
+  // test above for that workaround); HFC must now detect the file argument of
+  // the flag, hash its content, and fold it into the toolchain fingerprint so
+  // that editing the referenced file alone triggers a full dependency rebuild.
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, configure_stability_cmake_dependency_file_flag_detection,
+      boost::unit_test::data::make(hfc::test::cmake_hidden_input_variants()), data){
+
+    fs::path project_path = prepare_project_to_be_tested("configure_stability_cmake_dependency_file_flag_detection", data.is_cmake_re, temp_dir);
+    write_project_tipi_id(project_path);
+    write_simple_main(project_path, { "MathFunctions.h" } /* includes */, "simple_example.cpp" /* destination */);
+
+    // The file referenced by "-include" - HFC must detect & hash this. Its
+    // content is a harmless comment so it does not affect compilation.
+    fs::path forced_include_file = project_path / "toolchain" / "forced_include.h";
+    pre::file::from_string(forced_include_file.generic_string(), "// forced include v1\n");
+
+    fs::path toolchain_with_flag = get_project_toolchain_path(project_path, "linux-toolchain-file-flag.cmake");
+    std::string cmake_configure_command = get_cmake_configure_command(project_path, data, "", toolchain_with_flag);
+    std::string cmake_build_command     = get_cmake_build_command(project_path, data);
+
+    BOOST_REQUIRE(is_empty_directory(project_path / "build"));
+
+    auto mathlib_build_dir   = project_path / "build" / "_deps" / "mathlib-build";
+    auto mathlib_install_dir = project_path / "build" / "_deps" / "mathlib-install";
+
+    auto path_mathlib_CMakeConfigureLog = mathlib_build_dir / "CMakeFiles" / "CMakeConfigureLog.yaml";
+    auto path_mathlib_ninjafile         = mathlib_build_dir / "build.ninja";
+
+    auto extract_toolchain_fingerprint = [](const std::string& cmake_output) -> std::string {
+      boost::smatch m;
+      if(boost::regex_search(cmake_output, m, boost::regex{" - toolchain fingerprint: ([0-9a-f]+)"})) {
+        return m[1];
+      }
+      return "";
+    };
+
+    // ── Configure 1 ────────────────────────────────────────────────────────
+    std::cout << "⚗️ [Configure 1]" << std::endl;
+    std::string output_c1 = run_command(cmake_configure_command, project_path, test_env);
+
+    BOOST_REQUIRE(fs::exists(path_mathlib_CMakeConfigureLog));
+    BOOST_REQUIRE(fs::exists(path_mathlib_ninjafile));
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    std::string fingerprint_c1 = extract_toolchain_fingerprint(output_c1);
+    BOOST_REQUIRE_MESSAGE(!fingerprint_c1.empty(), "toolchain fingerprint not found in configure output");
+
+    // ── Build 1 ─────────────────────────────────────────────────────────────
+    std::cout << "⚗️ [Build 1]" << std::endl;
+    run_command(cmake_build_command, project_path, test_env);
+
+    BOOST_REQUIRE(fs::exists(mathlib_install_dir / "lib" / "libMathFunctions.a"));
+    BOOST_REQUIRE(fs::exists(mathlib_install_dir / "lib" / "libMathFunctionscbrt.a"));
+    BOOST_REQUIRE(fs::exists(project_path / "build" / "MyExample"));
+
+    file_fingerprint ffingerprint_c1_CMakeConfigureLog{path_mathlib_CMakeConfigureLog};
+    file_fingerprint ffingerprint_b1_installed_libMathFunctions{mathlib_install_dir / "lib" / "libMathFunctions.a"};
+    file_fingerprint ffingerprint_b1_project_binary{project_path / "build" / "MyExample"};
+
+    // ── Configure 2 / no changes ────────────────────────────────────────────
+    std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
+    std::string output_c2 = run_command(cmake_configure_command, project_path, test_env);
+
+    std::string fingerprint_c2 = extract_toolchain_fingerprint(output_c2);
+    BOOST_REQUIRE_MESSAGE(fingerprint_c1 == fingerprint_c2,
+      "toolchain fingerprint changed without any input change: " << fingerprint_c1 << " -> " << fingerprint_c2);
+    BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    // ── Change the file referenced by the flag ──────────────────────────────
+    // Only the content of forced_include.h changes; the flag string and the
+    // toolchain are byte-for-byte identical. Detection must still fire.
+    file_fingerprint forced_include_fingerprint_before{forced_include_file};
+    pre::file::from_string(forced_include_file.generic_string(), "// forced include v2 - triggers rebuild\n");
+    BOOST_REQUIRE(forced_include_fingerprint_before.has_changed());
+
+    // ── Configure 3 / referenced file changed ──────────────────────────────
+    std::cout << "👷 [Configure 3 / file-flag input changed]" << std::endl;
+    std::string output_c3 = run_command(cmake_configure_command, project_path, test_env);
+
+    std::string fingerprint_c3 = extract_toolchain_fingerprint(output_c3);
+    BOOST_REQUIRE_MESSAGE(!fingerprint_c3.empty(), "toolchain fingerprint not found in configure output");
+    BOOST_REQUIRE_MESSAGE(fingerprint_c1 != fingerprint_c3,
+      "file-flag detection: fingerprint did not change after editing the file referenced by -include: " << fingerprint_c3);
+
+    BOOST_REQUIRE_MESSAGE(ffingerprint_c1_CMakeConfigureLog.has_changed(),
+      "file-flag detection: dependency was not reconfigured after the referenced file changed");
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    file_fingerprint ffingerprint_c3_CMakeConfigureLog{path_mathlib_CMakeConfigureLog};
+
+    // ── Build 3 / referenced file changed ──────────────────────────────────
+    std::cout << "👷 [Build 3 / file-flag input changed]" << std::endl;
+    run_command(cmake_build_command, project_path, test_env);
+
+    BOOST_REQUIRE(ffingerprint_b1_project_binary.has_changed());
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    file_fingerprint ffingerprint_b3_installed_libMathFunctions{mathlib_install_dir / "lib" / "libMathFunctions.a"};
+    file_fingerprint ffingerprint_b3_project_binary{project_path / "build" / "MyExample"};
+
+    // ── Configure 4 + Build 4 / no changes ─────────────────────────────────
+    std::cout << "👷 [Configure 4 / no changes]" << std::endl;
+    std::string output_c4 = run_command(cmake_configure_command, project_path, test_env);
+    std::cout << "👷 [Build 4 / no changes]" << std::endl;
+    run_command(cmake_build_command, project_path, test_env);
+
+    std::string fingerprint_c4 = extract_toolchain_fingerprint(output_c4);
+    BOOST_REQUIRE_MESSAGE(fingerprint_c3 == fingerprint_c4,
+      "toolchain fingerprint changed between consecutive no-change configures: " << fingerprint_c3 << " -> " << fingerprint_c4);
+    BOOST_REQUIRE(ffingerprint_c3_CMakeConfigureLog.is_unchanged());
+    BOOST_REQUIRE(ffingerprint_b3_installed_libMathFunctions.is_unchanged());
+    BOOST_REQUIRE(ffingerprint_b3_project_binary.is_unchanged());
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+  }
+
 }
