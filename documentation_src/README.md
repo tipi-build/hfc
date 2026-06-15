@@ -13,6 +13,16 @@ pip install -U sphinx
 > ```
 > Performs all the required steps
 
+#### Alternative: using uv (no virtualenv needed)
+
+Using [uv](https://docs.astral.sh/uv/), you can generate the documentation without installing Sphinx or managing a virtualenv.
+
+> ### All in one helper script:
+>
+> ```bash
+> uv run --with sphinx ./update_documentation.sh
+> ```
+
 ### Step by step:
 
 To generate the documentation:

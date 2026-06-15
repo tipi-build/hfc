@@ -553,7 +553,44 @@ to their concrete values before hashing.  This prevents genex tokens from leakin
 the hash verbatim and causing false cache misses or cache hits.</p></li>
 <li><p>Any extra variables listed in <code class="docutils literal notranslate"><span class="pre">HERMETIC_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span></code>
 (per-dependency) or <code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_ADDITIONAL_TOOLCHAIN_FINGERPRINT_VARIABLES</span></code> (global).</p></li>
+<li><p>The <strong>content</strong> of files referenced by file-bearing compiler / linker flags (see below).</p></li>
 </ul>
+<p><strong>Automatic file-flag detection</strong></p>
+<p>Some compiler and linker flags take a <em>file</em> as their argument, for example
+<code class="docutils literal notranslate"><span class="pre">-fsanitize-ignorelist=msan.ignore</span></code> or <code class="docutils literal notranslate"><span class="pre">-include</span> <span class="pre">forced_include.h</span></code>.  The flag
+<em>string</em> is captured by the fingerprint, but the file it points at is an out-of-line
+build input: editing the file changes the compiled output while leaving every flag
+string byte-for-byte identical.  Without detection, HFC would reuse an
+already-built dependency with stale instrumentation, and users had to work around it
+by hashing the file themselves and injecting the digest on the command line.</p>
+<p>HFC now detects these flags automatically (in compiler flags, link flags, and the
+top-level directory <code class="docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code> / <code class="docutils literal notranslate"><span class="pre">LINK_OPTIONS</span></code> properties, including
+generator-expression-wrapped flags once evaluated), resolves the referenced file,
+and folds its <code class="docutils literal notranslate"><span class="pre">SHA256</span></code> content hash into the toolchain fingerprint.  Editing the
+file therefore triggers a rebuild with no manual hashing required.</p>
+<p>The built-in table covers the common GCC and Clang file-bearing flags: sanitizer /
+coverage ignore- and allow-lists (<code class="docutils literal notranslate"><span class="pre">-fsanitize-ignorelist=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">-fsanitize-coverage-ignorelist=</span></code>, <code class="docutils literal notranslate"><span class="pre">-fsanitize-memory-ignorelist=</span></code> …), PGO /
+sample / auto profiles (<code class="docutils literal notranslate"><span class="pre">-fprofile-use=</span></code>, <code class="docutils literal notranslate"><span class="pre">-fprofile-sample-use=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">-fauto-profile=</span></code> …), XRay lists, modules (<code class="docutils literal notranslate"><span class="pre">-fmodule-file=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">-fmodule-mapper=</span></code>), plugins / specs (<code class="docutils literal notranslate"><span class="pre">-fplugin=</span></code>, <code class="docutils literal notranslate"><span class="pre">-specs=</span></code>), preprocessor
+<code class="docutils literal notranslate"><span class="pre">-include</span></code> / <code class="docutils literal notranslate"><span class="pre">-imacros</span></code>, linker scripts and symbol lists
+(<code class="docutils literal notranslate"><span class="pre">--version-script</span></code>, <code class="docutils literal notranslate"><span class="pre">--dynamic-list</span></code>, <code class="docutils literal notranslate"><span class="pre">--retain-symbols-file</span></code>, <code class="docutils literal notranslate"><span class="pre">-T</span></code> …,
+including <code class="docutils literal notranslate"><span class="pre">-Wl,</span></code> and <code class="docutils literal notranslate"><span class="pre">-Xlinker</span></code> wrapping), and <code class="docutils literal notranslate"><span class="pre">&#64;response</span></code> files.</p>
+<p>A referenced file that cannot be resolved (a relative path HFC cannot anchor, or a
+missing file) is skipped with a debug log and never aborts configuration.</p>
+<p>Two cache variables control the feature:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_DISABLE_FILE_FLAG_DETECTION</span></code> <em>(default</em> <code class="docutils literal notranslate"><span class="pre">OFF</span></code> <em>)</em></dt><dd><p>Set to <code class="docutils literal notranslate"><span class="pre">ON</span></code> to disable detection entirely.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS</span></code></dt><dd><p>A list of extra <code class="docutils literal notranslate"><span class="pre">flag</span></code> prefixes whose <code class="docutils literal notranslate"><span class="pre">flag=path</span></code> argument should also be
+treated as a file input, on top of the built-in table.</p>
+</dd>
+</dl>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Treat a custom &quot;flag=path&quot; flag as a file input in addition to the built-ins</span>
+<span class="nf">set(</span><span class="no">HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS</span><span class="w"> </span><span class="s">&quot;-fmy-custom-list&quot;</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="no">STRING</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="no">FORCE</span><span class="nf">)</span>
+</pre></div>
+</div>
 <p><strong>Controlling the fingerprinting mini-project</strong></p>
 <p>The isolated cmake process that evaluates generator expressions enables compiler-detection
 variables (<code class="docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_*</span></code>) that require an enabled language.  The

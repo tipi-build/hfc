@@ -1,6 +1,7 @@
 include_guard(GLOBAL)
 include(${CMAKE_CURRENT_LIST_DIR}/hfc_log.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/hfc_genex_eval.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/hfc_scan_file_flags.cmake)
 
 # Computes a live SHA256 fingerprint of the active CMake toolchain taking into
 # account all influential CMAKE_* cache variables, as well as:
@@ -19,6 +20,8 @@ function(compute_live_toolchain_fingerprint out_var)
     get_cmake_property(all_cache_vars CACHE_VARIABLES)
     set(toolchain_state "")
     set(_hfc_detected_genex_exprs "")
+    # flag strings (literal, non-GENEX) gathered for file-flag detection below
+    set(_hfc_flag_strings "")
 
     # helper: if value contains a generator expression, record it
     macro(_hfc_collect_genex_if_present value)
@@ -43,6 +46,9 @@ function(compute_live_toolchain_fingerprint out_var)
       string(APPEND toolchain_state "TOPLEVEL_DIR_LINK_OPTIONS=${dir_link_opts}\n")
       string(APPEND toolchain_state "TOPLEVEL_DIR_INCLUDE_DIRECTORIES=${dir_include_dirs}\n")
       string(APPEND toolchain_state "TOPLEVEL_DIR_LINK_DIRECTORIES=${dir_link_dirs}\n")
+
+      # directory-level option properties may carry file-bearing flags
+      list(APPEND _hfc_flag_strings "${dir_compile_opts}" "${dir_link_opts}")
     endif()
 
     # Sort the list to guarantee deterministic hashing regardless of cache order
@@ -74,6 +80,11 @@ function(compute_live_toolchain_fingerprint out_var)
           get_property(var_value CACHE ${var_name} PROPERTY VALUE)
           string(APPEND toolchain_state "${var_name}=${var_value}\n")
           _hfc_collect_genex_if_present("${var_value}")
+          # *_FLAGS / *_OPTIONS cache vars carry the compiler & linker flags
+          # where file-bearing flags appear
+          if(var_name MATCHES "_(FLAGS|OPTIONS)(_[A-Z0-9]+)?$")
+            list(APPEND _hfc_flag_strings "${var_value}")
+          endif()
       endif()
     endforeach()
 
@@ -97,12 +108,27 @@ function(compute_live_toolchain_fingerprint out_var)
                 if(DEFINED "${extra_var}")
                     string(APPEND toolchain_state "${extra_var}=${${extra_var}}\n")
                     _hfc_collect_genex_if_present("${${extra_var}}")
+                    list(APPEND _hfc_flag_strings "${${extra_var}}")
                 else()
                     # Explicitly track undefined variables to catch if they get defined later (semantically defined != empty)
                     string(APPEND toolchain_state "${extra_var}//NOTFOUND\n")
                 endif()
             endif()
         endforeach()
+    endif()
+
+    # File-bearing flag detection: scan the gathered literal flag strings for
+    # flags whose argument is a file (e.g. -fsanitize-ignorelist=msan.ignore)
+    # and fold each referenced file's content hash into the fingerprint, so a
+    # change to that file invalidates dependencies automatically. GENEX-wrapped
+    # flags are handled separately in
+    # compute_augmented_toolchain_fingerprint_isolated after evaluation.
+    hfc_scan_file_flags(_hfc_file_flag_fingerprint
+        STRINGS   ${_hfc_flag_strings}
+        BASE_DIRS "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}"
+    )
+    if(NOT _hfc_file_flag_fingerprint STREQUAL "")
+        string(APPEND toolchain_state "FILE_FLAG_INPUTS=\n${_hfc_file_flag_fingerprint}")
     endif()
 
     # Report detected GENEX expressions (from cache/extra vars) to the caller.
@@ -211,6 +237,16 @@ function(compute_augmented_toolchain_fingerprint_isolated out_var)
             list(APPEND fp_cmake_args "-DCMAKE_TOOLCHAIN_FILE=${FN_ARG_TOOLCHAIN_FILE}")
         endif()
 
+        # forward file-flag detection controls into the isolated mini-project so
+        # the literal scan in compute_live_toolchain_fingerprint sees them
+        if(DEFINED HERMETIC_FETCHCONTENT_DISABLE_FILE_FLAG_DETECTION)
+            list(APPEND fp_cmake_args "-DHERMETIC_FETCHCONTENT_DISABLE_FILE_FLAG_DETECTION=${HERMETIC_FETCHCONTENT_DISABLE_FILE_FLAG_DETECTION}")
+        endif()
+        if(DEFINED HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS)
+            string(REPLACE ";" "\\;" _fp_additional_file_flags "${HERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS}")
+            list(APPEND fp_cmake_args "-DHERMETIC_FETCHCONTENT_ADDITIONAL_FILE_FLAGS=${_fp_additional_file_flags}")
+        endif()
+
         hfc_log(STATUS "Fingerprinting CMAKE_TOOLCHAIN_FILE: ${FN_ARG_TOOLCHAIN_FILE} [fingerprint key ${dedup_key}]")
         hfc_log_debug(" - command: ${CMAKE_COMMAND} ${fp_cmake_args}")
 
@@ -243,6 +279,19 @@ function(compute_augmented_toolchain_fingerprint_isolated out_var)
             hfc_log(STATUS " - toolchain genex evals: ${_hfc_genex_evals}")
             list(JOIN _hfc_genex_evals "\n" _hfc_genex_evals_str)
             string(APPEND live_fingerprint "\nGENEX_EVALS=${_hfc_genex_evals_str}")
+
+            # File-bearing flag detection for GENEX-wrapped flags: the literal
+            # GENEX string (e.g. $<$<CONFIG:Debug>:-fsanitize-ignorelist=foo>)
+            # is invisible to the literal scan in compute_live_toolchain_fingerprint;
+            # only its evaluated value reveals the actual flag and file path.
+            hfc_scan_file_flags(_hfc_genex_file_flag_fingerprint
+                STRINGS   ${_hfc_genex_evals}
+                BASE_DIRS "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}"
+            )
+            if(NOT _hfc_genex_file_flag_fingerprint STREQUAL "")
+                hfc_log(STATUS " - toolchain genex file-flag inputs detected")
+                string(APPEND live_fingerprint "\nGENEX_FILE_FLAG_INPUTS=\n${_hfc_genex_file_flag_fingerprint}")
+            endif()
         endif()
 
         set_property(GLOBAL PROPERTY "${dedup_property}" "${live_fingerprint}")
