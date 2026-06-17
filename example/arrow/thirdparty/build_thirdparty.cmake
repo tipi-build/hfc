@@ -24,7 +24,7 @@ if(NOT hfc_included)
   include(HermeticFetchContent)
 endif()
 
-set(HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES "Threads;Python;dl;m;Git")
+set(HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES "Threads;Python;Python3;dl;m;Git;FLEX;BISON")
 
 FetchContent_Declare(
   OpenSSL
