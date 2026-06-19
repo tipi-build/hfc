@@ -1,4 +1,4 @@
-
+set(FETCHCONTENT_QUIET OFF CACHE BOOL "" FORCE)
 cmake_minimum_required(VERSION 3.27.6)
 project(
   ModernCMakeExample
@@ -14,19 +14,18 @@ set(CMAKE_MODULE_PATH
 
 include(HermeticFetchContent)
 
-
 FetchContent_Declare(
-  "version_update"
-  GIT_REPOSITORY "https://github.com/tipi-build/unit-test-cmake-template-version-update.git"
-  GIT_TAG "790f82e8a01b062b34133ef71dd94e9468717f37"
+  "mathlib"
+  GIT_REPOSITORY "https://github.com/tipi-build/unit-test-cmake-template-2libs.git"
+  GIT_TAG "ecc756a4c3f1811cdfd637bd6d8f4e3feb6aff92"
 )
 
 FetchContent_MakeHermetic(
-  "version_update"
+  "mathlib"
   HERMETIC_BUILD_SYSTEM cmake
 )
 
-HermeticFetchContent_MakeAvailableAtConfigureTime("version_update")
+HermeticFetchContent_MakeAvailableAtConfigureTime("mathlib")
 
 FetchContent_Declare(
   Iconv
@@ -47,7 +46,6 @@ FetchContent_MakeHermetic(
 
 HermeticFetchContent_MakeAvailableAtConfigureTime(Iconv)
 
-add_executable(MyExample simple_example.cpp)
-target_link_libraries(MyExample PRIVATE fakecachedep::fakecachedep Iconv::Iconv)
-add_executable(MySimpleMain simple_main.cpp)
 
+add_executable(MyExample simple_example.cpp)
+target_link_libraries(MyExample PRIVATE MathFunctions::MathFunctions MathFunctionscbrt::MathFunctionscbrt Iconv::Iconv)

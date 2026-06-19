@@ -98,6 +98,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/check_source_build_hfc_prefix.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_subdir.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_subproject_targets_linking.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_update_origin.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_version_update.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_without_install.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/configure_stability_test.cpp"
@@ -119,3 +120,4 @@ endforeach()
 set_tests_properties (goldilock_provisioning_test  PROPERTIES
     ENVIRONMENT "FAKE_GOLDILOCK=$<TARGET_FILE:goldilock>;TRUE_GOLDILOCK=${HERMETIC_FETCHCONTENT_goldilock_BIN};STANDARD_COMPILER=${CMAKE_CXX_COMPILER}")
 set_tests_properties(check_find_package PROPERTIES WILL_FAIL TRUE)
+set_tests_properties(check_update_origin PROPERTIES ENVIRONMENT "TIPI_CACHE_CONSUME_ONLY=ON")
