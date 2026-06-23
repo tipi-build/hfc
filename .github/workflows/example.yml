@@ -1,8 +1,17 @@
 name: example build
 
-# This workflow is triggered on PRs ony
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: 'Docker image to use (e.g. tipibuild/tipi-ubuntu:abc123)'
+        required: false
+        type: string
+      cmake_re_commit_sha:
+        description: 'cmake-re commit SHA (for traceability)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -12,7 +21,7 @@ env:
   TIPI_REFRESH_TOKEN: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_REFRESH_TOKEN }}
   TIPI_VAULT_PASSPHRASE: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_VAULT_PASSPHRASE }}
   TIPI_CACHE_CONSUME_ONLY: ON
-  COMMIT_ID: ${{ github.event.pull_request.head.sha }}
+  COMMIT_ID: ${{ github.event.pull_request.head.sha || github.sha }}
 
 
 jobs:
@@ -20,14 +29,14 @@ jobs:
     name: build example with boost
     runs-on: ubuntu-latest-8-cores
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
         uses: actions/checkout@v4
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/boost
@@ -41,6 +50,7 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
       - name: build with cmake
+        if: ${{ !inputs.docker_image }}
         run: |
           cd hfc_project/example/boost
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
@@ -50,14 +60,14 @@ jobs:
     name: build example get-started
     runs-on: ubuntu-latest-8-cores
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
         uses: actions/checkout@v4
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/get-started
@@ -71,6 +81,7 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
       - name: build with cmake
+        if: ${{ !inputs.docker_image }}
         run: |
           cd hfc_project/example/get-started
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
@@ -81,14 +92,14 @@ jobs:
     name: build example grpc_use_3rd_party_cmake_modules with cmake-re
     runs-on: ubuntu-latest-8-cores
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
         uses: actions/checkout@v4
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/grpc_use_3rd_party_cmake_modules
@@ -104,6 +115,7 @@ jobs:
 
   build-example-with-grpc-cmake:
     name: build example grpc_use_3rd_party_cmake_modules with cmake
+    if: ${{ !inputs.docker_image }}
     runs-on: ubuntu-latest-8-cores
     container:
       image: tipibuild/tipi-ubuntu:latest
@@ -113,7 +125,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/grpc_use_3rd_party_cmake_modules
@@ -131,14 +143,14 @@ jobs:
     name: build example openssl
     runs-on: ubuntu-latest-8-cores
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
         uses: actions/checkout@v4
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/openssl
@@ -152,6 +164,7 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
       - name: build with cmake
+        if: ${{ !inputs.docker_image }}
         run: |
           cd hfc_project/example/openssl
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
@@ -161,14 +174,14 @@ jobs:
     name: build example arrow with cmake-re
     runs-on: ubuntu-latest-8-cores
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
         uses: actions/checkout@v4
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/arrow
@@ -184,6 +197,7 @@ jobs:
 
   build-example-with-arrow-cmake:
     name: build example arrow with cmake
+    if: ${{ !inputs.docker_image }}
     runs-on: ubuntu-latest-8-cores
     container:
       image: tipibuild/tipi-ubuntu:latest
@@ -193,7 +207,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/arrow

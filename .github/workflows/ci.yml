@@ -1,8 +1,17 @@
-name: build 
+name: build
 
-# This workflow is triggered on PRs ony
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: 'Docker image to use (e.g. tipibuild/tipi-ubuntu:abc123)'
+        required: false
+        type: string
+      cmake_re_commit_sha:
+        description: 'cmake-re commit SHA'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -14,11 +23,11 @@ env:
   TIPI_VAULT_PASSPHRASE: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_VAULT_PASSPHRASE }}
 
 jobs:
-  build: 
+  build:
     name: Run HermeticFetchContent tests
     runs-on: ubuntu-latest-8-cores
-    container: 
-      image: tipibuild/tipi-ubuntu:latest
+    container:
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
@@ -28,6 +37,9 @@ jobs:
           echo "TESTS_CACHED_HFC_TOOLS_DIR=$GITHUB_WORKSPACE/shared_hfc_tools_dir" >> $GITHUB_ENV
           echo "TESTS_CACHED_HFC_BASEDIR=$GITHUB_WORKSPACE/hfc_project_basedir" >> $GITHUB_ENV
           echo "HFC_TEST_DATA_DIR=$GITHUB_WORKSPACE/hfc_project/test/test_data" >> $GITHUB_ENV
+          if [ -n "${{ inputs.docker_image }}" ]; then
+            echo "HFC_TEST_SKIP_CMAKE=1" >> $GITHUB_ENV
+          fi
 
 
       - name: prepare runner
@@ -60,7 +72,7 @@ jobs:
         uses: actions/checkout@v4
         with:          
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 2 # we need at least two revisions in the cloned copy so that our upgrade testing work
 
       - name: tipi builds project 
@@ -85,6 +97,7 @@ jobs:
           tipi run ctest --verbose -j -E offline_source_override_test
 
       - name: Run offline_source_override_test (network-isolated container)
+        if: ${{ !inputs.docker_image }}
         run: |
           # This test validates that HFC can work fully offline by overriding
           # source URLs (goldilock, cmake-sbom, dependencies) with local file:// paths.
