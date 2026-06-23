@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.27.6)
 project(hfc-openssl-example)
 
 include(FetchContent)
-
+message(FATAL_ERROR "simulate an error")
 set(hfc_REVISION main)
 if(DEFINED ENV{COMMIT_ID} AND NOT "$ENV{COMMIT_ID}" STREQUAL "")
     set(hfc_REVISION "$ENV{COMMIT_ID}")

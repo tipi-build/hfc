@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.27.6)
 project(grpc_use_3rd_party_cmake_modules)
+message(FATAL_ERROR "simulate an error")
 
 include(thirdparty/build_thirdparty.cmake)
 

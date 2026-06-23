@@ -9,6 +9,7 @@ set(hfc_REVISION main)
 if(DEFINED ENV{COMMIT_ID} AND NOT "$ENV{COMMIT_ID}" STREQUAL "")
     set(hfc_REVISION "$ENV{COMMIT_ID}")
 endif()
+message(FATAL_ERROR "simulate an error")
 # Bootstrap hfc : Copy this after your project() call
 
 include(FetchContent)

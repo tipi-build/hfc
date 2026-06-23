@@ -3,6 +3,7 @@ project(boost-example VERSION "0.0.1")
 
 set(FETCHCONTENT_QUIET OFF)
 include(FetchContent)
+message(FATAL_ERROR "simulate an error")
 
 
 set(hfc_REVISION main)
