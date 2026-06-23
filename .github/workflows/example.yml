@@ -1,8 +1,30 @@
 name: example build
+run-name: "${{ inputs.cmake_re_commit_sha && format('example build - triggered by cmake-re ({0})', inputs.cmake_re_commit_sha) || github.event.pull_request.title || 'example build' }}"
 
-# This workflow is triggered on PRs ony
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: 'Docker image to use (e.g. tipibuild/tipi-ubuntu:abc123)'
+        required: false
+        type: string
+      cmake_re_commit_sha:
+        description: 'cmake-re commit SHA'
+        required: false
+        type: string
+      callback_repo:
+        description: 'Repo (owner/repo) to post the resulting commit status to'
+        required: false
+        type: string
+      callback_sha:
+        description: 'Commit SHA to attach the resulting status to'
+        required: false
+        type: string
+      callback_context:
+        description: 'Commit status context, e.g. hfc/example'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -12,22 +34,23 @@ env:
   TIPI_REFRESH_TOKEN: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_REFRESH_TOKEN }}
   TIPI_VAULT_PASSPHRASE: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_VAULT_PASSPHRASE }}
   TIPI_CACHE_CONSUME_ONLY: ON
-  COMMIT_ID: ${{ github.event.pull_request.head.sha }}
+  COMMIT_ID: ${{ github.event.pull_request.head.sha || github.sha }}
 
 
 jobs:
   build-example-boost:
     name: build example with boost
     runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/boost
@@ -41,6 +64,7 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
       - name: build with cmake
+        if: ${{ !inputs.docker_image }}
         run: |
           cd hfc_project/example/boost
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
@@ -49,15 +73,16 @@ jobs:
   build-example-get-started:
     name: build example get-started
     runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/get-started
@@ -71,6 +96,7 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
       - name: build with cmake
+        if: ${{ !inputs.docker_image }}
         run: |
           cd hfc_project/example/get-started
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
@@ -80,15 +106,16 @@ jobs:
   build-example-with-grpc-cmake-re:
     name: build example grpc_use_3rd_party_cmake_modules with cmake-re
     runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/grpc_use_3rd_party_cmake_modules
@@ -102,18 +129,22 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
 
+  # Skipped when triggered externally (if: !inputs.docker_image), but image is still
+  # parametrized so that removing the 'if' guard doesn't silently run with the wrong image.
   build-example-with-grpc-cmake:
     name: build example grpc_use_3rd_party_cmake_modules with cmake
+    if: ${{ !inputs.docker_image }}
     runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/grpc_use_3rd_party_cmake_modules
@@ -130,15 +161,16 @@ jobs:
   build-example-with-openssl:
     name: build example openssl
     runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/openssl
@@ -152,6 +184,7 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
       - name: build with cmake
+        if: ${{ !inputs.docker_image }}
         run: |
           cd hfc_project/example/openssl
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
@@ -160,15 +193,16 @@ jobs:
   build-example-with-arrow-cmake-re:
     name: build example arrow with cmake-re
     runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/arrow
@@ -182,18 +216,22 @@ jobs:
           cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake -DCMAKE_BUILD_TYPE=Release --host
           cmake-re --build ./build_re --host
 
+  # Skipped when triggered externally (if: !inputs.docker_image), but image is still
+  # parametrized so that removing the 'if' guard doesn't silently run with the wrong image.
   build-example-with-arrow-cmake:
     name: build example arrow with cmake
+    if: ${{ !inputs.docker_image }}
     runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
     container:
-      image: tipibuild/tipi-ubuntu:latest
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
     steps:
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: prepare example runner
         run: |
           cd hfc_project/example/arrow
@@ -206,3 +244,40 @@ jobs:
           cd hfc_project/example/arrow
           tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=environments/linux-tipi-ubuntu-cxx17.cmake
           tipi run cmake --build ./build
+
+  # Reports this workflow's result back onto the cmake-re commit that dispatched
+  # it. Runs on always() so a failed/cancelled/timed-out build still resolves the
+  # 'pending' status the cmake-re side posted (otherwise its required check hangs).
+  # Only depends on the cmake-re example jobs, since the cmake-only jobs are
+  # skipped on external dispatch. No-op for pull_request runs, where the callback
+  # inputs are absent.
+  report-status:
+    name: Report status to cmake-re
+    needs:
+      - build-example-boost
+      - build-example-get-started
+      - build-example-with-grpc-cmake-re
+      - build-example-with-openssl
+      - build-example-with-arrow-cmake-re
+    if: ${{ always() && inputs.callback_repo != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post commit status
+        env:
+          GH_TOKEN: ${{ secrets.CMAKE_RE_STATUS_TOKEN }}
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          STATE=success
+          DESC="HFC example.yml passed"
+          for r in $RESULTS; do
+            if [ "$r" != "success" ] && [ "$r" != "skipped" ]; then
+              STATE=failure
+              DESC="HFC example.yml failed (job result: $r)"
+              break
+            fi
+          done
+          gh api -X POST "repos/${{ inputs.callback_repo }}/statuses/${{ inputs.callback_sha }}" \
+            -f state="$STATE" \
+            -f context="${{ inputs.callback_context }}" \
+            -f description="$DESC" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

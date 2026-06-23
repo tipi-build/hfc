@@ -1,8 +1,30 @@
-name: build 
+name: build
+run-name: "${{ inputs.cmake_re_commit_sha && format('build - triggered by cmake-re ({0})', inputs.cmake_re_commit_sha) || github.event.pull_request.title || 'build' }}"
 
-# This workflow is triggered on PRs ony
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: 'Docker image to use (e.g. tipibuild/tipi-ubuntu:abc123)'
+        required: false
+        type: string
+      cmake_re_commit_sha:
+        description: 'cmake-re commit SHA'
+        required: false
+        type: string
+      callback_repo:
+        description: 'Repo (owner/repo) to post the resulting commit status to'
+        required: false
+        type: string
+      callback_sha:
+        description: 'Commit SHA to attach the resulting status to'
+        required: false
+        type: string
+      callback_context:
+        description: 'Commit status context, e.g. hfc/ci'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -14,11 +36,12 @@ env:
   TIPI_VAULT_PASSPHRASE: ${{ secrets.HFC_TIPI_TEST_USER_TIPI_VAULT_PASSPHRASE }}
 
 jobs:
-  build: 
+  build:
     name: Run HermeticFetchContent tests
     runs-on: ubuntu-latest-8-cores
-    container: 
-      image: tipibuild/tipi-ubuntu:latest
+    timeout-minutes: 90
+    container:
+      image: ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }}
       options: --user root
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
@@ -28,6 +51,9 @@ jobs:
           echo "TESTS_CACHED_HFC_TOOLS_DIR=$GITHUB_WORKSPACE/shared_hfc_tools_dir" >> $GITHUB_ENV
           echo "TESTS_CACHED_HFC_BASEDIR=$GITHUB_WORKSPACE/hfc_project_basedir" >> $GITHUB_ENV
           echo "HFC_TEST_DATA_DIR=$GITHUB_WORKSPACE/hfc_project/test/test_data" >> $GITHUB_ENV
+          if [ -n "${{ inputs.docker_image }}" ]; then
+            echo "HFC_TEST_SKIP_CMAKE=1" >> $GITHUB_ENV
+          fi
 
 
       - name: prepare runner
@@ -42,7 +68,7 @@ jobs:
       - name: Cached hfc tools dir
         if: ${{ env.build_with_cache == 'true' }} 
         id: win-cache-build-artifacts-restore
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             $TESTS_CACHED_HFC_TOOLS_DIR
@@ -57,10 +83,10 @@ jobs:
       #
       # This is necessary because we use the pull_request_target which requires a fully specified :ref: config
       - name: checkout pull request
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:          
           path: './hfc_project'
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 2 # we need at least two revisions in the cloned copy so that our upgrade testing work
 
       - name: tipi builds project 
@@ -116,6 +142,34 @@ jobs:
             --detach \
             --network=none \
             --workdir /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}/hfc_project/build \
-            tipibuild/tipi-ubuntu:latest \
+            ${{ inputs.docker_image || 'tipibuild/tipi-ubuntu:latest' }} \
             sleep infinity
           docker exec --user root test-container-without-network tipi run ctest --verbose -j -R offline_source_override_test
+
+  # Reports this workflow's result back onto the cmake-re commit that dispatched
+  # it. Runs on always() so a failed/cancelled/timed-out build still resolves the
+  # 'pending' status the cmake-re side posted (otherwise its required check hangs).
+  # No-op for pull_request runs, where the callback inputs are absent.
+  report-status:
+    name: Report status to cmake-re
+    needs: [build]
+    if: ${{ always() && inputs.callback_repo != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post commit status
+        env:
+          GH_TOKEN: ${{ secrets.CMAKE_RE_STATUS_TOKEN }}
+          RESULT: ${{ needs.build.result }}
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            STATE=success
+            DESC="HFC ci.yml passed"
+          else
+            STATE=failure
+            DESC="HFC ci.yml $RESULT"
+          fi
+          gh api -X POST "repos/${{ inputs.callback_repo }}/statuses/${{ inputs.callback_sha }}" \
+            -f state="$STATE" \
+            -f context="${{ inputs.callback_context }}" \
+            -f description="$DESC" \
+            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

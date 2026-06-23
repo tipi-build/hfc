@@ -59,26 +59,32 @@ namespace hfc::test {
 
     std::vector<test_variant> tests_variants_to_run{};
 
-    auto cmake_path = bp::search_path("cmake");
-    if (cmake_path.string().empty()) {
-      auto error = std::runtime_error("ERROR: cmake is not found on PATH, tests can't be run.");
-      std::cout << error.what() << std::endl;
-      throw error;
-    }
-    tests_variants_to_run.push_back( test_variant{cmake_path, false} );
+    bool skip_cmake = std::getenv("HFC_TEST_SKIP_CMAKE") != nullptr;
+    bool skip_cmake_re = std::getenv("HFC_TEST_SKIP_CMAKE_RE") != nullptr;
 
-    auto cmake_re_path = bp::search_path("cmake-re");
-    if (cmake_re_path.string().empty()) {
-      auto error = std::runtime_error("ERROR: cmake-re is not found on PATH, tests can't be run.");
-      std::cout << error.what() << std::endl;
-      throw error;
-    }
-    tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host"} );  // host build
-
-    if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
-      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv"} );       // /!\ no --host
+    if (skip_cmake && skip_cmake_re) {
+      throw std::runtime_error("Both HFC_TEST_SKIP_CMAKE and HFC_TEST_SKIP_CMAKE_RE are set, no test variants to run.");
     }
 
+    if(!skip_cmake) {
+      auto cmake_path = bp::search_path("cmake");
+      if (cmake_path.string().empty()) {
+        throw std::runtime_error("cmake is not found on PATH, tests can't be run.");
+      }
+      tests_variants_to_run.push_back( test_variant{cmake_path, false} );
+    }
+
+    if(!skip_cmake_re) {
+      auto cmake_re_path = bp::search_path("cmake-re");
+      if (cmake_re_path.string().empty()) {
+        throw std::runtime_error("cmake-re is not found on PATH, tests can't be run.");
+      }
+      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host"} );  // host build
+
+      if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
+        tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv"} );       // /!\ no --host
+      }
+    }
 
     return tests_variants_to_run;
   }
@@ -87,47 +93,52 @@ namespace hfc::test {
 
     std::vector<test_variant> tests_variants_to_run{};
 
-    auto cmake_path = bp::search_path("cmake");
-    if (cmake_path.string().empty()) {
-      auto error = std::runtime_error("ERROR: cmake is not found on PATH, tests can't be run.");
-      std::cout << error.what() << std::endl;
-      throw error;
+    bool skip_cmake = std::getenv("HFC_TEST_SKIP_CMAKE") != nullptr;
+    bool skip_cmake_re = std::getenv("HFC_TEST_SKIP_CMAKE_RE") != nullptr;
+
+    if (skip_cmake && skip_cmake_re) {
+      throw std::runtime_error("Both HFC_TEST_SKIP_CMAKE and HFC_TEST_SKIP_CMAKE_RE are set, no test variants to run.");
     }
 
-    // Test with both GCC and Clang toolchains
-    // Structure: {toolchain_name, compiler_to_check}
     std::vector<std::pair<std::string, std::string>> toolchains = {
       {"linux-toolchain.cmake", "gcc"},
       {"linux-toolchain-clang.cmake", "clang"}
     };
 
-    for (const auto& [toolchain, compiler] : toolchains) {
-      auto compiler_path = bp::search_path(compiler);
-      if (compiler_path.string().empty()) {
-        std::cout << "WARNING: " << compiler << " is not found on PATH, skipping tests with " << toolchain << std::endl;
-        continue;
+    if(!skip_cmake) {
+      auto cmake_path = bp::search_path("cmake");
+      if (cmake_path.string().empty()) {
+        throw std::runtime_error("cmake is not found on PATH, tests can't be run.");
       }
 
-      tests_variants_to_run.push_back( test_variant{cmake_path, false, "", "", "", toolchain} );
+      for (const auto& [toolchain, compiler] : toolchains) {
+        auto compiler_path = bp::search_path(compiler);
+        if (compiler_path.string().empty()) {
+          std::cout << "WARNING: " << compiler << " is not found on PATH, skipping tests with " << toolchain << std::endl;
+          continue;
+        }
+
+        tests_variants_to_run.push_back( test_variant{cmake_path, false, "", "", "", toolchain} );
+      }
     }
 
-    auto cmake_re_path = bp::search_path("cmake-re");
-    if (cmake_re_path.string().empty()) {
-      auto error = std::runtime_error("ERROR: cmake-re is not found on PATH, tests can't be run.");
-      std::cout << error.what() << std::endl;
-      throw error;
-    }
-
-    for (const auto& [toolchain, compiler] : toolchains) {
-      auto compiler_path = bp::search_path(compiler);
-      if (compiler_path.string().empty()) {
-        continue;
+    if(!skip_cmake_re) {
+      auto cmake_re_path = bp::search_path("cmake-re");
+      if (cmake_re_path.string().empty()) {
+        throw std::runtime_error("cmake-re is not found on PATH, tests can't be run.");
       }
 
-      tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host", "", "", toolchain} );  // host build
+      for (const auto& [toolchain, compiler] : toolchains) {
+        auto compiler_path = bp::search_path(compiler);
+        if (compiler_path.string().empty()) {
+          continue;
+        }
 
-      if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
-        tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv", "", "", toolchain} );       // /!\ no --host
+        tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv --host", "", "", toolchain} );  // host build
+
+        if(std::getenv("HFC_TEST_ENABLE_CONTAINERIZED_BUILDS_TEST") == "ON") {
+          tests_variants_to_run.push_back( test_variant{cmake_re_path, true, "-vv", "", "", toolchain} );       // /!\ no --host
+        }
       }
     }
 
