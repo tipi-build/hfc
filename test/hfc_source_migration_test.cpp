@@ -619,23 +619,8 @@ namespace hfc::test {
     do_clean_migration(data, temp_dir, test_env, "git_tag_to_git_tag", false, mig::from_repoA_v1(false), mig::to_repoA_v2(false));
   }
   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, at_git_tag_to_git_tag, HFC_MIGRATION_VARIANTS, data) {
-    // Pre-fix: an autotools dep whose GIT_TAG is bumped to another commit of the
-    // SAME repo migrates cleanly under native cmake (out-of-source build reads
-    // from a revision-specific dir), but is STALE under cmake-re: the in-source
-    // build reuses the shared mirror worktree (keyed on the proxy toolchain / ABI,
-    // not the revision) and restores the old revision's sources. The fix folds the
-    // revision into the proxy toolchain and flips this to CLEAN -- at which point
-    // this expectation is tightened to CLEAN.
-    source_material m = build_source_material(temp_dir / "sources", test_env, true);
-    auto o = run_scenario("at_git_tag_to_git_tag", mig::from_repoA_v1(true)(m), mig::to_repoA_v2(true)(m),
-                          data, temp_dir, make_uuid(), test_env);
-    const std::string lbl = "[" + variant_label(data) + "] " + o.name;
-    std::cout << lbl << " -> " << outcome_label(o) << std::endl;
-    BOOST_REQUIRE_MESSAGE(o.initial_ok, lbl << " baseline build failed: " << o.after.detail);
-    const outcome_kind expected = data.is_cmake_re ? outcome_kind::stale : outcome_kind::clean;
-    BOOST_CHECK_MESSAGE(classify(o) == expected,
-      lbl << " expected " << kind_name(expected) << ", got " << outcome_label(o)
-          << " (autotools same-repo tag bump; cmake-re reuses the in-source mirror worktree)");
+    do_clean_migration(data, temp_dir, test_env, "at_git_tag_to_git_tag", true,
+                       mig::from_repoA_v1(true), mig::to_repoA_v2(true));
   }
 
   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, git_repo_to_git_repo, HFC_MIGRATION_VARIANTS, data) {

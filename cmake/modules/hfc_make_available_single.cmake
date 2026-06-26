@@ -246,6 +246,36 @@ function(hfc_make_available_single content_name build_at_configure_time)
   endif()
 
   #
+  # In-source build systems (autotools / openssl) build the dependency *inside*
+  # the cmake-re mirror worktree, so the dependency's source tree itself lives in
+  # that worktree. The worktree's identity is derived from the proxy-toolchain
+  # hash (the ABI key) and is otherwise revision-independent, so two revisions of
+  # the same origin share one worktree: cmake-re then restores a cached source
+  # snapshot of the previously-built revision over the freshly-fetched sources,
+  # and the dependency is silently rebuilt/installed from stale sources.
+  #
+  # Out-of-source cmake builds read sources from a revision-specific directory and
+  # recompile from there, so they are unaffected and keep their incremental mirror
+  # reuse. For in-source builds we fold the content revision into the proxy
+  # toolchain so each revision gets its own mirror worktree.
+  set(_hfc_proxy_build_system "cmake")
+  if(DEFINED __PARAMS_HERMETIC_BUILD_SYSTEM)
+    set(_hfc_proxy_build_system "${__PARAMS_HERMETIC_BUILD_SYSTEM}")
+  endif()
+  if(_hfc_proxy_build_system STREQUAL "autotools" OR _hfc_proxy_build_system STREQUAL "openssl")
+    if(__PARAMS_GIT_REPOSITORY)
+      set(_hfc_insource_revision "${__PARAMS_GIT_TAG}")
+    else()
+      set(_hfc_insource_revision "${__PARAMS_URL_HASH}")
+    endif()
+    if(NOT DEFINED __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION)
+      set(__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION "")
+    endif()
+    string(APPEND __PARAMS_HERMETIC_TOOLCHAIN_EXTENSION
+      "\n# HFC in-source build mirror revision key: ${_hfc_insource_revision}\n")
+  endif()
+
+  #
   # proxy toolchain generation continued
   list(APPEND proxy_toolchain_args PROJECT_TOOLCHAIN_EXTENSION "${__PARAMS_HERMETIC_TOOLCHAIN_EXTENSION}")
   list(APPEND proxy_toolchain_args PROJECT_SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}")
