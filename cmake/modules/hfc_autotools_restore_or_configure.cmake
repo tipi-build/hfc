@@ -66,33 +66,37 @@ function(hfc_autootols_configure
   # File to consider the configure step done
   already_configured_file
   )
-  if (NOT EXISTS "${already_configured_file}")
-    set(cmake_command ${OVERRIDEN_CMAKE_COMMAND} "-G" "${CMAKE_GENERATOR}" "--install-prefix" "${HERMETIC_PROJECT_INSTALL_PREFIX}" "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}" "-S" "${cmake_adapter_parent_path}" "-B" "${AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR}" "-DCMAKE_TOOLCHAIN_FILE=${toolchain_file}")
 
-    if (CMAKE_RE_ENABLE)
-      # --origin
-      list(APPEND cmake_command "--host") # TODO: we should somehow be able to detect if this is actually a "sub-build" already
-      list(APPEND cmake_command "--origin" "${origin}")
-    endif()
+  # Always configure when invoked: the caller already gates this on
+  # dep_need_configure. Re-checking already_configured_file here is unsafe in
+  # cmake-re mode -- PROJECT_BINARY_DIR is a symlink the mirror prep re-points
+  # after that decision, so the marker can resolve to a stale one and wrongly skip
+  # ./configure, leaving repopulated sources with no Makefile ("make: No targets").
+  set(cmake_command ${OVERRIDEN_CMAKE_COMMAND} "-G" "${CMAKE_GENERATOR}" "--install-prefix" "${HERMETIC_PROJECT_INSTALL_PREFIX}" "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}" "-S" "${cmake_adapter_parent_path}" "-B" "${AUTOTOOLS_IN_SOURCE_TREE_BUILD_DIR}" "-DCMAKE_TOOLCHAIN_FILE=${toolchain_file}")
 
-    cmake_path(GET already_configured_file PARENT_PATH configured_marker_parent_path)
-    file(GLOB configure_markers "${configured_marker_parent_path}/hfc.*.configure.done")
-    if(configure_markers)
-      hfc_log_debug(" - clearing old configure markers")
-      file(REMOVE ${configure_markers})
-    endif()
+  if (CMAKE_RE_ENABLE)
+    # --origin
+    list(APPEND cmake_command "--host") # TODO: we should somehow be able to detect if this is actually a "sub-build" already
+    list(APPEND cmake_command "--origin" "${origin}")
+  endif()
 
-    execute_process(
-      COMMAND ${cmake_command}
-      RESULT_VARIABLE CONFIGURE_RESULT
-      COMMAND_ECHO STDOUT
-    )
+  cmake_path(GET already_configured_file PARENT_PATH configured_marker_parent_path)
+  file(GLOB configure_markers "${configured_marker_parent_path}/hfc.*.configure.done")
+  if(configure_markers)
+    hfc_log_debug(" - clearing old configure markers")
+    file(REMOVE ${configure_markers})
+  endif()
 
-    if(${CONFIGURE_RESULT} EQUAL 0)
-      file(TOUCH "${already_configured_file}")
-    else()
-      message(FATAL_ERROR "Failed to configure ${content_name}")
-    endif()
+  execute_process(
+    COMMAND ${cmake_command}
+    RESULT_VARIABLE CONFIGURE_RESULT
+    COMMAND_ECHO STDOUT
+  )
+
+  if(${CONFIGURE_RESULT} EQUAL 0)
+    file(TOUCH "${already_configured_file}")
+  else()
+    message(FATAL_ERROR "Failed to configure ${content_name}")
   endif()
 
 endfunction()
