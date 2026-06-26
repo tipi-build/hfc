@@ -1,0 +1,46 @@
+#!/bin/sh
+# Minimal hand-written ./configure for HFC's autotools build path.
+#
+# HFC's autotools support only ever runs:  ./configure --prefix=... CC=... CFLAGS=...
+# then `make` and `make install`. It never invokes autoconf/automake/libtool. So a
+# fake configure that honours --prefix and the toolchain vars HFC passes (CC/AR/
+# RANLIB/CFLAGS/CPPFLAGS) has full fidelity for what we are testing (source-origin
+# migration / source-cache keying), while staying tiny and dependency-free.
+#
+# It emits a Makefile by prepending the resolved variables to the committed
+# Makefile.rules (kept in a separate file so the recipe TABs survive verbatim).
+
+prefix=/usr/local
+CC=${CC:-cc}
+AR=${AR:-ar}
+RANLIB=${RANLIB:-ranlib}
+CFLAGS=
+CPPFLAGS=
+
+for arg in "$@"; do
+  case "$arg" in
+    --prefix=*) prefix="${arg#--prefix=}" ;;
+    CC=*)       CC="${arg#CC=}" ;;
+    AR=*)       AR="${arg#AR=}" ;;
+    RANLIB=*)   RANLIB="${arg#RANLIB=}" ;;
+    CFLAGS=*)   CFLAGS="${arg#CFLAGS=}" ;;
+    CPPFLAGS=*) CPPFLAGS="${arg#CPPFLAGS=}" ;;
+    *)          ;;  # ignore --host=, --disable-shared, --enable-static, CXX=, LDFLAGS=, ...
+  esac
+done
+
+# AR sometimes arrives as "<ar> cr" or with flags; keep only the program for `$(AR) rcs`.
+set -- $AR
+ar_prog="$1"
+
+{
+  printf 'CC = %s\n'       "$CC"
+  printf 'AR = %s\n'       "$ar_prog"
+  printf 'RANLIB = %s\n'   "$RANLIB"
+  printf 'CFLAGS = %s\n'   "$CFLAGS"
+  printf 'CPPFLAGS = %s\n' "$CPPFLAGS"
+  printf 'prefix = %s\n'   "$prefix"
+  cat Makefile.rules
+} > Makefile
+
+echo "fake-configure: prefix=$prefix CC=$CC AR=$ar_prog"
