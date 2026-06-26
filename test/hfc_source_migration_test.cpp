@@ -661,18 +661,14 @@ namespace hfc::test {
   // tighten it to CLEAN. The expected outcomes are calibrated against real runs:
   //   moving branch (same GIT_TAG "main")      -> STALE  (cache key unchanged)
   //   .git removed, build folder reused        -> CLEAN  (stamps survive)
-  //   .git removed, fresh build folder         -> CLEAN cmake-re / BROKEN native
-  //                                               cmake (both cmake and autotools)
+  //   .git removed, fresh build folder         -> CLEAN  (clone dir cleared/re-cloned)
   //
-  // TODO: the non-CLEAN expectations below encode real HFC issues, not desired
-  // behaviour. When either is fixed, flip its expectation to CLEAN (the exact
-  // match will fail until you do, by design):
-  //   1. STALE  - moving_branch_same_tag: a GIT_TAG that is a mutable branch
-  //      reuses the stale clone because the source-cache key is the GIT_TAG
-  //      string. Fix would resolve the ref to a concrete commit before keying.
-  //   2. BROKEN - {git,at_git}_dotgit_removed_fresh_build (native cmake):
-  //      re-populating a shared clone whose .git was removed fails (clone into a
-  //      non-empty, non-git dir). cmake-re recovers through its mirror.
+  // TODO: the STALE expectation below encodes a real HFC issue, not desired
+  // behaviour. When it is fixed, flip its expectation to CLEAN (the exact match
+  // will fail until you do, by design):
+  //   moving_branch_same_tag: a GIT_TAG that is a mutable branch reuses the stale
+  //   clone because the source-cache key is the GIT_TAG string. Fix would resolve
+  //   the ref to a concrete commit before keying.
 
   // Assert a scenario produced exactly `expected`. Any deviation fails the case,
   // including an *improvement* to CLEAN (so the expectation is kept honest).
@@ -716,20 +712,21 @@ namespace hfc::test {
   }
 
   // .git removed from the shared clone, fresh build folder: no stamp files, so
-  // FetchContent re-populates from scratch. For native cmake this fails —
-  // FetchContent tries to git-clone into the non-empty, non-git shared clone dir
-  // and the configure step errors. cmake-re re-populates through its mirror and
-  // recovers, so the native-cmake case is BROKEN in both build systems.
+  // FetchContent re-populates from scratch. HFC detects the non-git clone dir and
+  // clears it so the fresh clone succeeds, in both drivers and build systems.
   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, git_dotgit_removed_fresh_build, HFC_MIGRATION_VARIANTS, data) {
     source_material m = build_source_material(temp_dir / "sources", test_env);
     auto o = run_dotgit_scenario("git_dotgit_removed_fresh_build", true, data, temp_dir, m, test_env, false);
-    expect_outcome(o, data, data.is_cmake_re ? outcome_kind::clean : outcome_kind::broken,
-      ".git deleted from shared clone + fresh build folder => native-cmake re-population fails");
+    expect_outcome(o, data, outcome_kind::clean,
+      ".git deleted from shared clone + fresh build folder => clone dir cleared and re-populated");
   }
+  // The autotools (in-source) dep's first populate clones into the same source
+  // cache dir, so the re-clone recovery applies there too and it rebuilds cleanly
+  // in both drivers.
   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, at_git_dotgit_removed_fresh_build, HFC_MIGRATION_VARIANTS, data) {
     source_material m = build_source_material(temp_dir / "sources", test_env, true);
     auto o = run_dotgit_scenario("at_git_dotgit_removed_fresh_build", true, data, temp_dir, m, test_env, true);
-    expect_outcome(o, data, data.is_cmake_re ? outcome_kind::clean : outcome_kind::broken,
-      "autotools; .git deleted from shared clone + fresh build folder => native-cmake re-population fails");
+    expect_outcome(o, data, outcome_kind::clean,
+      "autotools; .git deleted from shared clone + fresh build folder");
   }
 }
