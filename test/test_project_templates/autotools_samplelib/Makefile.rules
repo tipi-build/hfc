@@ -1,0 +1,16 @@
+
+all: libsamplelib.a
+
+samplelib.o: samplelib.c samplelib.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c samplelib.c -o samplelib.o
+
+libsamplelib.a: samplelib.o
+	$(AR) rcs libsamplelib.a samplelib.o
+	-$(RANLIB) libsamplelib.a
+
+install: all
+	mkdir -p $(prefix)/lib $(prefix)/include
+	cp libsamplelib.a $(prefix)/lib/
+	cp samplelib.h $(prefix)/include/
+
+.PHONY: all install

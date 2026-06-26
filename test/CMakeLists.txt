@@ -108,6 +108,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/run_hfc_discover_targets_overridest_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/targets_cache_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/hfc_version_stepping_test.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/hfc_source_migration_test.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_bypass_provider_test.cpp"
 )
 
