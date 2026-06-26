@@ -216,6 +216,26 @@ function(hfc_populate_project_declare content_name)
       endif()
     endif()
 
+    # If the source cache dir exists but is NOT a valid git clone (e.g. its .git
+    # was removed) and we're about to git-clone into it, FetchContent's clone
+    # refuses a non-empty, non-git destination -> a fresh build (no stamp files)
+    # fails to populate. This is a corrupt state, not a deliberate dev checkout
+    # (those stay valid git repos, handled above), so clear it for a fresh clone.
+    # The subbuild populate stamps survive a build-folder wipe (they live next to
+    # the source cache), so we also invalidate them; otherwise ExternalProject
+    # skips the re-clone and runs its git-update step in the emptied dir, failing
+    # with "fatal: not a git repository". This applies to in-source build systems
+    # (autotools/openssl) too: their first populate clones into the same source
+    # cache dir, so the corruption and the fix are identical.
+    if(FN_ARG_GIT_REPOSITORY AND NOT SOURCE_DIR_is_git_repo AND EXISTS "${FN_ARG_SOURCE_DIR}")
+      file(GLOB _hfc_existing "${FN_ARG_SOURCE_DIR}/*")
+      if(_hfc_existing)
+        hfc_log(STATUS "🧹 ${FN_ARG_SOURCE_DIR} is not a git repository; clearing for a fresh clone")
+        file(REMOVE_RECURSE "${FN_ARG_SOURCE_DIR}")
+        hfc_invalidate_project_population(${content_name} "${FN_ARG_SOURCE_DIR}")
+      endif()
+    endif()
+
     #
     # build arguments for FetchContent_populate()
     set(populate_args "")
