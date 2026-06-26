@@ -216,12 +216,19 @@ namespace hfc::test {
     }
 
     // Writes the consumer project's CMakeLists.txt for a given origin.
-    void write_consumer(const fs::path& project_path, const origin_t& origin) {
+    // `cache_reldir`, when non-empty, relocates the central source cache to
+    // ${CMAKE_SOURCE_DIR}/<cache_reldir> via HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR.
+    void write_consumer(const fs::path& project_path, const origin_t& origin,
+                        const std::string& cache_reldir = "") {
       std::stringstream cml;
       cml << "set(FETCHCONTENT_QUIET OFF CACHE BOOL \"\" FORCE)\n"
           << "cmake_minimum_required(VERSION 3.27.6)\n"
-          << "project(HfcSourceMigrationTest VERSION 1.0 LANGUAGES CXX)\n\n"
-          << "set(CMAKE_MODULE_PATH\n"
+          << "project(HfcSourceMigrationTest VERSION 1.0 LANGUAGES CXX)\n\n";
+      if(!cache_reldir.empty()) {
+        cml << "set(HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR \"${CMAKE_SOURCE_DIR}/"
+            << cache_reldir << "\")\n\n";
+      }
+      cml << "set(CMAKE_MODULE_PATH\n"
           << "  \"${CMAKE_CURRENT_SOURCE_DIR}/cmake\"\n"
           << "  \"${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules\"\n"
           << "  ${CMAKE_MODULE_PATH})\n"
@@ -586,6 +593,57 @@ namespace hfc::test {
       else if(out.after.ran && out.after.variant_seen == 11) out.served_stale = true;
       return out;
     }
+
+    struct relocate_outcome {
+      scenario_outcome o;
+      fs::path src_before;     // source-cache clone dir before relocation
+      fs::path src_after;      // source-cache clone dir after relocation
+      fs::path relocated_dir;  // the dir HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR points at
+    };
+
+    // Relocating HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR (HFC's headline feature)
+    // must move the central source clone to the new dir while the build keeps
+    // working. Build once with the default cache, then reconfigure/rebuild the
+    // SAME origin with the cache relocated, and check both the build still works
+    // and the clone actually moved.
+    relocate_outcome run_relocate_scenario(const std::string& name, bool autotools,
+                                           const test_variant& data, const fs::path& temp_dir,
+                                           const source_material& m, bp::environment& env) {
+      relocate_outcome ro;
+      ro.o.name = name;
+      std::string uuid = make_uuid();
+      fs::path scenario_base = temp_dir / name;
+      fs::create_directories(scenario_base);
+      fs::path project_path = prepare_project_to_be_tested("hfc_source_migration", data.is_cmake_re, scenario_base);
+      write_project_tipi_id(project_path);
+
+      origin_t origin = git_origin(11, "repoA@" + m.repoA_v1.substr(0,8), m.repoA, m.repoA_v1, autotools);
+
+      // 1. Build with the default source cache.
+      write_consumer(project_path, origin);
+      step_result first = configure_build_run(project_path, data, env, uuid);
+      ro.o.initial_ok = first.ran && first.variant_seen == 11;
+      ro.src_before = extract_samplelib_src_dir(first.configure_output);
+
+      // 2. Relocate the source cache (same origin/revision) and rebuild in place.
+      write_consumer(project_path, origin, "relocated_cache");
+      ro.o.after = configure_build_run(project_path, data, env, uuid);
+      ro.src_after = extract_samplelib_src_dir(ro.o.after.configure_output);
+      if(ro.o.after.ran && ro.o.after.variant_seen == 11) ro.o.migrated_cleanly = true;
+      // The project-relative cache resolves under the mirror in cmake-re mode.
+      ro.relocated_dir = resolve_real_source(project_path) / "relocated_cache";
+      return ro;
+    }
+
+    // True if a samplelib-*-src clone exists directly under `dir`.
+    bool has_samplelib_clone(const fs::path& dir) {
+      if(!fs::exists(dir)) return false;
+      for(fs::directory_iterator it(dir), end; it != end; ++it) {
+        const std::string n = it->path().filename().generic_string();
+        if(boost::starts_with(n, "samplelib-") && boost::ends_with(n, "-src")) return true;
+      }
+      return false;
+    }
   }
 
 
@@ -649,6 +707,32 @@ namespace hfc::test {
   }
   BOOST_DATA_TEST_CASE_F(test_isolation_fixture, at_archive_to_archive, HFC_MIGRATION_VARIANTS, data) {
     do_clean_migration(data, temp_dir, test_env, "at_archive_to_archive", true, mig::archiveX(true), mig::archiveY(true));
+  }
+
+  // ─── Source-cache relocation ────────────────────────────────────────────────
+  // Relocating the central source cache via HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR
+  // (the core "relocate the download folder" feature) must keep the build working
+  // and actually move the clone to the new dir. Asserts both: the rebuilt binary
+  // still reflects the dependency (CLEAN) and the relocated dir holds the clone.
+  void do_relocate(const test_variant& data, const fs::path& temp_dir, bp::environment& env,
+                   const std::string& name, bool autotools) {
+    relocate_outcome ro = run_relocate_scenario(name, autotools, data, temp_dir, build_source_material(temp_dir / "sources", env, autotools), env);
+    const std::string lbl = "[" + variant_label(data) + "] " + name;
+    std::cout << lbl << " before=" << ro.src_before.generic_string()
+              << " after=" << ro.src_after.generic_string()
+              << " relocated=" << ro.relocated_dir.generic_string()
+              << " -> " << outcome_label(ro.o) << std::endl;
+    BOOST_REQUIRE_MESSAGE(ro.o.initial_ok, lbl << " baseline build failed: " << ro.o.after.detail);
+    BOOST_CHECK_MESSAGE(ro.o.migrated_cleanly, lbl << " build broken after relocation: " << outcome_label(ro.o));
+    BOOST_CHECK_MESSAGE(has_samplelib_clone(ro.relocated_dir),
+      lbl << " source clone not found under the relocated cache dir " << ro.relocated_dir.generic_string());
+  }
+
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, git_relocate_source_cache, HFC_MIGRATION_VARIANTS, data) {
+    do_relocate(data, temp_dir, test_env, "git_relocate_source_cache", false);
+  }
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, at_git_relocate_source_cache, HFC_MIGRATION_VARIANTS, data) {
+    do_relocate(data, temp_dir, test_env, "at_git_relocate_source_cache", true);
   }
 
   // ─── Same-cache-key edge cases ──────────────────────────────────────────────
