@@ -2,6 +2,9 @@ name: example build
 run-name: "${{ inputs.cmake_re_commit_sha && format('example build - triggered by cmake-re ({0})', inputs.cmake_re_commit_sha) || github.event.pull_request.title || 'example build' }}"
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
     inputs:
