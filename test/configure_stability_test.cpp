@@ -17,7 +17,7 @@
 #include <test_isolation_fixture.hpp>
 
 
-namespace hfc::test { 
+namespace hfc::test {
   namespace fs = boost::filesystem;
   namespace bp = boost::process;
   namespace utf = boost::unit_test;
@@ -47,7 +47,7 @@ namespace hfc::test {
     return count_files_starts_and_ends_with(path, "hfc.", ".configure.done");
   }
 
-  inline size_t count_install_done_files(const fs::path& path) {    
+  inline size_t count_install_done_files(const fs::path& path) {   
     return count_files_starts_and_ends_with(path, "hfc.", ".install.done");
   }
 
@@ -76,10 +76,10 @@ namespace hfc::test {
     {
       //
       // the Iconv lib is a "AtConfigureTime" library, so it should be fully configured by now
-      // 
+      //
 
       // these files are configure artifacts and should be present
-      BOOST_REQUIRE(fs::exists(iconv_build_dir / "Makefile"));     
+      BOOST_REQUIRE(fs::exists(iconv_build_dir / "Makefile"));    
       BOOST_REQUIRE(fs::exists(iconv_build_dir / "config.log"));
       BOOST_REQUIRE(fs::exists(iconv_build_dir / "config.status"));
 
@@ -88,7 +88,7 @@ namespace hfc::test {
       BOOST_REQUIRE(fs::exists(iconv_build_dir / ".libs" / "libiconv.la"));
       BOOST_REQUIRE(fs::exists(iconv_build_dir / "hello"));
 
-      // we should have installed 
+      // we should have installed
       BOOST_REQUIRE(fs::exists(iconv_install_dir / "lib" / "libiconv.a"));
       BOOST_REQUIRE(fs::exists(iconv_install_dir / "lib" / "libiconv.la"));
       BOOST_REQUIRE(fs::exists(iconv_install_dir / "include" / "lib.h"));
@@ -100,7 +100,7 @@ namespace hfc::test {
       //
       // the project binary should not be there just yet
       //
-      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));      
+      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));     
     }
 
     // gather some info to check that the configure didn't reexecute
@@ -135,12 +135,12 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c1_installed_libiconv.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(iconv_build_dir.parent_path()) == 1);
     BOOST_REQUIRE(count_install_done_files(iconv_install_dir) == 1);
-    
+   
     auto path_project_binary = project_path / "build" / "MyExample";
     BOOST_REQUIRE(fs::exists(path_project_binary));
 
     //
-    // configure and build once more 
+    // configure and build once more
     // expectation: no input was modified, so everything shall stay as-is
     //
 
@@ -240,7 +240,7 @@ namespace hfc::test {
 
     //
     // change the dependency config and expect a rebuild
-    // 
+    //
 
     fs::path project_cmakelists_path = project_path / "CMakeLists.txt";
     file_fingerprint ffingerprint_c5_cmakelists{project_cmakelists_path};
@@ -273,7 +273,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c5_installed_libiconv.is_unchanged());
     BOOST_REQUIRE(ffingerprint_b4_project_binary.has_changed());
     BOOST_REQUIRE(count_configure_done_files(iconv_build_dir.parent_path()) == 1);
-    BOOST_REQUIRE(count_install_done_files(iconv_install_dir) == 1);   
+    BOOST_REQUIRE(count_install_done_files(iconv_install_dir) == 1);  
 
   }
 
@@ -301,10 +301,10 @@ namespace hfc::test {
     {
       //
       // the Iconv lib is a "AtBuildTime" library, so it should be only configured not built
-      // 
+      //
 
       // these files are configure artifacts and should be present
-      BOOST_REQUIRE(fs::exists(iconv_build_dir / "Makefile"));     
+      BOOST_REQUIRE(fs::exists(iconv_build_dir / "Makefile"));    
       BOOST_REQUIRE(fs::exists(iconv_build_dir / "config.log"));
       BOOST_REQUIRE(fs::exists(iconv_build_dir / "config.status"));
       BOOST_REQUIRE(count_configure_done_files(iconv_build_dir.parent_path()) == 1);
@@ -315,14 +315,14 @@ namespace hfc::test {
       BOOST_REQUIRE(!fs::exists(iconv_build_dir / "hello"));
 
       // nothing should be installed
-      BOOST_REQUIRE(!fs::exists(iconv_install_dir / "bin"));    
-      BOOST_REQUIRE(!fs::exists(iconv_install_dir / "lib"));    
+      BOOST_REQUIRE(!fs::exists(iconv_install_dir / "bin"));   
+      BOOST_REQUIRE(!fs::exists(iconv_install_dir / "lib"));   
       BOOST_REQUIRE(is_empty_directory(iconv_install_dir / "include")); // exists for technical purposes but shall be empty
 
       //
       // the project binary should not be there just yet
       //
-      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));      
+      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));     
     }
 
     // gather some info to check that the configure didn't reexecute
@@ -353,15 +353,15 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c1_config_status.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_makefile.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(iconv_build_dir.parent_path()) == 1);
-    
+   
     auto path_project_binary = project_path / "build" / "MyExample";
     BOOST_REQUIRE(fs::exists(path_project_binary));
-    
+   
     BOOST_REQUIRE(fs::exists(path_iconv_installed_libiconv));
     file_fingerprint ffingerprint_b1_installed_libiconv{path_iconv_installed_libiconv};
 
     //
-    // configure and build once more 
+    // configure and build once more
     // expectation: no input was modified, so everything shall stay as-is
     //
 
@@ -452,7 +452,7 @@ namespace hfc::test {
 
     //
     // change the dependency config and expect a rebuild
-    // 
+    //
 
     fs::path project_cmakelists_path = project_path / "CMakeLists.txt";
     file_fingerprint ffingerprint_c5_cmakelists{project_cmakelists_path};
@@ -510,10 +510,10 @@ namespace hfc::test {
     {
       //
       // the mathlib is a "AtConfigureTime" library, so it should be fully configured and installed by now
-      // 
+      //
 
       // these files are configure artifacts and should be present
-      BOOST_REQUIRE(fs::exists(mathlib_build_dir / "build.ninja"));     
+      BOOST_REQUIRE(fs::exists(mathlib_build_dir / "build.ninja"));    
       BOOST_REQUIRE(fs::exists(mathlib_build_dir / "CMakeCache.txt"));
       BOOST_REQUIRE(fs::exists(mathlib_build_dir / "CMakeFiles" / "CMakeConfigureLog.yaml"));
 
@@ -521,7 +521,7 @@ namespace hfc::test {
       BOOST_REQUIRE(fs::exists(mathlib_build_dir / "libMathFunctions.a"));
       BOOST_REQUIRE(fs::exists(mathlib_build_dir / "libMathFunctionscbrt.a"));
 
-      // we should have installed 
+      // we should have installed
       BOOST_REQUIRE(fs::exists(mathlib_install_dir / "lib" / "libMathFunctions.a"));
       BOOST_REQUIRE(fs::exists(mathlib_install_dir / "lib" / "libMathFunctionscbrt.a"));
       BOOST_REQUIRE(fs::exists(mathlib_install_dir / "include" / "MathFunctions.h"));
@@ -532,7 +532,7 @@ namespace hfc::test {
       //
       // the project binary should not be there just yet
       //
-      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));      
+      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));     
     }
 
     // gather some info to check that the configure didn't reexecute
@@ -564,12 +564,12 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c1_installed_libMathFunctionscbrt.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_installed_libMathFunctions.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
-    
+   
     auto path_project_binary = project_path / "build" / "MyExample";
     BOOST_REQUIRE(fs::exists(path_project_binary));
 
     //
-    // configure and build once more 
+    // configure and build once more
     // expectation: no input was modified, so everything shall stay as-is
     //
 
@@ -664,7 +664,7 @@ namespace hfc::test {
 
     //
     // change the dependency config and expect a rebuild
-    // 
+    //
 
     fs::path project_cmakelists_path = project_path / "CMakeLists.txt";
     file_fingerprint ffingerprint_c5_cmakelists{project_cmakelists_path};
@@ -720,10 +720,10 @@ namespace hfc::test {
     {
       //
       // the Iconv lib is a "AtBuildTime" library, so it should be only configured not built
-      // 
+      //
 
       // these files are configure artifacts and should be present
-      BOOST_REQUIRE(fs::exists(mathlib_build_dir / "build.ninja"));     
+      BOOST_REQUIRE(fs::exists(mathlib_build_dir / "build.ninja"));    
       BOOST_REQUIRE(fs::exists(mathlib_build_dir / "CMakeCache.txt"));
       BOOST_REQUIRE(fs::exists(mathlib_build_dir / "CMakeFiles" / "CMakeConfigureLog.yaml"));
       BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
@@ -733,14 +733,14 @@ namespace hfc::test {
       BOOST_REQUIRE(!fs::exists(mathlib_build_dir / "libMathFunctionscbrt.a"));
 
       // nothing should be installed
-      BOOST_REQUIRE(!fs::exists(mathlib_install_dir / "bin"));    
-      BOOST_REQUIRE(!fs::exists(mathlib_install_dir / "lib"));    
+      BOOST_REQUIRE(!fs::exists(mathlib_install_dir / "bin"));   
+      BOOST_REQUIRE(!fs::exists(mathlib_install_dir / "lib"));   
       BOOST_REQUIRE(is_empty_directory(mathlib_install_dir / "include")); // exists for technical purposes but shall be empty
 
       //
       // the project binary should not be there just yet
       //
-      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));      
+      BOOST_REQUIRE(!fs::exists(project_path / "build" / "MyExample" ));     
     }
 
     // gather some info to check that the configure didn't reexecute
@@ -768,17 +768,17 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(ffingerprint_c1_path_mathlib_ninjafile.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
-    
+   
     auto path_project_binary = project_path / "build" / "MyExample";
     BOOST_REQUIRE(fs::exists(path_project_binary));
-    
+   
     BOOST_REQUIRE(fs::exists(path_mathlib_installed_libMathFunctions));
     BOOST_REQUIRE(fs::exists(path_mathlib_installed_libMathFunctionscbrt));
     file_fingerprint ffingerprint_b1_installed_libMathFunctions{path_mathlib_installed_libMathFunctions};
     file_fingerprint ffingerprint_b1_installed_libMathFunctionscbrt{path_mathlib_installed_libMathFunctionscbrt};
 
     //
-    // configure and build once more 
+    // configure and build once more
     // expectation: no input was modified, so everything shall stay as-is
     //
 
@@ -864,7 +864,7 @@ namespace hfc::test {
 
     //
     // change the dependency config and expect a rebuild
-    // 
+    //
 
     fs::path project_cmakelists_path = project_path / "CMakeLists.txt";
     file_fingerprint ffingerprint_c5_cmakelists{project_cmakelists_path};
@@ -890,13 +890,13 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_b4_installed_libMathFunctions.has_changed());
     BOOST_REQUIRE(ffingerprint_b4_installed_libMathFunctionscbrt.has_changed());
     BOOST_REQUIRE(ffingerprint_b4_project_binary.has_changed());
-    
+   
   }
 
 
   // Returns two test_variant instances for the hidden-input test:
-  //   _0 → AtBuildTime  (default, no extra -D flags)
-  //   _1 → AtConfigureTime (-DHFC_BUILD_AT_CONFIGURE_TIME=ON)
+  //  _0 → AtBuildTime  (default, no extra -D flags)
+  //  _1 → AtConfigureTime (-DHFC_BUILD_AT_CONFIGURE_TIME=ON)
   inline std::vector<test_variant> cmake_hidden_input_variants() {
     auto cmake_path = bp::search_path("cmake");
     if(cmake_path.string().empty()) {
@@ -946,7 +946,7 @@ namespace hfc::test {
       return "";
     };
 
-    // ── Configure 1 ────────────────────────────────────────────────────────
+    // Configure 1
     std::cout << "⚗️ [Configure 1]" << std::endl;
     std::string output_c1 = run_command(cmake_configure_command, project_path, test_env);
 
@@ -957,7 +957,7 @@ namespace hfc::test {
     std::string fingerprint_c1 = extract_toolchain_fingerprint(output_c1);
     BOOST_REQUIRE_MESSAGE(!fingerprint_c1.empty(), "toolchain fingerprint not found in configure output");
 
-    // ── Build 1 ─────────────────────────────────────────────────────────────
+    // Build 1
     std::cout << "⚗️ [Build 1]" << std::endl;
     run_command(cmake_build_command, project_path, test_env);
 
@@ -970,7 +970,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_b1_installed_libMathFunctions{mathlib_install_dir / "lib" / "libMathFunctions.a"};
     file_fingerprint ffingerprint_b1_project_binary{project_path / "build" / "MyExample"};
 
-    // ── Configure 2 / no changes ────────────────────────────────────────────
+    // Configure 2 / no changes
     std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
     std::string output_c2 = run_command(cmake_configure_command, project_path, test_env);
 
@@ -983,7 +983,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c1_ninjafile.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
 
-    // ── Build 2 / no changes ───────────────────────────────────────────────
+    // Build 2 / no changes
     std::cout << "⚗️ [Build 2 / no changes]" << std::endl;
     run_command(cmake_build_command, project_path, test_env);
 
@@ -992,7 +992,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_b1_project_binary.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
 
-    // ── Change hidden input ─────────────────────────────────────────────────
+    // Change hidden input
     // Simulates e.g. updating a sanitizer ignorelist: the toolchain reads the
     // file and adds its SHA256 as a compile definition, so the fingerprint of
     // the toolchain changes and the dependency must be fully reconfigured.
@@ -1000,7 +1000,7 @@ namespace hfc::test {
     pre::file::from_string(hidden_input_file.generic_string(), "modified content v2 - triggers rebuild");
     BOOST_REQUIRE(hidden_input_fingerprint_before.has_changed());
 
-    // ── Configure 3 / hidden input changed ─────────────────────────────────
+    // Configure 3 / hidden input changed
     std::cout << "👷 [Configure 3 / hidden input changed]" << std::endl;
     std::string output_c3 = run_command(cmake_configure_command, project_path, test_env);
 
@@ -1017,7 +1017,7 @@ namespace hfc::test {
 
     file_fingerprint ffingerprint_c3_CMakeConfigureLog{path_mathlib_CMakeConfigureLog};
 
-    // ── Build 3 / hidden input changed ─────────────────────────────────────
+    // Build 3 / hidden input changed
     std::cout << "👷 [Build 3 / hidden input changed]" << std::endl;
     run_command(cmake_build_command, project_path, test_env);
 
@@ -1027,7 +1027,7 @@ namespace hfc::test {
     file_fingerprint ffingerprint_b3_installed_libMathFunctions{mathlib_install_dir / "lib" / "libMathFunctions.a"};
     file_fingerprint ffingerprint_b3_project_binary{project_path / "build" / "MyExample"};
 
-    // ── Configure 4 + Build 4 / no changes ─────────────────────────────────
+    // Configure 4 + Build 4 / no changes
     // everything must be stable now that the hidden input has settled
     std::cout << "👷 [Configure 4 / no changes]" << std::endl;
     std::string output_c4 = run_command(cmake_configure_command, project_path, test_env);
@@ -1044,6 +1044,203 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_b3_project_binary.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
   }
+
+  // Verifies that changing the parent toolchain causes a transitive proxy
+  // toolchain invalidation through a HERMETIC_FIND_PACKAGES dependency chain:
+  //
+  //  parent toolchain changes
+  //    -> HfcDependencyProvidedLib proxy toolchain changes
+  //         (live_toolchain_fingerprint baked into HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT)
+  //      -> HFC_HfcDependencyProvidedLib_FINGERPRINT changes
+  //        -> mathlib proxy toolchain changes
+  //             (HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS entry updated)
+  //          -> mathlib is reconfigured
+  //
+  // Uses the check_find_package template which already has the two-dependency
+  // structure: HfcDependencyProvidedLib (autotools) consumed by mathlib via
+  // HERMETIC_FIND_PACKAGES.
+  BOOST_FIXTURE_TEST_CASE(configure_stability_transitive_invalidation_via_find_packages, test_isolation_fixture) {
+    auto cmake_path = bp::search_path("cmake");
+    if(cmake_path.string().empty()) {
+      throw std::runtime_error("cmake not found on PATH");
+    }
+    test_variant data{cmake_path, false};
+
+    fs::path project_path = prepare_project_to_be_tested("check_find_package", data.is_cmake_re, temp_dir);
+    write_project_tipi_id(project_path);
+    write_simple_main(project_path, { "MathFunctions.h", "MathFunctionscbrt.h", "lib.h" });
+
+    std::string cmake_configure_command = get_cmake_configure_command(project_path, data);
+
+    auto hfc_dep_proxy  = project_path / "build" / "_deps" / "HfcDependencyProvidedLib-toolchain" / "hfc_hermetic_proxy_toolchain.cmake";
+    auto mathlib_proxy  = project_path / "build" / "_deps" / "mathlib-toolchain"                 / "hfc_hermetic_proxy_toolchain.cmake";
+    auto mathlib_build_dir       = project_path / "build" / "_deps" / "mathlib-build";
+    auto path_mathlib_config_log = mathlib_build_dir / "CMakeFiles" / "CMakeConfigureLog.yaml";
+
+    // Configure 1
+    std::cout << "⚗️ [Configure 1]" << std::endl;
+    run_command(cmake_configure_command, project_path, test_env);
+
+    BOOST_REQUIRE(fs::exists(hfc_dep_proxy));
+    BOOST_REQUIRE(fs::exists(mathlib_proxy));
+    BOOST_REQUIRE(fs::exists(path_mathlib_config_log));
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    auto extract_dep_fingerprint = [&](const fs::path& proxy) -> std::string {
+      std::string content = pre::file::to_string(proxy.generic_string());
+      boost::smatch m;
+      if(boost::regex_search(content, m, boost::regex{"HfcDependencyProvidedLib=([0-9a-fA-F.]+)"})) {
+        return m[1].str();
+      }
+      return {};
+    };
+
+    // mathlib's proxy must actually carry the dependency fingerprint entry. The
+    // change-detection assertions below also pass via ROOT_PROJECT_TOOLCHAIN_FINGERPRINT,
+    // so this is the only assertion that fails if DEPENDENCY_FINGERPRINTS is emitted empty.
+    std::string dep_fingerprint_before = extract_dep_fingerprint(mathlib_proxy);
+    BOOST_REQUIRE_MESSAGE(!dep_fingerprint_before.empty(),
+      "mathlib proxy toolchain missing HfcDependencyProvidedLib=<hash> in HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS");
+
+    file_fingerprint fp_hfc_dep_proxy{hfc_dep_proxy};
+    file_fingerprint fp_mathlib_proxy{mathlib_proxy};
+    file_fingerprint fp_mathlib_config_log{path_mathlib_config_log};
+
+    // Configure 2 / no changes
+    std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
+    run_command(cmake_configure_command, project_path, test_env);
+
+    BOOST_REQUIRE_MESSAGE(fp_hfc_dep_proxy.is_unchanged(),
+      "HfcDependencyProvidedLib proxy toolchain changed without any input change");
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_proxy.is_unchanged(),
+      "mathlib proxy toolchain changed without any input change");
+    BOOST_REQUIRE(fp_mathlib_config_log.is_unchanged());
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+
+    // Modify parent toolchain
+    // Appending to the toolchain changes the live_toolchain_fingerprint baked
+    // into HfcDependencyProvidedLib's proxy toolchain, which changes its SHA256
+    // hash, which changes HFC_HfcDependencyProvidedLib_FINGERPRINT, which
+    // appears in mathlib's HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS.
+    fs::path project_toolchain = get_project_toolchain_path(project_path);
+    append_to_toolchain(project_toolchain, "\nadd_compile_definitions(\"HFC_TRANSITIVE_CHANGE=1\")");
+
+    // Configure 3 / toolchain changed
+    std::cout << "⚗️ [Configure 3 / toolchain changed]" << std::endl;
+    run_command(cmake_configure_command, project_path, test_env);
+
+    // First hop: HfcDependencyProvidedLib's proxy toolchain must reflect the
+    // new live_toolchain_fingerprint
+    BOOST_REQUIRE_MESSAGE(fp_hfc_dep_proxy.has_changed(),
+      "HfcDependencyProvidedLib proxy toolchain did not change after parent toolchain modification");
+
+    // Second hop: mathlib's proxy toolchain must reflect the updated
+    // HFC_HfcDependencyProvidedLib_FINGERPRINT via DEPENDENCY_FINGERPRINTS
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_proxy.has_changed(),
+      "mathlib proxy toolchain did not change -- HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS transitive invalidation failed");
+
+    std::string dep_fingerprint_after = extract_dep_fingerprint(mathlib_proxy);
+    BOOST_REQUIRE_MESSAGE(!dep_fingerprint_after.empty(),
+      "mathlib proxy toolchain missing HfcDependencyProvidedLib=<hash> after toolchain change");
+    BOOST_REQUIRE_MESSAGE(dep_fingerprint_after != dep_fingerprint_before,
+      "HfcDependencyProvidedLib fingerprint in mathlib's DEPENDENCY_FINGERPRINTS did not change "
+      "after the dependency was invalidated");
+
+    // Consequence: mathlib was reconfigured because its proxy toolchain changed
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_config_log.has_changed(),
+      "mathlib was not reconfigured after transitive dependency fingerprint change");
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+  }
+
+
+  // Transitive invalidation with a stimulus that perturbs ONLY the dependency, leaving the
+  // parent toolchain untouched. The previous test changes the parent toolchain, which reaches
+  // mathlib's proxy both through DEPENDENCY_FINGERPRINTS and directly through
+  // ROOT_PROJECT_TOOLCHAIN_FINGERPRINT -- so it cannot prove which path caused the change.
+  // Here the HfcDependencyProvidedLib declaration lists ENV{HFC_DEP_PERTURB} as a per-dependency
+  // fingerprint variable, so changing that env var alters ONLY HfcDependencyProvidedLib's
+  // fingerprint. mathlib's ROOT_PROJECT_TOOLCHAIN_FINGERPRINT is unchanged, so the only way
+  // mathlib's proxy can change is through the DEPENDENCY_FINGERPRINTS entry.
+  BOOST_FIXTURE_TEST_CASE(configure_stability_transitive_invalidation_via_dependency_fingerprint_only, test_isolation_fixture) {
+    auto cmake_path = bp::search_path("cmake");
+    if(cmake_path.string().empty()) {
+      throw std::runtime_error("cmake not found on PATH");
+    }
+    test_variant data{cmake_path, false};
+
+    fs::path project_path = prepare_project_to_be_tested("check_find_package", data.is_cmake_re, temp_dir);
+    write_project_tipi_id(project_path);
+    write_simple_main(project_path, { "MathFunctions.h", "MathFunctionscbrt.h", "lib.h" });
+
+    std::string cmake_configure_command = get_cmake_configure_command(project_path, data);
+
+    auto hfc_dep_proxy  = project_path / "build" / "_deps" / "HfcDependencyProvidedLib-toolchain" / "hfc_hermetic_proxy_toolchain.cmake";
+    auto mathlib_proxy  = project_path / "build" / "_deps" / "mathlib-toolchain"                 / "hfc_hermetic_proxy_toolchain.cmake";
+    auto mathlib_build_dir       = project_path / "build" / "_deps" / "mathlib-build";
+    auto path_mathlib_config_log = mathlib_build_dir / "CMakeFiles" / "CMakeConfigureLog.yaml";
+
+    auto extract_dep_fingerprint = [&](const fs::path& proxy) -> std::string {
+      std::string content = pre::file::to_string(proxy.generic_string());
+      boost::smatch m;
+      if(boost::regex_search(content, m, boost::regex{"HfcDependencyProvidedLib=([0-9a-fA-F.]+)"})) {
+        return m[1].str();
+      }
+      return {};
+    };
+
+    auto extract_root_toolchain_fingerprint = [&](const fs::path& proxy) -> std::string {
+      std::string content = pre::file::to_string(proxy.generic_string());
+      boost::smatch m;
+      if(boost::regex_search(content, m, boost::regex{"HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT \"([0-9a-fA-F]+)\""})) {
+        return m[1].str();
+      }
+      return {};
+    };
+
+    // Configure 1
+    std::cout << "⚗️ [Configure 1]" << std::endl;
+    test_env["HFC_DEP_PERTURB"] = "before";
+    run_command(cmake_configure_command, project_path, test_env);
+
+    BOOST_REQUIRE(fs::exists(hfc_dep_proxy));
+    BOOST_REQUIRE(fs::exists(mathlib_proxy));
+    BOOST_REQUIRE(fs::exists(path_mathlib_config_log));
+
+    std::string dep_fingerprint_before = extract_dep_fingerprint(mathlib_proxy);
+    std::string mathlib_root_tc_before = extract_root_toolchain_fingerprint(mathlib_proxy);
+    BOOST_REQUIRE_MESSAGE(!dep_fingerprint_before.empty(),
+      "mathlib proxy toolchain missing HfcDependencyProvidedLib=<hash> in HERMETIC_FETCHCONTENT_DEPENDENCY_FINGERPRINTS");
+    BOOST_REQUIRE_MESSAGE(!mathlib_root_tc_before.empty(),
+      "mathlib proxy toolchain missing HERMETIC_FETCHCONTENT_ROOT_PROJECT_TOOLCHAIN_FINGERPRINT");
+
+    file_fingerprint fp_mathlib_proxy{mathlib_proxy};
+    file_fingerprint fp_mathlib_config_log{path_mathlib_config_log};
+
+    // Configure 2 / perturb ONLY the dependency's fingerprint via its env input
+    std::cout << "⚗️ [Configure 2 / dependency fingerprint perturbed]" << std::endl;
+    test_env["HFC_DEP_PERTURB"] = "after";
+    run_command(cmake_configure_command, project_path, test_env);
+
+    // The parent toolchain is untouched, so mathlib's ROOT_PROJECT_TOOLCHAIN_FINGERPRINT must
+    // be identical -- this is what isolates the change to the DEPENDENCY_FINGERPRINTS path.
+    BOOST_REQUIRE_MESSAGE(extract_root_toolchain_fingerprint(mathlib_proxy) == mathlib_root_tc_before,
+      "mathlib ROOT_PROJECT_TOOLCHAIN_FINGERPRINT changed -- stimulus leaked into the parent toolchain, "
+      "test no longer isolates the DEPENDENCY_FINGERPRINTS path");
+
+    // The dependency fingerprint entry must change...
+    std::string dep_fingerprint_after = extract_dep_fingerprint(mathlib_proxy);
+    BOOST_REQUIRE_MESSAGE(dep_fingerprint_after != dep_fingerprint_before,
+      "HfcDependencyProvidedLib fingerprint in mathlib's DEPENDENCY_FINGERPRINTS did not change "
+      "after perturbing only the dependency's fingerprint input");
+
+    // ...and mathlib's proxy + reconfigure must follow.
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_proxy.has_changed(),
+      "mathlib proxy toolchain did not change after the dependency's fingerprint changed");
+    BOOST_REQUIRE_MESSAGE(fp_mathlib_config_log.has_changed(),
+      "mathlib was not reconfigured after the dependency's fingerprint changed");
+    BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
+  }
+
 
   // Generator expressions in add_compile_definitions() / add_compile_options()
   // are hashed as literal strings, not as evaluated values.  When the GENEX
@@ -1063,10 +1260,10 @@ namespace hfc::test {
     write_simple_main(project_path, { "MathFunctions.h" }, "simple_example.cpp");
 
     // Use the dedicated genex-blindspot toolchain which contains two GENEXs:
-    //   GENEX 1: $<$<BOOL:$CACHE{HFC_TEST_GENEX_FLAG}>:HFC_GENEX_FLAG_ACTIVE>
-    //            references a forwarded non-CMAKE_ cache variable
-    //   GENEX 2: $<$<CONFIG:Release>:HFC_TEST_RELEASE_MODE>
-    //            pure toolchain-local expression, no forwarding needed
+    //  GENEX 1: $<$<BOOL:$CACHE{HFC_TEST_GENEX_FLAG}>:HFC_GENEX_FLAG_ACTIVE>
+    //           references a forwarded non-CMAKE_ cache variable
+    //  GENEX 2: $<$<CONFIG:Release>:HFC_TEST_RELEASE_MODE>
+    //           pure toolchain-local expression, no forwarding needed
     fs::path toolchain_with_genex = get_project_toolchain_path(project_path, "linux-toolchain-genex-blindspot.cmake");
 
     std::string cmake_configure_flag_off = get_cmake_configure_command(project_path, data, "-DHFC_TEST_GENEX_FLAG=OFF", toolchain_with_genex);
@@ -1098,7 +1295,7 @@ namespace hfc::test {
       return "";
     };
 
-    // ── Configure 1 / GENEX flag = OFF ─────────────────────────────────────
+    // Configure 1 / GENEX flag = OFF
     std::cout << "⚗️ [Configure 1 / HFC_TEST_GENEX_FLAG=OFF]" << std::endl;
     std::string output_c1 = run_command(cmake_configure_flag_off, project_path, test_env);
 
@@ -1116,7 +1313,7 @@ namespace hfc::test {
     BOOST_REQUIRE_MESSAGE(genex_evals_c1.find("HFC_GENEX_FLAG_ACTIVE") == std::string::npos,
       "GENEX 1 (HFC_GENEX_FLAG_ACTIVE) should be absent when flag=OFF, but found in: " << genex_evals_c1);
 
-    // ── Build 1 ─────────────────────────────────────────────────────────────
+    // Build 1
     std::cout << "⚗️ [Build 1]" << std::endl;
     run_command(cmake_build_command, project_path, test_env);
 
@@ -1125,7 +1322,7 @@ namespace hfc::test {
 
     file_fingerprint ffingerprint_c1_CMakeConfigureLog{path_mathlib_CMakeConfigureLog};
 
-    // ── Configure 2 / no changes ────────────────────────────────────────────
+    // Configure 2 / no changes
     std::cout << "⚗️ [Configure 2 / no changes]" << std::endl;
     std::string output_c2 = run_command(cmake_configure_flag_off, project_path, test_env);
 
@@ -1135,7 +1332,7 @@ namespace hfc::test {
     BOOST_REQUIRE(ffingerprint_c1_CMakeConfigureLog.is_unchanged());
     BOOST_REQUIRE(count_configure_done_files(mathlib_build_dir) == 1);
 
-    // ── Configure 3 / GENEX flag toggled to ON ──────────────────────────────
+    // Configure 3 / GENEX flag toggled to ON
     std::cout << "⚗️ [Configure 3 / HFC_TEST_GENEX_FLAG=ON]" << std::endl;
     std::string output_c3 = run_command(cmake_configure_flag_on, project_path, test_env);
 
@@ -1143,8 +1340,8 @@ namespace hfc::test {
     BOOST_REQUIRE_MESSAGE(!fingerprint_c3.empty(), "toolchain fingerprint not found in configure output");
 
     // Both GENEXs must appear in the evaluated output:
-    //   GENEX 1 (forwarded flag=ON)  -> HFC_GENEX_FLAG_ACTIVE
-    //   GENEX 2 (pure config-based)  -> HFC_TEST_RELEASE_MODE
+    //  GENEX 1 (forwarded flag=ON)  -> HFC_GENEX_FLAG_ACTIVE
+    //  GENEX 2 (pure config-based)  -> HFC_TEST_RELEASE_MODE
     std::string genex_evals_c3 = extract_genex_evals(output_c3);
     BOOST_REQUIRE_MESSAGE(!genex_evals_c3.empty(), "genex evals not found in configure output -- _hfc_genex_evals.txt was not produced");
     BOOST_REQUIRE_MESSAGE(genex_evals_c3.find("HFC_GENEX_FLAG_ACTIVE") != std::string::npos,
