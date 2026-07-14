@@ -1,4 +1,5 @@
 include(hfc_goldilock_helpers)
+include(hfc_policy_helpers)
 
 macro(hfc_provide_dependency_FETCHCONTENT method package_name)
 
@@ -59,17 +60,22 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
     list(SUBLIST populate_args 0 ${FIND_PACKAGE_ARGS_ix} populate_args)
   endif()
 
-  FetchContent_Populate(${package_name}
+  hfc_fetchcontent_populate(${package_name}
     ${populate_args}
     SOURCE_DIR ${content_source_dir}
     SUBBUILD_DIR "${HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR}/${package_name}-${source_hash_short}-subbuild"
   )
+
+  hfc_resolve_policy_version_minimum("" hfc_policy_version_minimum)
+  hfc_push_policy_version_minimum("${hfc_policy_version_minimum}")
 
   if(EXISTS "${content_source_dir}/CMakeLists.txt")
     add_subdirectory("${content_source_dir}" "${FN_ARG_BINARY_DIR}")
   elseif(FN_ARG_SOURCE_SUBDIR AND EXISTS "${content_source_dir}/${FN_ARG_SOURCE_SUBDIR}/CMakeLists.txt")
     add_subdirectory("${content_source_dir}/${FN_ARG_SOURCE_SUBDIR}" "${FN_ARG_BINARY_DIR}")
   endif()
+
+  hfc_pop_policy_version_minimum()
 
   if(NOT TARGET hfc_${package_name}_source_dir)
     hfc_custom_echo_command_create("hfc_${package_name}_source_dir_echo_cmd" "===SOURCE_DIR===")

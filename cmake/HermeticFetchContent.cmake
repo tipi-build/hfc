@@ -68,6 +68,7 @@ Commands
       [HERMETIC_PREPATCHED_RESOLVER <cmake code>]
       [HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION <cmake code>]
       [HERMETIC_DISCOVER_TARGETS_FILE_PATTERN <regex pattern>]
+      [HERMETIC_POLICY_VERSION_MINIMUM <version>]
     )
 
   The ``FetchContent_MakeHermetic()`` function records options that describe the additional
@@ -122,6 +123,24 @@ Commands
       "CMAKE_C_FLAGS"
     )
 
+
+  The ``HERMETIC_POLICY_VERSION_MINIMUM`` option sets ``CMAKE_POLICY_VERSION_MINIMUM`` for the
+  isolated build of this content. This is the escape hatch for legacy dependencies that declare
+  ``cmake_minimum_required(VERSION <3.5)``, which CMake 4 and later reject with a hard error.
+  Set it to the lowest policy version CMake still accepts (typically ``3.5``) to build such
+  dependencies unmodified:
+
+  .. code-block:: cmake
+
+    FetchContent_MakeHermetic(
+      old_library
+      HERMETIC_POLICY_VERSION_MINIMUM 3.5
+    )
+
+  A project-wide default for all hermetic contents can be set via the global variable
+  ``HERMETIC_FETCHCONTENT_POLICY_VERSION_MINIMUM`` (the per-content option takes precedence).
+  Note that changing this value alters the generated proxy toolchain and therefore triggers a
+  one-time reconfigure/rebuild of the affected dependencies.
 
   The ``HERMETIC_CONFIG_EXTRA_ARGS`` option allows passing additional flags to the ``configure``
   script for dependencies using ``autotools`` or ``openssl`` build systems. These flags are

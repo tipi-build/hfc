@@ -2,6 +2,7 @@ include(hfc_log)
 include(hfc_required_args)
 include(hfc_git_helpers)
 include(hfc_goldilock_helpers)
+include(hfc_policy_helpers)
 include(FetchContent)
 include(hfc_compute_subbuild_path)
 include(hfc_compute_populate_build_path)
@@ -295,7 +296,7 @@ function(hfc_populate_project_declare content_name)
 
     #
     hfc_log_debug(" - populating (${populate_args})")
-    FetchContent_Populate(
+    hfc_fetchcontent_populate(
       ${content_name}
       ${populate_args}
     )
@@ -395,7 +396,7 @@ function(hfc_populate_project_declare content_name)
 
       #
       hfc_log_debug(" - populating (${clone_source_in_build_populate_args})")
-      FetchContent_Populate(
+      hfc_fetchcontent_populate(
         ${content_name_clone_in_build_folder}
         ${clone_source_in_build_populate_args}
       )

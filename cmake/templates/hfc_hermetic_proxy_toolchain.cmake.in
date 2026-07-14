@@ -56,11 +56,15 @@ if(NOT hfc_dependency_provider_module IN_LIST CMAKE_PROJECT_TOP_LEVEL_INCLUDES)
 endif()
 
 # cmake variables that are forwarded from the parent project
-# to set a baseline for things that might not be provided through 
+# to set a baseline for things that might not be provided through
 # the project toolchain. Defined before including the toolchain because
 # the toolchain should utilmately be the source of information and
 # might have behavior overriding values passed here
 @HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES_CONTENT@
+
+## > CMAKE_POLICY_VERSION_MINIMUM for legacy dependencies (CMake 4 compat)
+## > affects ABI hash change detection for cmake-re
+@HERMETIC_FETCHCONTENT_POLICY_VERSION_MINIMUM_CONTENT@
 
 # use the CMake toolchain that the user wants
 if(NOT "@HERMETIC_FETCHCONTENT_CMAKE_TOOLCHAIN_FILE@" STREQUAL "")

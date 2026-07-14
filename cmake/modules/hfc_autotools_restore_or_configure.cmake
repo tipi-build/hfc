@@ -18,7 +18,7 @@ function(generate_autotools_cmake_adapter destination PROJECT_NAME PROJECT_SOURC
   list(JOIN FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS " " HERMETIC_CONFIG_EXTRA_ARGS)
   set(HERMETIC_CONFIG_LANGUAGE "${FN_ARG_HERMETIC_CONFIG_LANGUAGE}")
 
-  make_directory(${destination})
+  file(MAKE_DIRECTORY ${destination})
   configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/CMakeLists_to_configure_autotools.txt.in" "${destination}/CMakeLists.txt" @ONLY)
 
 endfunction()
@@ -38,7 +38,7 @@ function(generate_openssl_cmake_adapter destination PROJECT_NAME PROJECT_SOURCE_
   list(JOIN FN_ARG_HERMETIC_CONFIG_EXTRA_ARGS " " HERMETIC_CONFIG_EXTRA_ARGS)
   set(HERMETIC_CONFIG_LANGUAGE "${FN_ARG_HERMETIC_CONFIG_LANGUAGE}")
 
-  make_directory(${destination})
+  file(MAKE_DIRECTORY ${destination})
   configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/CMakeLists_to_configure_openssl.txt.in" "${destination}/CMakeLists.txt" @ONLY)
 
 endfunction()
@@ -235,8 +235,8 @@ function(hfc_autotools_restore_or_configure content_name)
   endif()
   cmake_language(CALL ${FN_ARG_CMAKE_ADAPTER_GENERATOR_FN}_get_install_target install_target_name)
 
-  make_directory(${FN_ARG_PROJECT_INSTALL_PREFIX})
-  make_directory(${FN_ARG_PROJECT_SOURCE_DIR})
+  file(MAKE_DIRECTORY ${FN_ARG_PROJECT_INSTALL_PREFIX})
+  file(MAKE_DIRECTORY ${FN_ARG_PROJECT_SOURCE_DIR})
 
   set(dep_need_configure ON)
   set(dep_need_install ON)

@@ -50,6 +50,7 @@ function(hfc_cmake_restore_or_configure content_name)
     HERMETIC_SKIP_REGISTER_TARGET_FOR_LISTING
     HERMETIC_DISCOVER_TARGETS_FILE_PATTERN
     PROXY_TOOLCHAIN_PATH
+    POLICY_VERSION_MINIMUM
 
     # Cache related
     ORIGIN
@@ -77,9 +78,9 @@ function(hfc_cmake_restore_or_configure content_name)
     )
   endif()
 
-  make_directory(${FN_ARG_PROJECT_INSTALL_PREFIX})
-  make_directory(${FN_ARG_PROJECT_BINARY_DIR})
-  make_directory(${FN_ARG_PROJECT_SOURCE_DIR})
+  file(MAKE_DIRECTORY ${FN_ARG_PROJECT_INSTALL_PREFIX})
+  file(MAKE_DIRECTORY ${FN_ARG_PROJECT_BINARY_DIR})
+  file(MAKE_DIRECTORY ${FN_ARG_PROJECT_SOURCE_DIR})
 
   set(dep_need_configure ON)
   set(dep_need_install ON)
@@ -126,6 +127,7 @@ function(hfc_cmake_restore_or_configure content_name)
       TOOLCHAIN_FILE "${FN_ARG_PROXY_TOOLCHAIN_PATH}"
       ORIGIN "${FN_ARG_ORIGIN}"
       HFC_CONFIGURE_MARKER_FILE "${FN_ARG_HFC_CONFIGURE_MARKER_FILE}"
+      POLICY_VERSION_MINIMUM "${FN_ARG_POLICY_VERSION_MINIMUM}"
     )
 
   endif()
@@ -270,6 +272,7 @@ function(hfc_cmake_restore_or_configure content_name)
       FN_ARG_PROJECT_SOURCE_SUBDIR
       FN_ARG_PROJECT_BINARY_DIR
       FN_ARG_HERMETIC_TOOLCHAIN_EXTENSION
+      FN_ARG_POLICY_VERSION_MINIMUM
       HERMETIC_FETCHCONTENT_ROOT_DIR
     )
       set(TEMPLATE_SOURCE_DIR ${FN_ARG_PROJECT_SOURCE_DIR})
@@ -281,6 +284,14 @@ function(hfc_cmake_restore_or_configure content_name)
       set(TEMPLATE_HERMETIC_TOOLCHAIN_EXTENSION "${FN_ARG_HERMETIC_TOOLCHAIN_EXTENSION}")
       set(TEMPLATE_CONTENT_NAME ${content_name})
       set(TEMPLATE_BINARY_DIR ${FN_ARG_PROJECT_BINARY_DIR})
+
+      # CMake 4 compat escape hatch: must be set before the add_subdirectory()
+      # so the dependency's cmake_minimum_required() sees it
+      if(FN_ARG_POLICY_VERSION_MINIMUM)
+        set(TEMPLATE_POLICY_VERSION_MINIMUM_CONTENT "set(CMAKE_POLICY_VERSION_MINIMUM \"${FN_ARG_POLICY_VERSION_MINIMUM}\")")
+      else()
+        set(TEMPLATE_POLICY_VERSION_MINIMUM_CONTENT "# CMAKE_POLICY_VERSION_MINIMUM: (not set)")
+      endif()
 
       file(MAKE_DIRECTORY "${no_target_extension_src_dir}")
       configure_file("${HERMETIC_FETCHCONTENT_ROOT_DIR}/templates/no_target_ext_add_subdirectory.CMakeLists.txt.in" "${no_target_extension_cmakelist}" @ONLY)
