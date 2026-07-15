@@ -4,34 +4,55 @@ hfc_policy_helpers
 Policy scope helpers for HFC's FetchContent_Populate call sites.
 
 FetchContent_Populate() reads CMP0168 from the policy scope of its caller at
-call time. When the consuming project sets a policy version >= 3.30 (the
-common case on CMake 4.x), CMP0168 defaults to NEW and FetchContent switches
-to "direct population", which ignores SUBBUILD_DIR and keeps its stamp files
-in the consumer's CMAKE_BINARY_DIR/CMakeFiles/fc-stamp. HFC's shared source
-cache relies on the sub-build implementation keeping stamps next to the cache
-(so they survive build-folder wipes and are shared across consumers); under
-direct population a fresh build folder would rm -rf and re-clone the shared
-cache. Pin CMP0168 to OLD strictly around our own populate calls.
+call time; the consumer's own policy version must never decide which populate
+implementation HFC's cache machinery runs on. HFC's call sites only ever
+populate a COLD (missing/empty) source dir — warm caches are detected and
+skipped beforehand (see hfc_populate_cache_state.cmake) — which makes
+CMP0168 NEW ("direct population", no sub-build) both safe and preferable:
+there is nothing in the dir for its clone step to destroy, and it saves a
+nested CMake configure per dependency. On CMake < 3.30 the policy does not
+exist and the sub-build implementation is the only one.
 
-The push/pop pair keeps the pin from leaking into the surrounding scope --
-several call sites are macros expanding in consumer scope.
+Setting HERMETIC_FETCHCONTENT_FORCE_SUBBUILD=ON restores the previous
+behavior (CMP0168 pinned to OLD, sub-build populate with its stamps next to
+the source cache) as an escape hatch.
 #]=======================================================================]
 
-# Call FetchContent_Populate() with CMP0168 pinned to OLD.
+# Call FetchContent_Populate() with a deterministic CMP0168 setting.
 #
 # FetchContent_Populate() reads CMP0168 from its caller's policy scope at call
 # time (cmake_policy(GET ... PARENT_SCOPE)). This wrapper function is that
-# caller: the pin set in its own policy scope is what FetchContent sees, and
+# caller: the mode set in its own policy scope is what FetchContent sees, and
 # it never leaks to the surrounding scope (function policy scopes are
 # isolated). Note a cmake_policy(PUSH)/POP pair around the call site would NOT
 # work from helper macros: CMake requires PUSH/POP to balance within a single
 # macro invocation.
 #
+# Only call this against a cold source dir (see module docs). SUBBUILD_DIR in
+# the arguments is used by the sub-build implementation and ignored by direct
+# population, so passing it is always safe.
+#
 # The <contentName>_SOURCE_DIR / _BINARY_DIR / _POPULATED variables that
 # FetchContent_Populate() sets in its caller are re-exported to our caller.
 function(hfc_fetchcontent_populate content_name)
   if(POLICY CMP0168)
-    cmake_policy(SET CMP0168 OLD) # keep the sub-build populate implementation
+    if(HERMETIC_FETCHCONTENT_FORCE_SUBBUILD)
+      cmake_policy(SET CMP0168 OLD) # escape hatch: legacy sub-build populate
+    else()
+      cmake_policy(SET CMP0168 NEW) # direct population, cold dirs only
+
+      # HFC decided this content is COLD: direct population's per-build-tree
+      # step stamps must not contradict that (e.g. reconfiguring the same
+      # build tree after HFC_V1_REMOVE_SOURCE_DIR_AFTER_INSTALL deleted the
+      # cache sources: a surviving download.stamp would skip the download and
+      # leave the source dir empty)
+      string(TOLOWER "${content_name}" content_name_lower)
+      file(REMOVE_RECURSE "${CMAKE_BINARY_DIR}/CMakeFiles/fc-stamp/${content_name_lower}")
+      file(REMOVE_RECURSE "${CMAKE_BINARY_DIR}/CMakeFiles/fc-tmp/${content_name_lower}")
+      if(FETCHCONTENT_BASE_DIR)
+        file(REMOVE_RECURSE "${FETCHCONTENT_BASE_DIR}/${content_name_lower}-tmp")
+      endif()
+    endif()
   endif()
 
   FetchContent_Populate(${content_name} ${ARGN})

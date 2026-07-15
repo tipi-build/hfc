@@ -47,7 +47,11 @@
 //  - git_second_build_tree_reuses_cache_without_origin: warm clean clone →
 //    fresh build tree works offline-from-origin, HEAD untouched, no clone ran.
 //  - url_second_build_tree_reuses_cache_without_origin: same for URL/archive
-//    content (whose reuse rests on the populate stamps, not on a git check).
+//    content (whose reuse rests on HFC's populate marker, not on a git check).
+//  - git_branch_tag_follows_branch_without_reclone: a branch GIT_TAG is
+//    followed via in-place fetch+checkout — never a re-clone — and keeps
+//    working from the local clone when the origin is unreachable (native
+//    cmake only: branch moves do not change cmake-re's ORIGIN+REVISION key).
 //  - git_local_modifications_survive_new_build_tree: local (uncommitted)
 //    changes in the cached clone survive a new build tree and are what gets
 //    built (the debugging workflow of hfc commit a56de21d). Native cmake only:
@@ -117,6 +121,16 @@ namespace hfc::test {
 
     std::string git_head(const fs::path& repo, bp::environment& env) {
       auto rev = run_cmd(env, bp::start_dir=(repo), bp::shell, git_with_identity() + " rev-parse HEAD");
+      boost::trim(rev.output);
+      return rev.output;
+    }
+
+    // Commits the current contents of an existing repo as a new commit on the
+    // current branch (moves the branch forward). Returns the new commit SHA.
+    std::string git_commit_all(const fs::path& dir, bp::environment& env, const std::string& message) {
+      run_cmd(env, bp::start_dir=(dir), bp::shell, git_with_identity() + " add -A");
+      run_cmd(env, bp::start_dir=(dir), bp::shell, git_with_identity() + " commit -q -m \"" + message + "\"");
+      auto rev = run_cmd(env, bp::start_dir=(dir), bp::shell, git_with_identity() + " rev-parse HEAD");
       boost::trim(rev.output);
       return rev.output;
     }
@@ -245,7 +259,12 @@ namespace hfc::test {
     // re-create it against the same (uuid-stable) mirror, i.e. a warm
     // reconfigure — the strongest equivalent scenario it supports.
     void retire_build_tree(const fs::path& project_path) {
-      fs::rename(project_path / "build", project_path / "build_first");
+      fs::path retired;
+      for(int i = 1;; ++i) {
+        retired = project_path / ("build_retired_" + std::to_string(i));
+        if(!fs::exists(retired)) break;
+      }
+      fs::rename(project_path / "build", retired);
       fs::create_directories(project_path / "build");
     }
 
@@ -338,6 +357,65 @@ namespace hfc::test {
     BOOST_REQUIRE_EQUAL(second.variant_seen, 1);
     BOOST_REQUIRE_MESSAGE(cached_header.is_unchanged(),
                           "the cached extracted sources were replaced — the archive was re-downloaded/re-extracted");
+  }
+
+  // A branch GIT_TAG follows the branch without ever re-cloning the cache:
+  // new build trees fetch + check out the moved branch when the origin is
+  // reachable, and fall back to the local clone state when it is not.
+  // Native cmake only: cmake-re's install-tree cache keys the revision on the
+  // declared GIT_TAG, which does not change when a branch moves — a separate,
+  // pre-existing concern from cache reuse.
+  BOOST_DATA_TEST_CASE_F(test_isolation_fixture, git_branch_tag_follows_branch_without_reclone,
+                         boost::unit_test::data::make(hfc::test::test_variants()), data) {
+    if(data.is_cmake_re) {
+      std::cout << "(skipped for cmake-re: branch moves do not change the ORIGIN+REVISION cache key)" << std::endl;
+      return;
+    }
+
+    fs::path project_path = prepare_project_to_be_tested("check_source_cache_reuse", data.is_cmake_re, temp_dir);
+    std::string uuid = make_uuid();
+
+    fs::path origin = temp_dir / "samplelib_origin";
+    write_lib_source(origin, 1);
+    git_init_and_commit(origin, test_env, "samplelib v1");
+
+    write_consumer(project_path,
+      "  GIT_REPOSITORY \"file://" + origin.generic_string() + "\"\n"
+      "  GIT_TAG \"main\"\n");
+
+    auto first = configure_build_run(project_path, data, test_env, uuid);
+    BOOST_REQUIRE_MESSAGE(first.configured && first.built, first.detail);
+    BOOST_REQUIRE_EQUAL(first.variant_seen, 1);
+    fs::path clone = find_samplelib_clone(project_path);
+    BOOST_REQUIRE_MESSAGE(!clone.empty(), "samplelib clone not found in the central source cache");
+
+    // fresh build tree, branch unmoved: reuse, no re-clone
+    retire_build_tree(project_path);
+    auto second = configure_build_run(project_path, data, test_env, uuid);
+    BOOST_REQUIRE_MESSAGE(second.configured && second.built, second.detail);
+    BOOST_REQUIRE_EQUAL(second.variant_seen, 1);
+    BOOST_REQUIRE_MESSAGE(!cloned_samplelib(second.configure_output),
+                          "unmoved branch caused a re-clone instead of reusing the cache");
+
+    // move the branch: a fresh build tree must follow it, still without re-cloning
+    write_lib_source(origin, 2);
+    git_commit_all(origin, test_env, "samplelib v2");
+    retire_build_tree(project_path);
+    auto third = configure_build_run(project_path, data, test_env, uuid);
+    BOOST_REQUIRE_MESSAGE(third.configured && third.built, third.detail);
+    BOOST_REQUIRE_MESSAGE(!cloned_samplelib(third.configure_output),
+                          "moved branch caused a re-clone instead of an in-place update");
+    BOOST_REQUIRE_EQUAL(third.variant_seen, 2);
+
+    // origin gone: keep working from the local clone state
+    retire_origin(origin);
+    retire_build_tree(project_path);
+    auto fourth = configure_build_run(project_path, data, test_env, uuid);
+    BOOST_REQUIRE_MESSAGE(fourth.configured && fourth.built,
+                          "unreachable origin must not break a warm branch-tagged cache:\n" + fourth.detail);
+    BOOST_REQUIRE_EQUAL(fourth.variant_seen, 2);
+    BOOST_REQUIRE_MESSAGE(!cloned_samplelib(fourth.configure_output),
+                          "unreachable origin caused a re-clone attempt");
   }
 
   // Local (uncommitted) modifications in the cached clone must survive a new

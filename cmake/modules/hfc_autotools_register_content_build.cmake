@@ -4,6 +4,7 @@ include(ProcessorCount)
 include(ExternalProject)
 include(hfc_log)
 include(hfc_required_args)
+include(hfc_populate_cache_state)
 include(hfc_generate_external_project)
 include(hfc_cmake_re_command)
 include(hfc_get_command_in_cleared_env)
@@ -128,8 +129,9 @@ function(hfc_autotools_register_content_build content_name)
     hfc_compute_subbuild_path(${content_name} subbuild_path
       SOURCE_DIR "${FN_ARG_PROJECT_SOURCE_DIR}"
     )
+    hfc_populate_marker_path("${FN_ARG_PROJECT_SOURCE_DIR}" populate_marker_path)
 
-    string(APPEND install_command " && ${CMAKE_COMMAND} -E rm -rf ${subbuild_path} ")
+    string(APPEND install_command " && ${CMAKE_COMMAND} -E rm -rf ${subbuild_path} ${populate_marker_path} ")
   endif()
 
   #hfc_get_command_string_in_cleared_env("${build_command}" build_command)
