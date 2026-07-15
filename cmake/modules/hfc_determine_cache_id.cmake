@@ -16,7 +16,7 @@ origin information.
 function(hfc_determine_cache_id contentName)
   block(SCOPE_FOR VARIABLES PROPAGATE contentName)
 
-    __FetchContent_getSavedDetails(${content_name} __fetchcontent_arguments)
+    hfc_declared_details_get(${contentName} __fetchcontent_arguments)
     cmake_parse_arguments(fetchContentArg "" "URL" "" ${__fetchcontent_arguments})
     cmake_parse_arguments(fetchContentArg "" "URL_HASH" "" ${__fetchcontent_arguments})
     cmake_parse_arguments(fetchContentArg "" "GIT_REPOSITORY" "" ${__fetchcontent_arguments})

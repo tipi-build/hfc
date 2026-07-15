@@ -1,3 +1,71 @@
+include(hfc_log)
+
+# Internal use, projects must not call this directly. It is
+# intended for use by HFC's FetchContent_Declare() override.
+#
+# Records the raw declaration arguments of a content in HFC-owned storage,
+# mirroring FetchContent's first-declaration-wins semantics. This is what
+# frees HFC from reading CMake's private saved-details storage
+# (__FetchContent_getSavedDetails).
+function(hfc_declared_details_store contentName)
+  string(TOLOWER ${contentName} contentNameLower)
+  set(propertyName "_HermeticFetchContent_${contentNameLower}_declaredDetails")
+  get_property(alreadyDefined GLOBAL PROPERTY ${propertyName} DEFINED)
+  if(alreadyDefined)
+    return()
+  endif()
+
+  set(quotedArgs "")
+  foreach(__cmake_item IN LISTS ARGN)
+    string(APPEND quotedArgs " [==[${__cmake_item}]==]")
+  endforeach()
+
+  # mirror FetchContent_Declare()'s documented FETCHCONTENT_BASE_DIR layout:
+  # SOURCE_DIR/BINARY_DIR default to <base>/<name>-(src|build) when the
+  # declaration does not provide them (HFC's consumers rely on BINARY_DIR
+  # being part of the recorded details)
+  cmake_parse_arguments(ARG "" "SOURCE_DIR;BINARY_DIR" "" ${ARGN})
+  if(NOT ARG_SOURCE_DIR)
+    string(APPEND quotedArgs " [==[SOURCE_DIR]==] [==[${FETCHCONTENT_BASE_DIR}/${contentNameLower}-src]==]")
+  endif()
+  if(NOT ARG_BINARY_DIR)
+    string(APPEND quotedArgs " [==[BINARY_DIR]==] [==[${FETCHCONTENT_BASE_DIR}/${contentNameLower}-build]==]")
+  endif()
+
+  define_property(GLOBAL PROPERTY ${propertyName})
+  cmake_language(EVAL CODE
+    "set_property(GLOBAL PROPERTY ${propertyName} ${quotedArgs})"
+  )
+endfunction()
+
+# Internal use, projects must not call this directly.
+#
+# Retrieves the declaration arguments recorded by hfc_declared_details_store().
+# Falls back to FetchContent's private saved details for declarations that
+# happened before HermeticFetchContent was included (i.e. before HFC's
+# FetchContent_Declare() override was installed).
+function(hfc_declared_details_get contentName outVar)
+  string(TOLOWER ${contentName} contentNameLower)
+  set(propertyName "_HermeticFetchContent_${contentNameLower}_declaredDetails")
+  get_property(alreadyDefined GLOBAL PROPERTY ${propertyName} DEFINED)
+  if(alreadyDefined)
+    get_property(propertyValue GLOBAL PROPERTY ${propertyName})
+    set(${outVar} "${propertyValue}" PARENT_SCOPE)
+    return()
+  endif()
+
+  if(COMMAND __FetchContent_getSavedDetails)
+    hfc_log_debug("No HFC-recorded declaration for ${contentName}; falling back to FetchContent's saved details (was it declared before including HermeticFetchContent?)")
+    __FetchContent_getSavedDetails(${contentName} propertyValue)
+    set(${outVar} "${propertyValue}" PARENT_SCOPE)
+    return()
+  endif()
+
+  message(FATAL_ERROR
+    "No declaration details recorded for ${contentName}. "
+    "Call FetchContent_Declare(${contentName} ...) after including HermeticFetchContent.")
+endfunction()
+
 # Internal use, projects must not call this directly. It is
 # intended for use by the FetchContent_Declare() function.
 #

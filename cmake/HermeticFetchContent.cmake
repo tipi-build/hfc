@@ -564,6 +564,27 @@ include(hfc_goldilock_helpers)
 include(hfc_provide_dependency_FETCHCONTENT)
 
 #
+# Record every declaration in HFC-owned storage so HFC never needs to read
+# FetchContent's private saved-details (__FetchContent_getSavedDetails). The
+# override forwards to the original implementation (reachable as
+# _FetchContent_Declare per CMake's command-shadowing rule), so plain
+# FetchContent flows are unchanged.
+#
+# The global-property guard makes installing the override idempotent: the
+# include_guard() above is per-directory-scope, and defining this override a
+# second time would make _FetchContent_Declare point at the first override,
+# i.e. infinite recursion.
+get_property(hfc_fetchcontent_declare_override_installed GLOBAL PROPERTY HFC_FETCHCONTENT_DECLARE_OVERRIDE_INSTALLED)
+if(NOT hfc_fetchcontent_declare_override_installed)
+  set_property(GLOBAL PROPERTY HFC_FETCHCONTENT_DECLARE_OVERRIDE_INSTALLED TRUE)
+
+  function(FetchContent_Declare content_name)
+    hfc_declared_details_store(${content_name} ${ARGN})
+    _FetchContent_Declare(${content_name} ${ARGN})
+  endfunction()
+endif()
+
+#
 # Save the declaration details for this Hermetic Content
 function(FetchContent_MakeHermetic content_name)
   string(TOLOWER ${content_name} contentNameLower)
@@ -573,7 +594,7 @@ function(FetchContent_MakeHermetic content_name)
     return()
   endif()
 
-  __FetchContent_getSavedDetails(${content_name} __fetchcontent_arguments)
+  hfc_declared_details_get(${content_name} __fetchcontent_arguments)
 
   # extract som of the Generic FetchContent details so we can patch in information
 
@@ -675,7 +696,7 @@ macro(hfc_FetchContent_MakeAvailable_interlocked)
 
   foreach(content_name IN ITEMS ${ARGV})
 
-    __FetchContent_getSavedDetails(${content_name} __fetchcontent_arguments)
+    hfc_declared_details_get(${content_name} __fetchcontent_arguments)
     hfc_provide_dependency_FETCHCONTENT("FETCHCONTENT_MAKEAVAILABLE_SERIAL" ${content_name} ${__fetchcontent_arguments})
     string(TOLOWER "${content_name}" content_name_lower)
 
