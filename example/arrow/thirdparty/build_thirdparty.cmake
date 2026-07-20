@@ -350,4 +350,4 @@ FetchContent_MakeHermetic(
    SBOM_SUPPLIER "The Apache Foundation"
 )
 
-HermeticFetchContent_MakeAvailableAtConfigureTime(arrow)
+HermeticFetchContent_MakeAvailableAtBuildTime(arrow)
