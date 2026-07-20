@@ -1,0 +1,105 @@
+name: Build HFC example
+description: >
+  Builds one HFC example project in one of three modes: `cmake-re` (host),
+  plain `cmake`, or `cmake-re --distributed` (RBE). The distributed mode needs
+  the Docker CLI and the host Docker socket available inside the job container
+  (docker-in-docker), so it installs docker-ce-cli and writes the EngFlow auth
+  files. The caller is responsible for the container definition (including the
+  /var/run/docker.sock volume mount for distributed builds).
+
+inputs:
+  example:
+    description: Example directory under example/ (e.g. boost, arrow)
+    required: true
+  mode:
+    description: Build mode - one of "cmake-re", "cmake", "distributed"
+    required: true
+  toolchain:
+    description: Toolchain file, relative to the example directory
+    required: false
+    default: environments/linux-tipi-ubuntu-cxx17.cmake
+
+runs:
+  using: composite
+  steps:
+    - name: validate environment
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+      run: |
+        missing=()
+        for var in TIPI_ACCESS_TOKEN TIPI_REFRESH_TOKEN TIPI_VAULT_PASSPHRASE; do
+          [ -n "${!var}" ] || missing+=("$var")
+        done
+        if [ "$MODE" = "distributed" ]; then
+          for var in RBE_service EF_CERT EF_KEY; do
+            [ -n "${!var}" ] || missing+=("$var")
+          done
+        fi
+        if [ ${#missing[@]} -gt 0 ]; then
+          echo "::error::build-example: missing required workflow env var(s): ${missing[*]}" >&2
+          echo "Set them in the caller's top-level 'env:' block (they are not action inputs)." >&2
+          exit 1
+        fi
+        
+    - name: install docker (docker-in-docker)
+      if: ${{ inputs.mode == 'distributed' }}
+      shell: bash
+      run: |
+        apt update -y
+        apt install -y ca-certificates curl
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+          $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+          tee /etc/apt/sources.list.d/docker.list > /dev/null
+        apt update -y
+        apt install -y docker-ce-cli
+
+    # EF_CERT / EF_KEY are provided as workflow-level env vars by the caller;
+    # composite actions cannot read the secrets context directly.
+    - name: write EngFlow cluster auth files
+      if: ${{ inputs.mode == 'distributed' }}
+      shell: bash
+      run: |
+        echo "${EF_CERT}" > /tmp/engflow.crt
+        echo "${EF_KEY}" > /tmp/engflow.key
+
+    - name: prepare example runner
+      shell: bash
+      run: |
+        cd hfc_project/example/${{ inputs.example }}
+        git init
+        git config --global user.email "hello@tipi.build"
+        git config --global user.name "tipibuild"
+        tipi connect
+
+    - name: build with cmake-re
+      if: ${{ inputs.mode == 'cmake-re' }}
+      shell: bash
+      run: |
+        cd hfc_project/example/${{ inputs.example }}
+        cmake-re -GNinja -S . -B build_re -DCMAKE_TOOLCHAIN_FILE=${{ inputs.toolchain }} -DCMAKE_BUILD_TYPE=Release --host
+        cmake-re --build ./build_re --host
+
+    - name: build with cmake
+      if: ${{ inputs.mode == 'cmake' }}
+      shell: bash
+      run: |
+        cd hfc_project/example/${{ inputs.example }}
+        tipi run cmake -GNinja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ inputs.toolchain }}
+        tipi run cmake --build ./build
+
+    - name: build with cmake-re --distributed
+      if: ${{ inputs.mode == 'distributed' }}
+      shell: bash
+      # RBE_service is provided as a workflow-level env var by the caller.
+      env:
+        RBE_tls_client_auth_cert: /tmp/engflow.crt
+        RBE_tls_client_auth_key: /tmp/engflow.key
+      run: |
+        cd hfc_project/example/${{ inputs.example }}
+        cmake-re -GNinja -S . -B build_distributed -DCMAKE_TOOLCHAIN_FILE=${{ inputs.toolchain }} -DCMAKE_BUILD_TYPE=Release --host --distributed
+        cmake-re --build ./build_distributed --host --distributed -j100

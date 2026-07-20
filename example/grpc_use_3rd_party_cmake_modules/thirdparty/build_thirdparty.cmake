@@ -230,7 +230,7 @@ FetchContent_MakeHermetic(
   SBOM_SUPPLIER "Google Inc"
 )
 
-HermeticFetchContent_MakeAvailableAtConfigureTime(gRPC)
+HermeticFetchContent_MakeAvailableAtBuildTime(gRPC)
 
 include(hfc_provide_dependency_FINDPACKAGE)
 
