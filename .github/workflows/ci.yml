@@ -149,11 +149,11 @@ jobs:
             sleep infinity
           docker exec --user root test-container-without-network tipi run ctest --verbose -j -R offline_source_override_test
 
-  # Same test suite as `build`, but with the current latest CMake 4.x release
-  # provisioned through the tipi distro system: test/generate_cmake4_distro.sh
-  # generates a distro.json whose cmake entry points at a re-zipped Kitware
-  # release, and TIPI_DISTRO_JSON makes every `tipi run` use it (see the
-  # CMake 4 compatibility plan in docs/cmake4-compat-report.md).
+  # Same test suite as `build`, but with CMake 4 provisioned through the tipi
+  # distro system: the distro.json from tipi-build/distro branch
+  # feature/cmake-4.4.0 (pinned to a commit below) carries distro-ready
+  # CMake 4.4.0 zips, and TIPI_DISTRO_JSON makes every `tipi run` use it (see
+  # the CMake 4 compatibility plan in docs/cmake4-compat-report.md).
   #
   # Skipped for cmake-re-triggered dispatch runs (docker_image input set):
   # those runs skip the native-cmake test variants entirely, which is the
@@ -178,7 +178,7 @@ jobs:
       - name: prepare runner
         run: |
           sudo apt-get update -y
-          sudo apt install -y gettext zip python3
+          sudo apt install -y gettext
 
           # this will be cached to  test execution (e.g. avoid rebuilding goldilock and project dependencies all the time)
           mkdir -p $TESTS_CACHED_HFC_TOOLS_DIR
@@ -192,14 +192,24 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 2 # we need at least two revisions in the cloned copy so that our upgrade testing work
 
-      - name: Provision latest CMake 4 via tipi distro
+      - name: Provision CMake 4.4.0 via tipi distro (tipi-build/distro feature/cmake-4.4.0)
         run: |
-          # materialize the base distro.json in case the image hasn't yet
-          tipi --version
-          DISTRO_JSON=$(./hfc_project/test/generate_cmake4_distro.sh $GITHUB_WORKSPACE/cmake4-distro)
-          echo "TIPI_DISTRO_JSON=$DISTRO_JSON" >> $GITHUB_ENV
+          # distro.json from tipi-build/distro @ feature/cmake-4.4.0, pinned to
+          # its current commit so the content is immutable. The linux CMake zip
+          # is staged into the workspace and the manifest rewritten to file://
+          # for it, so the network-isolated offline test container (which only
+          # sees the workspace mount) can provision the same CMake offline.
+          DISTRO_PIN=c5d489ccaf51f28fcb35def9e58ec78ab3491169
+          CMAKE44_ZIP_URL=https://nxxm.indigenious.io/distro/all/CMake/v4.4.0/cmake-4.4.0-linux-x86_64.zip
+          DISTRO_DIR=$GITHUB_WORKSPACE/cmake4-distro
+          mkdir -p $DISTRO_DIR
+          curl -fsSL -o $DISTRO_DIR/cmake-4.4.0-linux-x86_64.zip $CMAKE44_ZIP_URL
+          curl -fsSL https://raw.githubusercontent.com/tipi-build/distro/$DISTRO_PIN/distro.json \
+            | sed "s|$CMAKE44_ZIP_URL|file://$DISTRO_DIR/cmake-4.4.0-linux-x86_64.zip|" \
+            > $DISTRO_DIR/distro-cmake4.json
+          echo "TIPI_DISTRO_JSON=$DISTRO_DIR/distro-cmake4.json" >> $GITHUB_ENV
           # provision now and surface the version this job runs against
-          TIPI_DISTRO_JSON=$DISTRO_JSON tipi run cmake --version
+          TIPI_DISTRO_JSON=$DISTRO_DIR/distro-cmake4.json tipi run cmake --version
 
       - name: tipi builds project
         run: |
