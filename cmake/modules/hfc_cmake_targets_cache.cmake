@@ -106,6 +106,15 @@ function(hfc_cmake_targets_cache_isolated)
   set(HERMETIC_FETCHCONTENT_CMAKE_ADDITIONAL_EXPORTS "${FN_ARG_CMAKE_ADDITIONAL_EXPORTS}")
   set(HERMETIC_FETCHCONTENT_TARGETS_FILE_PATTERN "${FN_ARG_TARGETS_FILE_PATTERN}")
 
+  # forward the ENABLED_LANGUAGES information to the dump project
+  # so that libraries forced to be found on system can take that
+  # info into account
+  set(TEMPLATE_ENABLE_LANGUAGES "NONE")
+  if(FORCE_SYSTEM_${content_name})
+    get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+    set(TEMPLATE_ENABLE_LANGUAGES ${languages})
+  endif()
+
   string(RANDOM LENGTH 10 rand_str)
   set(tmp_proj_dir "${FN_ARG_TEMP_DIR}/tmp_${rand_str}")
 
