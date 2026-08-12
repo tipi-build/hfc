@@ -5,6 +5,7 @@ include(hfc_saved_details)
 include(hfc_determine_cache_id)
 include(hfc_populate_project)
 include(hfc_generate_cmake_proxy_toolchain)
+include(hfc_policy_helpers)
 include(hfc_targets_cache_create)
 
 # This creates prefixes where HermeticFetchContent will reuse buildLocation or installed location
@@ -62,6 +63,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
     HERMETIC_TOOLCHAIN_EXTENSION
     HERMETIC_BUILD_SYSTEM
     HERMETIC_CONFIG_LANGUAGE
+    HERMETIC_POLICY_VERSION_MINIMUM
     MAKE_EXECUTABLES_FINDABLE
 
     HERMETIC_CMAKE_EXPORT_LIBRARY_DECLARATION
@@ -180,6 +182,14 @@ function(hfc_make_available_single content_name build_at_configure_time)
 
   if(DEFINED __PARAMS_HERMETIC_CONFIG_LANGUAGE)
     list(APPEND proxy_toolchain_args HERMETIC_CONFIG_LANGUAGE "${__PARAMS_HERMETIC_CONFIG_LANGUAGE}")
+  endif()
+
+  # effective CMAKE_POLICY_VERSION_MINIMUM for this content (empty = off);
+  # goes into the proxy toolchain so it reaches isolated builds and is part
+  # of the toolchain fingerprint / cmake-re ABI-hash cache keying
+  hfc_resolve_policy_version_minimum("${__PARAMS_HERMETIC_POLICY_VERSION_MINIMUM}" content_policy_version_minimum)
+  if(NOT content_policy_version_minimum STREQUAL "")
+    list(APPEND proxy_toolchain_args POLICY_VERSION_MINIMUM "${content_policy_version_minimum}")
   endif()
 
   #
@@ -446,6 +456,7 @@ function(hfc_make_available_single content_name build_at_configure_time)
       BUILD_TARGETS ${__PARAMS_BUILD_TARGETS}
       CUSTOM_INSTALL_TARGETS ${__PARAMS_CUSTOM_INSTALL_TARGETS}
       PROXY_TOOLCHAIN_PATH ${proxy_toolchain_path}
+      POLICY_VERSION_MINIMUM "${content_policy_version_minimum}"
 
       ORIGIN ${${content_name}_origin}
       REVISION ${${content_name}_revision}

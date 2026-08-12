@@ -2,6 +2,8 @@ include(hfc_log)
 include(hfc_required_args)
 include(hfc_git_helpers)
 include(hfc_goldilock_helpers)
+include(hfc_policy_helpers)
+include(hfc_populate_cache_state)
 include(FetchContent)
 include(hfc_compute_subbuild_path)
 include(hfc_compute_populate_build_path)
@@ -165,75 +167,85 @@ function(hfc_populate_project_declare content_name)
       hfc_log(FATAL_ERROR "Could not acquire lock for ${lock_dir}")
     endif()
 
-    # figure out if this is already the correct state or if we've got to do things.
-    is_git_repository(REPOSITORY_DIR "${FN_ARG_SOURCE_DIR}" OUT_RESULT SOURCE_DIR_is_git_repo)
+    # HFC owns warm/cold detection: FetchContent_Populate() only ever runs
+    # against a COLD source dir (populating into an empty dir is safe under
+    # both populate implementations; re-populating a warm shared cache is what
+    # nukes/re-downloads it under CMP0168 direct population).
+    hfc_compute_subbuild_path(${content_name} legacy_subbuild_path
+      SOURCE_DIR "${FN_ARG_SOURCE_DIR}"
+    )
+    hfc_populate_check_cache_state(${content_name}
+      SOURCE_DIR "${FN_ARG_SOURCE_DIR}"
+      GIT_REPOSITORY "${FN_ARG_GIT_REPOSITORY}"
+      GIT_TAG "${FN_ARG_GIT_TAG}"
+      URL "${FN_ARG_URL}"
+      LEGACY_SUBBUILD_DIR "${legacy_subbuild_path}"
+      OUT_STATE cache_state
+    )
 
-    if(SOURCE_DIR_is_git_repo)
-
-      repo_get_head_id(REPOSITORY_DIR "${FN_ARG_SOURCE_DIR}"
-        OUT_COMMIT_ID initial_commit_id
+    if(cache_state STREQUAL "UPDATE")
+      # valid clone at another revision: fetch + force-clean checkout in place,
+      # never a re-clone (an unreachable origin only matters if the revision is
+      # missing locally)
+      hfc_populate_update_git_worktree(${content_name}
+        SOURCE_DIR "${FN_ARG_SOURCE_DIR}"
+        GIT_TAG "${FN_ARG_GIT_TAG}"
+        OUT_SUCCESS update_success
       )
-
-      repo_is_clean(REPOSITORY_DIR "${FN_ARG_SOURCE_DIR}"
-        CHECK_IGNORED
-        OUT_RESULT initial_repo_is_clean
-      )
-
-      if((initial_commit_id STREQUAL FN_ARG_GIT_TAG) AND initial_repo_is_clean)
-        hfc_log(STATUS "🟢 Repository ${FN_ARG_SOURCE_DIR} at ${FN_ARG_GIT_TAG} and clean")
-        set(done TRUE)
+      if(update_success)
+        set(cache_state "WARM")
       else()
-        # We explicitely do not reset, and trust the stamp files
-        #hfc_log(STATUS "Repository ${FN_ARG_SOURCE_DIR} currently at ${initial_commit_id} and is_clean=${initial_repo_is_clean}")
-        #checkout_revision_force_clean(
-        #  REPOSITORY_DIR "${FN_ARG_SOURCE_DIR}"
-        #  GIT_REVISION "${FN_ARG_GIT_TAG}"
-        #  OUT_SUCCESS done
-        #)
-        if (NOT prepatched_RESOLVED_PATCH AND NOT FN_ARG_PATCH_COMMAND)
-          hfc_log(WARNING "🔴 Repository ${FN_ARG_SOURCE_DIR} currently at ${initial_commit_id} is not clean. is_clean=${initial_repo_is_clean}. Are the local modifications intentional ?")
-        endif()
-      endif()
-
-      if(done)
-
-        # note: this function might be invoked from a scripted context
-        # so we might not be able to FetchContent_SetPopulated() because it internally
-        # set_property(GLOBAL) which is not scriptable
-        if(NOT CMAKE_SCRIPT_MODE_FILE)
-
-          FetchContent_SetPopulated(${content_name}
-            SOURCE_DIR "${FN_ARG_SOURCE_DIR}"
-            BINARY_DIR "${FN_ARG_BINARY_DIR}"
-          )
-
-        endif()
-
-        hfc_goldilock_release("${lock_dir}" success)
-
-        # \ö/
-        return()
+        hfc_log(STATUS "🧹 Could not update ${FN_ARG_SOURCE_DIR} in place; re-populating from scratch")
+        set(cache_state "CORRUPT")
       endif()
     endif()
 
-    # If the source cache dir exists but is NOT a valid git clone (e.g. its .git
-    # was removed) and we're about to git-clone into it, FetchContent's clone
-    # refuses a non-empty, non-git destination -> a fresh build (no stamp files)
-    # fails to populate. This is a corrupt state, not a deliberate dev checkout
-    # (those stay valid git repos, handled above), so clear it for a fresh clone.
-    # The subbuild populate stamps survive a build-folder wipe (they live next to
-    # the source cache), so we also invalidate them; otherwise ExternalProject
-    # skips the re-clone and runs its git-update step in the emptied dir, failing
-    # with "fatal: not a git repository". This applies to in-source build systems
-    # (autotools/openssl) too: their first populate clones into the same source
-    # cache dir, so the corruption and the fix are identical.
-    if(FN_ARG_GIT_REPOSITORY AND NOT SOURCE_DIR_is_git_repo AND EXISTS "${FN_ARG_SOURCE_DIR}")
-      file(GLOB _hfc_existing "${FN_ARG_SOURCE_DIR}/*")
-      if(_hfc_existing)
-        hfc_log(STATUS "🧹 ${FN_ARG_SOURCE_DIR} is not a git repository; clearing for a fresh clone")
-        file(REMOVE_RECURSE "${FN_ARG_SOURCE_DIR}")
-        hfc_invalidate_project_population(${content_name} "${FN_ARG_SOURCE_DIR}")
+    if(cache_state STREQUAL "CORRUPT")
+      # non-empty dir that is neither a valid clone nor a completed populate
+      # (e.g. .git removed, half-extracted archive): clear every layout and
+      # re-populate. Deliberate dev checkouts stay valid git repos and never
+      # land here.
+      hfc_log(STATUS "🧹 ${FN_ARG_SOURCE_DIR} is not a usable populated state; clearing for a fresh populate")
+      hfc_invalidate_project_population(${content_name} "${FN_ARG_SOURCE_DIR}")
+      set(cache_state "COLD")
+    endif()
+
+    if(cache_state STREQUAL "WARM")
+      if(FN_ARG_GIT_REPOSITORY)
+        repo_is_clean(REPOSITORY_DIR "${FN_ARG_SOURCE_DIR}"
+          CHECK_IGNORED
+          OUT_RESULT warm_repo_is_clean
+        )
+        if(warm_repo_is_clean)
+          hfc_log(STATUS "🟢 Repository ${FN_ARG_SOURCE_DIR} at ${FN_ARG_GIT_TAG} and clean")
+        else()
+          hfc_log(STATUS "🟢 Repository ${FN_ARG_SOURCE_DIR} at ${FN_ARG_GIT_TAG} with local modifications")
+          if(NOT prepatched_RESOLVED_PATCH AND NOT FN_ARG_PATCH_COMMAND)
+            hfc_log(WARNING "🔴 Repository ${FN_ARG_SOURCE_DIR} has local modifications; reusing them. Are they intentional ?")
+          endif()
+        endif()
+      else()
+        hfc_log(STATUS "🟢 Reusing populated sources at ${FN_ARG_SOURCE_DIR}")
       endif()
+
+      hfc_populate_marker_write(${content_name} "${FN_ARG_SOURCE_DIR}")
+
+      # note: this function might be invoked from a scripted context
+      # so we might not be able to FetchContent_SetPopulated() because it internally
+      # set_property(GLOBAL) which is not scriptable
+      if(NOT CMAKE_SCRIPT_MODE_FILE)
+
+        FetchContent_SetPopulated(${content_name}
+          SOURCE_DIR "${FN_ARG_SOURCE_DIR}"
+          BINARY_DIR "${FN_ARG_BINARY_DIR}"
+        )
+
+      endif()
+
+      hfc_goldilock_release("${lock_dir}" success)
+
+      # \ö/
+      return()
     endif()
 
     #
@@ -288,17 +300,16 @@ function(hfc_populate_project_declare content_name)
       list(APPEND populate_args "GIT_SHALLOW" ${FN_ARG_GIT_SHALLOW})
     endif()
 
-    # we used to fix issues that could occur if the sources are missing but the stamp file were still around
-    # we now explictely trust the stamps file, this allow better debugging for developers
-    # as this allows modifying the sources of a dependency while debugging configure step
-    #hfc_invalidate_project_population(${content_name} "${FN_ARG_SOURCE_DIR}")
-
-    #
+    # cold populate into the (empty) cache dir; the completed populate is
+    # recorded by the marker, which is what makes later configures and other
+    # build trees reuse the cache without re-downloading
     hfc_log_debug(" - populating (${populate_args})")
-    FetchContent_Populate(
+    hfc_fetchcontent_populate(
       ${content_name}
       ${populate_args}
     )
+
+    hfc_populate_marker_write(${content_name} "${FN_ARG_SOURCE_DIR}")
 
     FetchContent_SetPopulated(${content_name}
       SOURCE_DIR "${FN_ARG_SOURCE_DIR}"
@@ -390,15 +401,55 @@ function(hfc_populate_project_declare content_name)
       list(APPEND clone_source_in_build_populate_args "SUBBUILD_DIR" ${subbuild_path})
       list(APPEND clone_source_in_build_populate_args "BINARY_DIR" ${populate_build_path})
 
-      # fix issues that could occur if the sources are missing but the stamp file is still around
-      hfc_invalidate_project_population(${content_name_clone_in_build_folder} "${SOURCE_DIR_IN_BINARY_DIR}")
+      # git in-source trees are self-validating (a valid clone with HEAD at the
+      # declared tag IS the correct state) and reuse the warm/update state
+      # machine. URL in-source trees are not: the tree is per-build-tree and is
+      # rearranged behind HFC's back in cmake-re mode (mirror worktree
+      # re-pointing, source snapshot restore), so no marker can be trusted —
+      # always re-extract from the locally cached archive (cheap, offline).
+      if(FN_ARG_URL)
+        set(in_build_cache_state "CORRUPT")
+      else()
+        hfc_populate_check_cache_state(${content_name_clone_in_build_folder}
+          SOURCE_DIR "${SOURCE_DIR_IN_BINARY_DIR}"
+          GIT_REPOSITORY "${FN_ARG_SOURCE_DIR}"
+          GIT_TAG "${FN_ARG_GIT_TAG}"
+          URL "${FN_ARG_URL}"
+          LEGACY_SUBBUILD_DIR "${subbuild_path}"
+          OUT_STATE in_build_cache_state
+        )
+      endif()
 
-      #
-      hfc_log_debug(" - populating (${clone_source_in_build_populate_args})")
-      FetchContent_Populate(
-        ${content_name_clone_in_build_folder}
-        ${clone_source_in_build_populate_args}
-      )
+      if(in_build_cache_state STREQUAL "UPDATE")
+        hfc_populate_update_git_worktree(${content_name_clone_in_build_folder}
+          SOURCE_DIR "${SOURCE_DIR_IN_BINARY_DIR}"
+          GIT_TAG "${FN_ARG_GIT_TAG}"
+          OUT_SUCCESS in_build_update_success
+        )
+        if(in_build_update_success)
+          set(in_build_cache_state "WARM")
+        else()
+          set(in_build_cache_state "CORRUPT")
+        endif()
+      endif()
+
+      if(in_build_cache_state STREQUAL "CORRUPT")
+        hfc_log(STATUS "🧹 ${SOURCE_DIR_IN_BINARY_DIR} is not a usable populated state; clearing for a fresh populate")
+        hfc_invalidate_project_population(${content_name_clone_in_build_folder} "${SOURCE_DIR_IN_BINARY_DIR}")
+        set(in_build_cache_state "COLD")
+      endif()
+
+      if(in_build_cache_state STREQUAL "WARM")
+        hfc_log_debug(" - reusing populated in-source tree at ${SOURCE_DIR_IN_BINARY_DIR}")
+        hfc_populate_marker_write(${content_name_clone_in_build_folder} "${SOURCE_DIR_IN_BINARY_DIR}")
+      else()
+        hfc_log_debug(" - populating (${clone_source_in_build_populate_args})")
+        hfc_fetchcontent_populate(
+          ${content_name_clone_in_build_folder}
+          ${clone_source_in_build_populate_args}
+        )
+        hfc_populate_marker_write(${content_name_clone_in_build_folder} "${SOURCE_DIR_IN_BINARY_DIR}")
+      endif()
 
       FetchContent_SetPopulated(${content_name_clone_in_build_folder}_to_build_folder
         SOURCE_DIR "${SOURCE_DIR_IN_BINARY_DIR}"
@@ -439,12 +490,30 @@ function(hfc_populate_project_invoke_clone_in_build_folder_if_required content_n
   hfc_populate_project_invoke_clone_in_build_folder_if_required_internal(${content_name} ${__fetchcontent_arguments})
 endfunction()
 
-# Removes the stamps file to force a new population of the project ( reuses existing archives )
+# Forces a fresh population of the project: removes the populate marker, the
+# source dir itself and the populate state of BOTH FetchContent
+# implementations (the legacy sub-build next to the source cache, and the
+# per-build-tree dirs of CMP0168 direct population), so no stale stamp can
+# make a later populate skip or half-run its steps.
 function(hfc_invalidate_project_population content_name source_dir)
-  hfc_compute_subbuild_path(${content_name} subbuild_path SOURCE_DIR ${source_dir})
-
   string(TOLOWER ${content_name} content_name_lower)
-  file(REMOVE_RECURSE "${subbuild_path}/${content_name_lower}-populate-prefix/src/${content_name_lower}-populate-stamp")
-  file(REMOVE_RECURSE "${subbuild_path}/${content_name_lower}-populate-prefix/tmp")
-  file(REMOVE_RECURSE "${subbuild_path}/CMakeFiles/${content_name_lower}-populate-complete")
+
+  hfc_populate_marker_remove("${source_dir}")
+
+  if(NOT "${source_dir}" STREQUAL "" AND EXISTS "${source_dir}")
+    file(REMOVE_RECURSE "${source_dir}")
+  endif()
+
+  # legacy sub-build populate layout (lives next to the source cache)
+  hfc_compute_subbuild_path(${content_name} subbuild_path SOURCE_DIR ${source_dir})
+  if(EXISTS "${subbuild_path}")
+    file(REMOVE_RECURSE "${subbuild_path}")
+  endif()
+
+  # direct-population layout (per consumer build tree)
+  file(REMOVE_RECURSE "${CMAKE_BINARY_DIR}/CMakeFiles/fc-stamp/${content_name_lower}")
+  file(REMOVE_RECURSE "${CMAKE_BINARY_DIR}/CMakeFiles/fc-tmp/${content_name_lower}")
+  if(FETCHCONTENT_BASE_DIR)
+    file(REMOVE_RECURSE "${FETCHCONTENT_BASE_DIR}/${content_name_lower}-tmp")
+  endif()
 endfunction()

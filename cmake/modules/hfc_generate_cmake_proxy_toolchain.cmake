@@ -39,6 +39,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     PROJECT_SOURCE_SUBDIR
     DESTINATION_TOOLCHAIN_PATH
     HERMETIC_CONFIG_LANGUAGE
+    POLICY_VERSION_MINIMUM
   )
 
   set(multi_value_params
@@ -95,6 +96,18 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
 
   endforeach()
 
+  # CMAKE_POLICY_VERSION_MINIMUM for legacy dependencies (CMake 4 compat):
+  # a real set() line so nested project code is covered, and part of the
+  # toolchain contents so it participates in the fingerprint / cmake-re
+  # ABI-hash cache keying. The functional injection for the dependency's
+  # top-level cmake_minimum_required() is the -D flag on the configure
+  # command (the toolchain is only read at project() time).
+  if(FN_ARG_POLICY_VERSION_MINIMUM)
+    set(policy_version_minimum_content "set(CMAKE_POLICY_VERSION_MINIMUM \"${FN_ARG_POLICY_VERSION_MINIMUM}\")")
+  else()
+    set(policy_version_minimum_content "# CMAKE_POLICY_VERSION_MINIMUM: (not set)")
+  endif()
+
   # forward important information from the command line arguments down via the proxy toolchains
   set(proxy_toolchain_forwarded_cmake_variables_content "")
 
@@ -145,6 +158,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
       toolchain_path_abs
       content_name
       proxy_toolchain_forwarded_cmake_variables_content
+      policy_version_minimum_content
       HERMETIC_FETCHCONTENT_ROOT_DIR
       HERMETIC_FETCHCONTENT_BYPASS_PROVIDER_FOR_PACKAGES
       HERMETIC_FETCHCONTENT_goldilock_BIN
@@ -167,6 +181,7 @@ function(hfc_generate_cmake_proxy_toolchain content_name)
     set(HERMETIC_FETCHCONTENT_CMAKE_TOOLCHAIN_FILE "${toolchain_path_abs}")
     set(HERMETIC_FETCHCONTENT_TOOLCHAIN_EXTENSION "${FN_ARG_PROJECT_TOOLCHAIN_EXTENSION}")
     set(HERMETIC_FETCHCONTENT_FORWARDED_CMAKE_VARIABLES_CONTENT "${proxy_toolchain_forwarded_cmake_variables_content}")
+    set(HERMETIC_FETCHCONTENT_POLICY_VERSION_MINIMUM_CONTENT "${policy_version_minimum_content}")
 
     set(HERMETIC_FETCHCONTENT_FIND_PACKAGES "${FN_ARG_HERMETIC_FIND_PACKAGES}")
     set(HERMETIC_FETCHCONTENT_PROJECT_DEPENDENCIES_CONTENTS "${project_dependency_contents}")

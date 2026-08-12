@@ -17,6 +17,10 @@ message(STATUS "[HERMETIC_FETCHCONTENT<no target toolchain extension>] running H
 @TEMPLATE_HERMETIC_TOOLCHAIN_EXTENSION@
 
 #
+# CMake 4 compat escape hatch for legacy dependencies (empty when not requested)
+@TEMPLATE_POLICY_VERSION_MINIMUM_CONTENT@
+
+#
 # add the actual project sources
 add_subdirectory(@TEMPLATE_SOURCE_DIR@ @TEMPLATE_BINARY_DIR@)
 

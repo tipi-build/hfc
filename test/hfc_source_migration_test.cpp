@@ -14,6 +14,7 @@
 #include <pre/file/string.hpp>
 #include <pre/file/hash.hpp>
 
+#include <cctype>
 #include <functional>
 #include <sstream>
 #include <string>
@@ -270,6 +271,7 @@ namespace hfc::test {
       int  variant_seen = -1;   // exit code of MyExample
       std::string detail;
       std::string configure_output;  // kept so we can locate the source-cache dir
+      std::string build_output;      // kept for post-mortem diagnostics
     };
 
     // Configure + build the consumer in its (reused) build folder, then run the
@@ -291,6 +293,7 @@ namespace hfc::test {
 
       std::string build_command = get_cmake_build_command(project_path, data);
       auto b = run_cmd(env, bp::start_dir=(project_path), bp::shell, build_command);
+      r.build_output = b.output;
       r.built = (b.return_code == 0);
       if(!r.built) {
         r.detail = "build failed:\n" + b.output;
@@ -361,6 +364,123 @@ namespace hfc::test {
       return {};
     }
 
+    // ── Post-mortem diagnostics ─────────────────────────────────────────────
+    // A STALE/BROKEN outcome says the wrong sources were built, not why. These
+    // dumps capture, at the moment of failure, what is needed to tell the
+    // candidate causes apart without a local reproduction (this matrix has
+    // failed only on CI so far, see tipi-build/specs-cmake-re#96):
+    //   - HFC's configure log  -> which populate decision was taken (cold /
+    //     warm reuse / update / invalidate) and whether the install/configure
+    //     markers short-circuited the dependency rebuild
+    //   - source cache on disk -> which variant each clone actually holds, so
+    //     "populated the wrong sources" is distinguishable from "right sources,
+    //     stale binary"
+    //   - artifact mtimes      -> "dependency never rebuilt/reinstalled" vs
+    //     "consumer never relinked"
+
+    // Last `n` lines of `text`, so a dump stays readable in a CI log.
+    std::string tail_lines(const std::string& text, std::size_t n) {
+      std::vector<std::string> lines;
+      std::istringstream stream(text);
+      for(std::string line; std::getline(stream, line); ) lines.push_back(line);
+      if(lines.size() <= n) return text;
+      std::ostringstream out;
+      out << "[... " << (lines.size() - n) << " earlier lines omitted ...]\n";
+      for(std::size_t i = lines.size() - n; i < lines.size(); ++i) out << lines[i] << "\n";
+      return out.str();
+    }
+
+    // The variant id baked into a samplelib source file on disk ("11", "41", …),
+    // i.e. which sources the cache really holds right now.
+    std::string source_variant_on_disk(const fs::path& dir) {
+      for(const std::string& name : {"samplelib.cpp", "samplelib.c"}) {
+        fs::path file = dir / name;
+        if(!fs::exists(file)) continue;
+        const std::string content = pre::file::to_string(file.generic_string());
+        const std::size_t at = content.rfind("return ");
+        if(at == std::string::npos) return "?";
+        std::string digits;
+        for(std::size_t i = at + 7; i < content.size() && std::isdigit(content[i]); ++i) digits += content[i];
+        return digits.empty() ? "?" : digits;
+      }
+      return "(no samplelib source)";
+    }
+
+    std::string mtime_of(const fs::path& p) {
+      if(!fs::exists(p)) return "(missing)";
+      return std::to_string(static_cast<long long>(fs::last_write_time(p)));
+    }
+
+    void dump_tree_evidence(const fs::path& project_path) {
+      for(const fs::path& root : {project_path, resolve_real_source(project_path)}) {
+        fs::path cache = root / "thirdparty" / "cache";
+        if(!fs::exists(cache)) continue;
+        std::cout << "-- source cache: " << cache.generic_string() << std::endl;
+        for(fs::directory_iterator it(cache), end; it != end; ++it) {
+          const bool is_dir = fs::is_directory(it->path());
+          const std::string name = it->path().filename().generic_string();
+          std::cout << "   " << name << (is_dir ? "/" : "") << "  mtime=" << mtime_of(it->path());
+          if(is_dir) std::cout << "  variant_on_disk=" << source_variant_on_disk(it->path());
+          // a populated sub-build dir means FetchContent ran the legacy
+          // sub-build populate; under CMP0168 direct population there is none
+          if(is_dir && boost::ends_with(name, "-subbuild")) {
+            std::cout << "  subbuild_configured=" << (fs::exists(it->path() / "CMakeCache.txt") ? "yes" : "no");
+          }
+          std::cout << std::endl;
+        }
+        break;
+      }
+
+      // Direct population keeps its step stamps per consumer build tree and
+      // keyed on the content name only, so they are shared across source-cache
+      // keys: a stale download.stamp here would silently skip a re-download.
+      fs::path fc_stamp = project_path / "build" / "CMakeFiles" / "fc-stamp";
+      if(fs::exists(fc_stamp)) {
+        std::cout << "-- direct-population stamps: " << fc_stamp.generic_string() << std::endl;
+        for(fs::recursive_directory_iterator f(fc_stamp), fend; f != fend; ++f) {
+          std::cout << "   " << fs::relative(f->path(), fc_stamp).generic_string()
+                    << "  mtime=" << mtime_of(f->path()) << std::endl;
+        }
+      } else {
+        std::cout << "-- direct-population stamps: (none at " << fc_stamp.generic_string() << ")" << std::endl;
+      }
+
+      fs::path deps = resolve_real_source(project_path) / "build" / "_deps";
+      if(!fs::exists(deps)) deps = project_path / "build" / "_deps";
+      if(fs::exists(deps)) {
+        std::cout << "-- dependency base dir: " << deps.generic_string() << std::endl;
+        for(fs::directory_iterator it(deps), end; it != end; ++it) {
+          std::cout << "   " << it->path().filename().generic_string() << std::endl;
+        }
+        for(fs::directory_iterator it(deps), end; it != end; ++it) {
+          if(!fs::is_directory(it->path()) || !boost::ends_with(it->path().filename().generic_string(), "-install")) continue;
+          std::cout << "-- install prefix: " << it->path().generic_string() << std::endl;
+          for(fs::recursive_directory_iterator f(it->path()), fend; f != fend; ++f) {
+            const std::string name = f->path().filename().generic_string();
+            if(boost::starts_with(name, "hfc.") || boost::ends_with(name, ".a") || name == "samplelib.h") {
+              std::cout << "   " << f->path().generic_string() << "  mtime=" << mtime_of(f->path()) << std::endl;
+            }
+          }
+        }
+      }
+
+      fs::path exe = project_path / "build" / "MyExample";
+      std::cout << "-- consumer executable: " << exe.generic_string()
+                << "  mtime=" << mtime_of(exe) << std::endl;
+    }
+
+    void dump_scenario_diagnostics(const std::string& label, const fs::path& project_path,
+                                  const step_result& after) {
+      std::cout << "\n===== DIAGNOSTICS " << label << " =====" << std::endl;
+      std::cout << "----- migration configure output -----\n"
+                << tail_lines(after.configure_output, 400) << std::endl;
+      std::cout << "----- migration build output -----\n"
+                << tail_lines(after.build_output, 120) << std::endl;
+      std::cout << "----- on-disk state -----" << std::endl;
+      dump_tree_evidence(project_path);
+      std::cout << "===== END DIAGNOSTICS " << label << " =====\n" << std::endl;
+    }
+
     // One migration scenario: build with `from`, then reconfigure+rebuild the
     // same folder with `to`, and check which sources end up compiled in.
     struct scenario_outcome {
@@ -369,6 +489,7 @@ namespace hfc::test {
       step_result after;
       bool migrated_cleanly = false;   // running binary reflects `to`
       bool served_stale = false;       // running binary reflects `from`
+      fs::path project_path;           // kept so a failure can dump on-disk evidence
     };
 
     scenario_outcome run_scenario(const std::string& name, const origin_t& from, const origin_t& to,
@@ -383,6 +504,7 @@ namespace hfc::test {
       fs::create_directories(scenario_base);
       fs::path project_path = prepare_project_to_be_tested("hfc_source_migration", data.is_cmake_re, scenario_base);
       write_project_tipi_id(project_path);
+      out.project_path = project_path;
 
       std::cout << "\n========== scenario: " << name << " ==========" << std::endl;
 
@@ -509,6 +631,9 @@ namespace hfc::test {
       const std::string lbl = "[" + variant_label(data) + "] " + o.name;
       std::cout << lbl << " -> " << outcome_label(o) << std::endl;
       BOOST_REQUIRE_MESSAGE(o.initial_ok, lbl << " baseline build failed: " << o.after.detail);
+      if(!o.migrated_cleanly) {
+        dump_scenario_diagnostics(lbl + " " + outcome_label(o), o.project_path, o.after);
+      }
       BOOST_CHECK_MESSAGE(o.migrated_cleanly, lbl << " expected CLEAN, got: " << outcome_label(o));
     }
 
@@ -528,6 +653,7 @@ namespace hfc::test {
       fs::create_directories(scenario_base);
       fs::path project_path = prepare_project_to_be_tested("hfc_source_migration", data.is_cmake_re, scenario_base);
       write_project_tipi_id(project_path);
+      out.project_path = project_path;
 
       origin_t git_v1 = git_origin(11, "repoA@" + m.repoA_v1.substr(0,8), m.repoA, m.repoA_v1, autotools);
       write_consumer(project_path, git_v1);
@@ -578,6 +704,7 @@ namespace hfc::test {
       fs::create_directories(scenario_base);
       fs::path project_path = prepare_project_to_be_tested("hfc_source_migration", data.is_cmake_re, scenario_base);
       write_project_tipi_id(project_path);
+      out.project_path = project_path;
 
       // Baseline: main == v1 (variant 11).
       run_cmd(env, bp::start_dir=(m.repoA), bp::shell, git_with_identity() + " reset -q --hard " + m.repoA_v1);
@@ -616,6 +743,7 @@ namespace hfc::test {
       fs::create_directories(scenario_base);
       fs::path project_path = prepare_project_to_be_tested("hfc_source_migration", data.is_cmake_re, scenario_base);
       write_project_tipi_id(project_path);
+      ro.o.project_path = project_path;
 
       origin_t origin = git_origin(11, "repoA@" + m.repoA_v1.substr(0,8), m.repoA, m.repoA_v1, autotools);
 
@@ -762,6 +890,9 @@ namespace hfc::test {
     std::cout << lbl << " -> " << outcome_label(o) << std::endl;
     BOOST_REQUIRE_MESSAGE(o.initial_ok, lbl << " baseline failed: " << o.after.detail);
     const outcome_kind actual = classify(o);
+    if(actual != expected) {
+      dump_scenario_diagnostics(lbl + " " + outcome_label(o), o.project_path, o.after);
+    }
     BOOST_CHECK_MESSAGE(actual == expected,
       lbl << " expected " << kind_name(expected) << " (" << note << "), got " << outcome_label(o)
           << (actual == outcome_kind::clean

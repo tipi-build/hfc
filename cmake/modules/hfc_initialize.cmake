@@ -2,6 +2,7 @@
 
 include(hfc_log)
 include(hfc_goldilock_helpers)
+include(hfc_policy_helpers)
 include(hfc_custom_echo_command)
 include(FetchContent)
 include(hfc_ensure_executable_version_greater_equal)
@@ -249,7 +250,7 @@ function(hfc_ensure_goldilock_available)
       set(_goldilock_git_tag "${FN_ARG_GOLDILOCK_REVISION}")
     endif()
 
-    FetchContent_Populate(
+    hfc_fetchcontent_populate(
       hfc_goldilock
       GIT_REPOSITORY "${_goldilock_git_repository}"
       GIT_TAG        "${_goldilock_git_tag}"

@@ -22,6 +22,7 @@ function(hfc_run_project_configure content_name)
 
   set(oneValueArgs
     PROJECT_SOURCE_SUBDIR
+    POLICY_VERSION_MINIMUM
     ${oneValueArgs_required}
   )
   set(multiValueArgs
@@ -51,6 +52,14 @@ function(hfc_run_project_configure content_name)
   endif()
 
   set(cmake_command ${OVERRIDEN_CMAKE_COMMAND} "-G" "${CMAKE_GENERATOR}" "--install-prefix" "${FN_ARG_PROJECT_INSTALL_PREFIX}" "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}" "-S" "${FN_ARG_PROJECT_SOURCE_DIR}" "-B" "${FN_ARG_PROJECT_BINARY_DIR}" "-DCMAKE_TOOLCHAIN_FILE=${FN_ARG_TOOLCHAIN_FILE}")
+
+  # CMake 4 compat escape hatch for legacy dependencies declaring
+  # cmake_minimum_required(VERSION < 3.5) - must be on the command line, the
+  # toolchain file is only read at project() time which is too late for the
+  # dependency's top-level cmake_minimum_required()
+  if(FN_ARG_POLICY_VERSION_MINIMUM)
+    list(APPEND cmake_command "-DCMAKE_POLICY_VERSION_MINIMUM=${FN_ARG_POLICY_VERSION_MINIMUM}")
+  endif()
 
   if (CMAKE_RE_ENABLE)
     # --origin
