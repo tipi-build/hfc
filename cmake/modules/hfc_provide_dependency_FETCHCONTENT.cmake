@@ -65,10 +65,18 @@ macro(hfc_provide_dependency_FETCHCONTENT method package_name)
     SUBBUILD_DIR "${HERMETIC_FETCHCONTENT_SOURCE_CACHE_DIR}/${package_name}-${source_hash_short}-subbuild"
   )
 
-  if(EXISTS "${content_source_dir}/CMakeLists.txt")
+  # When SOURCE_SUBDIR is specified, the CMakeLists.txt to add lives *only* in
+  # that subdirectory (this mirrors CMake's own FetchContent/ExternalProject
+  # semantics)
+  if(FN_ARG_SOURCE_SUBDIR)
+    if(EXISTS "${content_source_dir}/${FN_ARG_SOURCE_SUBDIR}/CMakeLists.txt")
+      add_subdirectory("${content_source_dir}/${FN_ARG_SOURCE_SUBDIR}" "${FN_ARG_BINARY_DIR}")
+    endif()
+
+    # note about why nested ifs: prevent falling back to root-level CMakeLists.txt if SOURCE_SUBDIR is 
+    # specified but no file is present.
+  elseif(EXISTS "${content_source_dir}/CMakeLists.txt")
     add_subdirectory("${content_source_dir}" "${FN_ARG_BINARY_DIR}")
-  elseif(FN_ARG_SOURCE_SUBDIR AND EXISTS "${content_source_dir}/${FN_ARG_SOURCE_SUBDIR}/CMakeLists.txt")
-    add_subdirectory("${content_source_dir}/${FN_ARG_SOURCE_SUBDIR}" "${FN_ARG_BINARY_DIR}")
   endif()
 
   if(NOT TARGET hfc_${package_name}_source_dir)
