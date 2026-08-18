@@ -97,6 +97,7 @@ set(test_source_files
     "${CMAKE_CURRENT_LIST_DIR}/check_prepatch_resolver.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_source_build_hfc_prefix.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_subdir.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/check_source_subdir_precedence.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_subproject_targets_linking.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_version_update.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/check_without_install.cpp"
